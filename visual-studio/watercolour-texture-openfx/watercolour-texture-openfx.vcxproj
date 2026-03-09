@@ -203,7 +203,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>Default</LanguageStandard_C>
-      <AdditionalIncludeDirectories>../../watercolour-texture/;..\..\3rd-party\OpenFX\OpenFX-1.4\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../watercolour-texture/;..\..\3rd-party\OpenFX\OpenFX-1.4\include;$(SolutionDir)../../3rd-party/simd/include</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
@@ -241,7 +241,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>Default</LanguageStandard_C>
-      <AdditionalIncludeDirectories>../../watercolour-texture/;..\..\3rd-party\OpenFX\OpenFX-1.4\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../watercolour-texture/;..\..\3rd-party\OpenFX\OpenFX-1.4\include;$(SolutionDir)../../3rd-party/simd/include</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
@@ -266,7 +266,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>Default</LanguageStandard_C>
-      <AdditionalIncludeDirectories>../../watercolour-texture/;..\..\3rd-party\OpenFX\OpenFX-1.4\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../watercolour-texture/;..\..\3rd-party\OpenFX\OpenFX-1.4\include;$(SolutionDir)../../3rd-party/simd/include</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
@@ -291,7 +291,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>Default</LanguageStandard_C>
-      <AdditionalIncludeDirectories>../../watercolour-texture/;..\..\3rd-party\OpenFX\OpenFX-1.4\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../watercolour-texture/;..\..\3rd-party\OpenFX\OpenFX-1.4\include;$(SolutionDir)../../3rd-party/simd/include</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>

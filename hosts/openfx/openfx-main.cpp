@@ -37,7 +37,7 @@ Description:
 #include "openfx-parameter-helper.h"
 #include "openfx-instance-data.h"
 
-#include "../../common/simd-cpuid.h"
+#include "simd-cpuid.h"
 
 #include <exception>
 #include <string.h>
