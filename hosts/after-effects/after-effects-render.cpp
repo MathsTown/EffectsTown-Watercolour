@@ -37,9 +37,9 @@ Description:
 #include "after-effects-parameter-helper.h"
 #include "..\..\common\util.h"
 
-#include "..\..\common\simd-cpuid.h"
-#include "..\..\common\simd-f32.h"
-#include "..\..\common\simd-uint32.h"
+#include "simd-cpuid.h"
+#include "simd-f32.h"
+#include "simd-uint32.h"
 
 template <SimdFloat S>
 struct RenderData {

@@ -46,27 +46,6 @@
     <ClInclude Include="..\..\common\parameter-list.h">
       <Filter>Source Files\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\simd-cpuid.h">
-      <Filter>Source Files\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\simd-f32.h">
-      <Filter>Source Files\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\simd-f64.h">
-      <Filter>Source Files\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\simd-uint32.h">
-      <Filter>Source Files\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\simd-uint64.h">
-      <Filter>Source Files\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\simd-concepts.h">
-      <Filter>Source Files\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\environment.h">
-      <Filter>Source Files\Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\watercolour-texture\renderer.h">
       <Filter>Source Files\Project</Filter>
     </ClInclude>
