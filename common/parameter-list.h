@@ -193,17 +193,23 @@ struct ParameterList {
 	}
 
 	//Set a numerical value
-	double set_value(ParameterID id, double v) {
+	void set_value(ParameterID id, double v) {
 		for (auto & e : entries) {
-			if (id == e.id) e.value = v;
+			if (id == e.id){
+			 	e.value = v;
+				return;
+			}
 		}
 		throw(std::runtime_error("Parameter not found."));
 	}
 
 	//Set a string value
-	double set_value_string(ParameterID id, std::string v) {
+	void set_value_string(ParameterID id, std::string v) {
 		for (auto & e : entries) {
-			if (id == e.id) e.value_string = v;
+			if (id == e.id){
+				e.value_string = v;
+				return;
+			}
 		}
 		throw(std::runtime_error("Parameter not found."));
 	}

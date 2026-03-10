@@ -439,6 +439,7 @@ ParameterList read_parameters() {
 			break;
 		case ParameterType::list:			
 			p.value_string = ParameterHelper::ReadListAsString(p.id, p.list);
+			break;
 		case ParameterType::colour:
 			auto pixel = ParameterHelper::ReadColour(p.id);
 			p.red = pixel.red / 255.0f;

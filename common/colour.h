@@ -1,6 +1,6 @@
 /********************************************************************************************************
 
-Authors:		(c) 2023 Maths Town
+Authors:		(c) 2023-2026 Maths Town
 
 Licence:		The MIT License
 
@@ -240,11 +240,22 @@ struct ColourRGBA {
         /**************************************************************************************************
         Un-multiplies the alpha channel through the colour. (For pre-mulitplied alpha buffers)
         *************************************************************************************************/
-        ColourRGBA<F> un_premultiply_alpha() const noexcept {
+        ColourRGBA<F> un_premultiply_alpha() const noexcept requires std::floating_point<F>  {
             auto c = *this;
+            if (c.alpha == 0.0f) return c;
             c.red /= c.alpha;
             c.green /= c.alpha;
             c.blue /= c.alpha;
+            return c;
+        }
+        ColourRGBA<F> un_premultiply_alpha() const noexcept requires SimdFloat<F> {
+            auto c = *this;
+            
+            // Replace zero alpha lanes with 1.0 if alpha is zero so division is always safe.
+            const auto safe_alpha = if_equal(c.alpha, F(0.0f), F(1.0f), c.alpha);            
+            c.red = c.red / safe_alpha;
+            c.green = c.green / safe_alpha;
+            c.blue = c.blue / safe_alpha;
             return c;
         }
 
