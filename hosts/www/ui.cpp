@@ -63,7 +63,18 @@ EM_JS (bool, javascript_run_ui, (), {
     }
 
     //Setup Events
-    window.addEventListener('resize',onResize);  
+    window.addEventListener('resize',onResize);
+
+    //Aspect ratio buttons
+    document.querySelectorAll('input[name="aspect"]').forEach(function(radio){
+        radio.addEventListener('change', function(){
+            let canvas = document.getElementById('canvas');
+            canvas.className = 'aspect-' + this.value;
+            requestAnimationFrame(function(){
+                worker.postMessage({'resize':true, 'width':canvas.clientWidth, 'height':canvas.clientHeight});
+            });
+        });
+    });
 
 
     /**************************************************************************************************
@@ -87,12 +98,23 @@ EM_JS (bool, javascript_run_ui, (), {
     
     /**************************************************************************************************
     * Javascript function:
+    * Syncs the page state to match the current form values.
+    * Called on load to reconcile any browser-restored form state with the rest of the page.
     * ************************************************************************************************/
-    function handelMessage(msg){                
+    function syncFormState(){
+        let checked = document.querySelector('input[name="aspect"]:checked');
+        if (checked) document.getElementById('canvas').className = 'aspect-' + checked.value;
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * ************************************************************************************************/
+    function handelMessage(msg){
         if(msg.data.hasOwnProperty('loaded')){  //Initial Worker Loaded Message
+            syncFormState();
             worker.postMessage({'seed':seed, 'isPreview':false});
             sendCanvasToWorker(worker);
-            Module["on_worker_load"]();   //callback to c++         
+            Module["on_worker_load"]();   //callback to c++
             return;
         }
         Module["on_worker_message"](msg);

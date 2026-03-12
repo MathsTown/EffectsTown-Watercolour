@@ -34,15 +34,17 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     <meta charset="utf-8">
     <title>Effects Town</title>
     <style>
-        html, body, canvas{
+        html, body{
             background-color:rgb(255, 255, 255);
             margin:0;
             padding: 0;
             overflow:hidden;
             color: black;
-            
             width:100%;
             height:100%;
+        }
+        canvas{
+            background-color:rgb(255, 255, 255);
         }
         #canvasholder{
           top:0px;
@@ -50,7 +52,15 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
           width: calc(100% - 25em);
           height:100%;
           z-index: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          container-type: size;
         }
+        .aspect-auto  { width:100%; height:100%; }
+        .aspect-1-1   { width: min(100cqw, 100cqh);          height: min(100cqh, 100cqw); }
+        .aspect-16-9  { width: min(100cqw, 100cqh * 16 / 9); height: min(100cqh, 100cqw * 9 / 16); }
+        .aspect-9-16  { width: min(100cqw, 100cqh * 9 / 16); height: min(100cqh, 100cqw * 16 / 9); }
         #parameters{
           position:absolute;
           top:0px;
@@ -141,7 +151,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   </head>
   <body>    
     <div id="canvasholder">
-      <canvas id="canvas"></canvas> 
+      <canvas id="canvas" class="aspect-auto"></canvas>
     </div>
     
     
@@ -149,9 +159,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       <!--<a class="buttonsmaller" id="aspect-auto">Auto</a>-->
       <div class="menugroup">
         Aspect Ratio<br>
-        <div class="radiolist"><input id="i1" name="iterations" type="radio" checked/><label for="i1">Auto 
-          </label><input id="i2" name="iterations" type="radio" /><label for="i2">1:1
-          </label><input id="i3" name="iterations" type="radio" /><label for="i3">16:9 
+        <div class="radiolist"><input id="i1" name="aspect" type="radio" value="auto" checked/><label for="i1">Auto
+          </label><input id="i2" name="aspect" type="radio" value="1-1"/><label for="i2">1:1
+          </label><input id="i3" name="aspect" type="radio" value="16-9"/><label for="i3">16:9
+          </label><input id="i4" name="aspect" type="radio" value="9-16"/><label for="i4">9:16
           </label>
         </div>
       </div>

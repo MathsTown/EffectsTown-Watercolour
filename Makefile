@@ -22,12 +22,12 @@
 
 all: watercolour-texture
 
-builddir := ..\build
-htmldir := ..\public_html
+builddir := .\build
+htmldir := .\public_html
 
 
 #headers used by renderer
-common_depend = common\colour.h common\linear-algebra.h common\noise.h common\simd-f32.h common\simd-f64.h common\simd-concepts.h common\simd-uint32.h common\simd-uint64.h 
+common_depend = common\colour.h common\linear-algebra.h common\noise.h 3rd-party\simd\include\simd-f32.h 3rd-party\simd\include\simd-f64.h 3rd-party\simd\include\simd-concepts.h 3rd-party\simd\include\simd-uint32.h 3rd-party\simd\include\simd-uint64.h
 
 #===========================
 #Watercolour texture project
@@ -36,7 +36,8 @@ builddir_fxhash := $(builddir)\watercolour-texture\fxhash
 htmldir_fxhash := $(htmldir)\effects\watercolour-texture\fxhash
 builddir_www := $(builddir)\watercolour-texture\www
 htmldir_www := $(htmldir)\effects\watercolour-texture\www
-project_dir := ".\projects\watercolour-texture"
+project_dir := .\watercolour-texture
+simd_include := .\3rd-party\simd\include
 
 watercolour-texture: watercolour-texture-fxhash watercolour-texture-www
 
@@ -66,11 +67,11 @@ $(htmldir_fxhash)\main-background-cpp.js : $(builddir_fxhash)\main-background.o 
 $(htmldir_fxhash)\main-render-worker-cpp.js : $(builddir_fxhash)\main-render-worker.o $(builddir_fxhash)\jsutil.o $(builddir_fxhash)\parameters.o
 	emcc $^ -o  $@ -lembind -O2 -std=c++20  -sENVIRONMENT=worker --closure 1 
 
-$(builddir_fxhash)\main-render-worker.o: hosts\fxhash\main-render-worker.cpp projects\watercolour-texture\renderer.h $(common_depend) 
-	emcc hosts\fxhash\main-render-worker.cpp -I$(project_dir)   -std=c++20 -c -o $@ -O2 -Wall -Wno-unknown-pragmas -Wpedantic -Wextra
+$(builddir_fxhash)\main-render-worker.o: hosts\fxhash\main-render-worker.cpp watercolour-texture\renderer.h $(common_depend)
+	emcc hosts\fxhash\main-render-worker.cpp -I$(project_dir) -I$(simd_include)  -std=c++20 -c -o $@ -O2 -Wall -Wno-unknown-pragmas -Wpedantic -Wextra
 
-$(builddir_fxhash)\parameters.o: projects\watercolour-texture\parameters.h projects\watercolour-texture\parameters.cpp 
-	emcc projects\watercolour-texture\parameters.cpp  -I$(project_dir)   -std=c++20 -c -o $@ -O2 -Wall -Wno-unknown-pragmas -Wpedantic -Wextra
+$(builddir_fxhash)\parameters.o: watercolour-texture\parameters.h watercolour-texture\parameters.cpp
+	emcc watercolour-texture\parameters.cpp  -I$(project_dir) -I$(simd_include)  -std=c++20 -c -o $@ -O2 -Wall -Wno-unknown-pragmas -Wpedantic -Wextra
 
 #Common
 $(builddir_fxhash)\jsutil.o: hosts\fxhash\jsutil.cpp hosts\fxhash\jsutil.h 
@@ -110,11 +111,11 @@ $(htmldir_www)\main-background-cpp.js : $(builddir_www)\main-background.o $(buil
 $(htmldir_www)\main-render-worker-cpp.js : $(builddir_www)\main-render-worker.o $(builddir_www)\jsutil.o $(builddir_www)\parameters.o
 	emcc $^ -o  $@ -lembind -O2 -std=c++20  -sENVIRONMENT=worker --closure 1 
 
-$(builddir_www)\main-render-worker.o: hosts\www\main-render-worker.cpp projects\watercolour-texture\renderer.h $(common_depend) 
-	emcc hosts\www\main-render-worker.cpp -I$(project_dir)   -std=c++20 -c -o $@ -O2 -Wall -Wno-unknown-pragmas -Wpedantic -Wextra
+$(builddir_www)\main-render-worker.o: hosts\www\main-render-worker.cpp watercolour-texture\renderer.h $(common_depend)
+	emcc hosts\www\main-render-worker.cpp -I$(project_dir) -I$(simd_include)  -std=c++20 -c -o $@ -O2 -Wall -Wno-unknown-pragmas -Wpedantic -Wextra
 
-$(builddir_www)\parameters.o: projects\watercolour-texture\parameters.h projects\watercolour-texture\parameters.cpp 
-	emcc projects\watercolour-texture\parameters.cpp  -I$(project_dir)   -std=c++20 -c -o $@ -O2 -Wall -Wno-unknown-pragmas -Wpedantic -Wextra
+$(builddir_www)\parameters.o: watercolour-texture\parameters.h watercolour-texture\parameters.cpp
+	emcc watercolour-texture\parameters.cpp  -I$(project_dir) -I$(simd_include)  -std=c++20 -c -o $@ -O2 -Wall -Wno-unknown-pragmas -Wpedantic -Wextra
 
 #Common
 $(builddir_www)\jsutil.o: hosts\www\jsutil.cpp hosts\www\jsutil.h 

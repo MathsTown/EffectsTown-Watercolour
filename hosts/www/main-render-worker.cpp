@@ -32,10 +32,10 @@ Description:
 #include <emscripten/val.h>
 #include <emscripten/bind.h>
 
-#include "../../projects/watercolour-texture/parameters.h"
-#include "../../common/simd-f32.h"
+#include "../../watercolour-texture/parameters.h"
+#include "simd-f32.h"
 
-#include "../../projects/watercolour-texture/renderer.h"
+#include "../../watercolour-texture/renderer.h"
 #include "../../common/colour.h"
 #include "jsutil.h"
 

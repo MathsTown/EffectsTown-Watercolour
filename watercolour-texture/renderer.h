@@ -34,11 +34,11 @@ Description:
 #include <numbers>
 #include <typeinfo>
 
-#include "../../common/colour.h"
-#include "../../common/linear-algebra.h"
-#include "../../common/noise.h"
-#include "../../common/parameter-list.h"
-#include "..\..\common\input-transforms.h"
+#include "../common/colour.h"
+#include "../common/linear-algebra.h"
+#include "../common/noise.h"
+#include "../common/parameter-list.h"
+#include "..\common\input-transforms.h"
 
 #include "simd-cpuid.h"
 #include "simd-f32.h"
