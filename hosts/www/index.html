@@ -77,6 +77,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
           font-weight:bold;
           margin-bottom:6px;
         }
+        .menuheading{
+          font-weight:bold;
+          margin-bottom:6px;
+          display:block;
+        }
         .paramrow{
           text-align:left;
           margin:4px 0;
@@ -194,7 +199,31 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
           .radiolist label:last-of-type{
             border-radius: 0 0.5em 0.5em 0;
           }
-    </style>      
+        .seedinput{
+          width:calc(100% - 1.2em);
+          font-size:0.9em;
+          padding:0.2em 0.4em;
+          border:1px solid #777777;
+          border-radius:4px;
+          margin-top:4px;
+          box-sizing:border-box;
+        }
+        .resetbutton{
+          display:block;
+          width:calc(100% - 1em);
+          margin: 8px auto 2px auto;
+          background:white;
+          border-radius: 10px;
+          border: 2px solid #777777;
+          padding:0.3em;
+          font-size:0.9em;
+          cursor: pointer;
+          background-image: linear-gradient(#ffffff 45%,#eeeeee 100%, #ffffff);
+        }
+        .resetbutton:hover{
+          background-image: linear-gradient(#f9ecdb 45%,#f9cc8b 100%, #f9dcbb);
+        }
+    </style>
   </head>
   <body>    
     <div id="canvasholder">
@@ -205,7 +234,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     <div id="parameters">
       <!--<a class="buttonsmaller" id="aspect-auto">Auto</a>-->
       <div class="menugroup">
-        Aspect Ratio<br>
+        <span class="menuheading">Aspect Ratio</span>
         <div class="radiolist"><input id="i1" name="aspect" type="radio" value="auto" checked/><label for="i1">Auto
           </label><input id="i2" name="aspect" type="radio" value="1-1"/><label for="i2">1:1
           </label><input id="i3" name="aspect" type="radio" value="16-9"/><label for="i3">16:9
@@ -213,7 +242,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
           </label>
         </div>
       </div>
+      <div class="menugroup" style="margin-top:5px;">
+        <span class="menuheading">Seed</span>
+        <input type="text" id="seed-input" class="seedinput" value="Effects Town">
+      </div>
     </div>   
   </body>
-  <script src=main-cpp.js></script>
+  <script src="main-cpp.js"></script>
 </html>  

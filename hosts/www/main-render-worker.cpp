@@ -49,10 +49,10 @@ thread_local bool params_initialized = false;
  * [Inline Javascript]
  * 
  * ************************************************************************************************/
-EM_JS (bool, run_javascipt, (), {
+EM_JS (bool, run_javascript, (), {
     //console.log("Render Worker Loaded");
 
-    //***Javascript function to render a line.  Called by handelMessage***
+    //***Javascript function to render a line.  Called by handleMessage***
     function render_line(data){
         //Apply parameters sent from the background worker before rendering.
         if (data.hasOwnProperty('params')) {
@@ -80,14 +80,14 @@ EM_JS (bool, run_javascipt, (), {
     }
 
     //*** Handel incoming messages ***
-    function handelMessage(msg){
+    function handleMessage(msg){
         if(msg.data.hasOwnProperty('render')){
             render_line(msg.data);
             return;
         }
     }
 
-    self.onmessage = handelMessage;
+    self.onmessage = handleMessage;
 
     //Send loaded message to parent thread, including serialised parameter definitions for the UI.
     postMessage({'loaded':true, 'paramDefs': Module["get_parameters_json"]()}); //Note: Using string indexes to avoid minification by closure compiler.
@@ -240,7 +240,7 @@ uint32_t render_pixel(uint32_t x, uint32_t y){
 int main(){     
     
     
-    run_javascipt();
+    run_javascript();
 
    
 

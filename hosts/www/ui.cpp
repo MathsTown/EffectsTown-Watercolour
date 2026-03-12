@@ -49,13 +49,16 @@ emscripten::val main_worker {};
  * Browser compatability checks should already be done.
  * ************************************************************************************************/
 EM_JS (bool, javascript_run_ui, (), {
-    let seed = "Effecs Town";
+    let seedInputEl = document.getElementById('seed-input');
+    let seed = (seedInputEl && seedInputEl.value) ? seedInputEl.value : "Effects Town";
     console.log("Seed: " + seed);
     let isShuttingDown = false;
     let backgroundLoaded = false;
     let paramsLoaded = false;
-    let resizePending = false;
-    let paramsPending = false;
+    let flushPending = false;
+    let dirtySeed = false;
+    let dirtyParams = false;
+    let dirtyResize = false;
     let backgroundLoadTimeout = 0;
     let paramsLoadTimeout = 0;
     
@@ -63,7 +66,7 @@ EM_JS (bool, javascript_run_ui, (), {
     let worker;
     if (window.Worker){
         worker = new Worker("main-background-cpp.js", {name:'background'});
-        worker.onmessage = handelMessage;
+        worker.onmessage = handleMessage;
         
     }else{
         alert("Web Workers are not supported."); //Should be unreachable, as we checked earlier
@@ -101,12 +104,59 @@ EM_JS (bool, javascript_run_ui, (), {
     window.addEventListener('resize',onResize);
     window.addEventListener('beforeunload', onBeforeUnload);
 
+    function queueWorkerFlush(){
+        if (isShuttingDown || !worker) return;
+        if (flushPending) return;
+        flushPending = true;
+        requestAnimationFrame(function(){
+            flushPending = false;
+            if (isShuttingDown || !worker) return;
+
+            let msg = {};
+            if (dirtySeed) {
+                msg['seed'] = seed;
+                msg['isPreview'] = false;
+                dirtySeed = false;
+            }
+            if (dirtyParams) {
+                msg['params'] = collectParams();
+                dirtyParams = false;
+            }
+            if (dirtyResize) {
+                let canvas = document.getElementById('canvas');
+                msg['resize'] = true;
+                msg['width'] = canvas.clientWidth;
+                msg['height'] = canvas.clientHeight;
+                dirtyResize = false;
+            }
+            if (Object.keys(msg).length > 0) worker.postMessage(msg);
+        });
+    }
+
+    //Seed input
+    function markSeedDirty(){
+        if (!backgroundLoaded) return;
+        dirtySeed = true;
+        queueWorkerFlush();
+    }
+
+    if (seedInputEl) {
+        seedInputEl.addEventListener('input', function(){
+            seed = seedInputEl.value;
+            markSeedDirty();
+        });
+        seedInputEl.addEventListener('change', function(){
+            seed = seedInputEl.value;
+            markSeedDirty();
+        });
+    }
+
     //Aspect ratio buttons
     document.querySelectorAll('input[name="aspect"]').forEach(function(radio){
         radio.addEventListener('change', function(){
             let canvas = document.getElementById('canvas');
             canvas.className = 'aspect-' + this.value;
-            scheduleResize();
+            markResizeDirty();
         });
     });
 
@@ -115,22 +165,15 @@ EM_JS (bool, javascript_run_ui, (), {
     * Javascript function:
     * ************************************************************************************************/
     function onResize(){
-            scheduleResize();
+            markResizeDirty();
     }
 
     /**************************************************************************************************
     * Javascript function:
     * ************************************************************************************************/
-    function scheduleResize(){
-        if (isShuttingDown || !worker) return;
-        if (resizePending) return;
-        resizePending = true;
-        requestAnimationFrame(function(){
-            resizePending = false;
-            if (isShuttingDown || !worker) return;
-            let canvas =  document.getElementById('canvas');
-            worker.postMessage({'resize':true, 'width': canvas.clientWidth, 'height': canvas.clientHeight});
-        });
+    function markResizeDirty(){
+        dirtyResize = true;
+        queueWorkerFlush();
     }
 
     /**************************************************************************************************
@@ -144,9 +187,6 @@ EM_JS (bool, javascript_run_ui, (), {
         window.removeEventListener('resize', onResize);
         window.removeEventListener('beforeunload', onBeforeUnload);
         if (worker){
-            try {
-                worker.postMessage({'shutdown':true});
-            } catch (e) {}
             worker.terminate();
             worker = undefined;
         }
@@ -176,7 +216,7 @@ EM_JS (bool, javascript_run_ui, (), {
     /**************************************************************************************************
     * Javascript function:
     * ************************************************************************************************/
-    function handelMessage(msg){
+    function handleMessage(msg){
         if(msg.data.hasOwnProperty('loaded')){  //Initial Worker Loaded Message
             backgroundLoaded = true;
             clearStartupError();
@@ -194,7 +234,11 @@ EM_JS (bool, javascript_run_ui, (), {
             paramsLoaded = true;
             clearStartupError();
             if (paramsLoadTimeout) clearTimeout(paramsLoadTimeout);
-            buildParameterForm(JSON.parse(msg.data['paramDefs']));
+            try {
+                buildParameterForm(JSON.parse(msg.data['paramDefs']));
+            } catch (e) {
+                showStartupError('Failed to parse parameters from render worker.');
+            }
             return;
         }
         Module["on_worker_message"](msg);
@@ -314,6 +358,7 @@ EM_JS (bool, javascript_run_ui, (), {
                 select.className = 'paramselect';
                 select.setAttribute('data-param-id', String(pId));
                 select.setAttribute('data-param-type', 'list');
+                select.setAttribute('data-param-default', String(Math.floor(Number.isFinite(Number(p['initial_value'])) ? Number(p['initial_value']) : 0)));
                 let listItems = p['list'];
                 if (!Array.isArray(listItems)) listItems = [];
                 listItems.forEach(function(item){
@@ -342,6 +387,7 @@ EM_JS (bool, javascript_run_ui, (), {
                 cb.setAttribute('data-param-type', 'check');
                 let checkedValue = Number(p['initial_value']);
                 cb.checked = Number.isFinite(checkedValue) && checkedValue !== 0;
+                cb.setAttribute('data-param-default', cb.checked ? '1' : '0');
                 cb.addEventListener('change', onParamsChanged);
                 label.appendChild(cb);
                 label.appendChild(document.createTextNode(' ' + pName));
@@ -350,6 +396,28 @@ EM_JS (bool, javascript_run_ui, (), {
 
             currentGroup.appendChild(row);
         }
+
+        let resetBtn = document.createElement('button');
+        resetBtn.className = 'resetbutton';
+        resetBtn.textContent = 'Reset All';
+        resetBtn.addEventListener('click', function(){
+            document.querySelectorAll('[data-param-id]').forEach(function(el){
+                let def = el.getAttribute('data-param-default');
+                let type = el.getAttribute('data-param-type');
+                if (type === 'check') {
+                    el.checked = (def === '1');
+                } else if (type === 'list') {
+                    let idx = parseInt(def, 10);
+                    if (Number.isFinite(idx) && idx >= 0 && idx < el.options.length) el.selectedIndex = idx;
+                } else {
+                    el.value = def;
+                    let slider = el.parentNode ? el.parentNode.querySelector('.paramslider') : null;
+                    if (slider) slider.value = def;
+                }
+            });
+            onParamsChanged();
+        });
+        section.appendChild(resetBtn);
 
         onParamsChanged();
     }
@@ -384,14 +452,9 @@ EM_JS (bool, javascript_run_ui, (), {
     * Triggered whenever any parameter control changes.
     * ************************************************************************************************/
     function onParamsChanged(){
-        if (isShuttingDown || !worker) return;
-        if (paramsPending) return;
-        paramsPending = true;
-        requestAnimationFrame(function(){
-            paramsPending = false;
-            if (isShuttingDown || !worker) return;
-            worker.postMessage({'params': collectParams()});
-        });
+        if (!backgroundLoaded) return;
+        dirtyParams = true;
+        queueWorkerFlush();
     }
 
     return true;

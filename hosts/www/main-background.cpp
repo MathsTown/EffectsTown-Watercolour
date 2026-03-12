@@ -63,13 +63,13 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
     if (numberWorkers<4) numberWorkers=4;
     if (numberWorkers>64) numberWorkers=64;  //We start getting memory allocation issues above 80 or so.
 
-    //Setup message handeling.
-    self.onmessage = handelMessageParent;
+    //Setup message handling.
+    self.onmessage = handleMessageParent;
 
     //Start Render Workers
     for (let i=0; i<numberWorkers; i++){
         let worker = new Worker("main-render-worker-cpp.js", {name:'render'});
-        worker.onmessage = handelMessageRender;       
+        worker.onmessage = handleMessageRender;       
     }
 
     //Send loaded message to UI Thread.
@@ -120,7 +120,7 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
         }
 
         //Clear backbuffer
-        for (let i=0;i<backBuffer.data.length;i++) backBuffer.data[i] = 0x0; 
+        backBuffer.data.fill(0);
     }
 
     /**************************************************************************************************
@@ -129,16 +129,16 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
     * ************************************************************************************************/
     function resizeCanvas(width,height){
         
-        ctx.width = offscreen.width = width;
-        ctx.height = offscreen.height = height;
+        offscreen.width = width;
+        offscreen.height = height;
         backBuffer = new ImageData(offscreen.width,offscreen.height);
         doRender();
     }
 
     /**************************************************************************************************
-    * Javascript function: Handels messages from GUI thread (Parent thread)
+    * Javascript function: Handles messages from GUI thread (Parent thread)
     * ************************************************************************************************/
-    function handelMessageParent(msg){                
+    function handleMessageParent(msg){                
         // We will be sent an offscreen canvas
         if(msg.data.hasOwnProperty('canvas')){  
 
@@ -148,18 +148,6 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
             
             doRender();
             
-            return;
-        }
-
-        if(msg.data.hasOwnProperty('seed')){
-            seed = msg.data['seed'];
-            isPreview = msg.data['isPreview'];
-            return;
-        }
-
-        if(msg.data.hasOwnProperty('params')){
-            currentParams = msg.data['params'];
-            doRender();
             return;
         }
 
@@ -173,7 +161,20 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
             return;
         }
 
-        // Don't process other messages if we don't have the canvas.
+        let needsRender = false;
+
+        if(msg.data.hasOwnProperty('seed')){
+            seed = msg.data['seed'];
+            isPreview = msg.data['isPreview'];
+            needsRender = true;
+        }
+
+        if(msg.data.hasOwnProperty('params')){
+            currentParams = msg.data['params'];
+            needsRender = true;
+        }
+
+        // Don't process resize or render work if we don't have the canvas yet.
         if (typeof(offscreen) == "undefined" || typeof(ctx) == "undefined") return;
 
         //Canvas needs to be resized to match page.
@@ -181,7 +182,8 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
             resizeCanvas(msg.data.width, msg.data.height);
             return;
         }
-        
+
+        if (needsRender) doRender();
 
     }
 
@@ -214,9 +216,9 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
     }
 
     /**************************************************************************************************
-    * Javascript function: Handels messages from render workers (children of this thead)
+    * Javascript function: Handles messages from render workers (children of this thread)
     * ************************************************************************************************/
-    function handelMessageRender(msg){   
+    function handleMessageRender(msg){   
         let w = msg.target;
         if (msg.data.hasOwnProperty('result')){            
             startWorkerRender(w);

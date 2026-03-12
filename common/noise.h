@@ -54,11 +54,12 @@ inline constexpr uint64_t bits_52 = 0b000000000000111111111111111111111111111111
  * Simple method to convert a string to a uint32 seed
  * ************************************************************************************************/
 inline constexpr uint32_t string_to_seed(const std::string& str) {
-    uint32_t seed{ 0 };
-    for (size_t i = 0; i < str.length(); i++) {
-        seed ^= static_cast<uint32_t>(str[i]) >> ((i & 4) * 4);
+    uint32_t hash = 2166136261u; // FNV-1a 32-bit offset basis
+    for (unsigned char c : str) {
+        hash ^= static_cast<uint32_t>(c);
+        hash *= 16777619u; // FNV-1a 32-bit prime
     }
-    return seed;
+    return hash;
 }
 
 /**************************************************************************************************
