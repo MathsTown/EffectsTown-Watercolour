@@ -51,6 +51,13 @@ emscripten::val main_worker {};
 EM_JS (bool, javascript_run_ui, (), {
     let seed = "Effecs Town";
     console.log("Seed: " + seed);
+    let isShuttingDown = false;
+    let backgroundLoaded = false;
+    let paramsLoaded = false;
+    let resizePending = false;
+    let paramsPending = false;
+    let backgroundLoadTimeout = 0;
+    let paramsLoadTimeout = 0;
     
     //Start background worker.  We will eventually hand over the canvas to the background worker.
     let worker;
@@ -62,17 +69,44 @@ EM_JS (bool, javascript_run_ui, (), {
         alert("Web Workers are not supported."); //Should be unreachable, as we checked earlier
     }
 
+    /**************************************************************************************************
+    * Javascript function:
+    * ************************************************************************************************/
+    function showStartupError(message){
+        let container = document.getElementById('parameters');
+        let node = document.getElementById('startup-status');
+        if (!node){
+            node = document.createElement('div');
+            node.id = 'startup-status';
+            node.className = 'menugroup';
+            container.appendChild(node);
+        }
+        node.style.color = '#a00000';
+        node.textContent = message;
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * ************************************************************************************************/
+    function clearStartupError(){
+        let node = document.getElementById('startup-status');
+        if (node) node.remove();
+    }
+
+    backgroundLoadTimeout = setTimeout(function(){
+        if (!backgroundLoaded) showStartupError('Startup timeout: background worker did not respond.');
+    }, 10000);
+    
     //Setup Events
     window.addEventListener('resize',onResize);
+    window.addEventListener('beforeunload', onBeforeUnload);
 
     //Aspect ratio buttons
     document.querySelectorAll('input[name="aspect"]').forEach(function(radio){
         radio.addEventListener('change', function(){
             let canvas = document.getElementById('canvas');
             canvas.className = 'aspect-' + this.value;
-            requestAnimationFrame(function(){
-                worker.postMessage({'resize':true, 'width':canvas.clientWidth, 'height':canvas.clientHeight});
-            });
+            scheduleResize();
         });
     });
 
@@ -81,8 +115,41 @@ EM_JS (bool, javascript_run_ui, (), {
     * Javascript function:
     * ************************************************************************************************/
     function onResize(){
+            scheduleResize();
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * ************************************************************************************************/
+    function scheduleResize(){
+        if (isShuttingDown || !worker) return;
+        if (resizePending) return;
+        resizePending = true;
+        requestAnimationFrame(function(){
+            resizePending = false;
+            if (isShuttingDown || !worker) return;
             let canvas =  document.getElementById('canvas');
-            worker.postMessage({resize:true, width: canvas.clientWidth, height: canvas.clientHeight,});
+            worker.postMessage({'resize':true, 'width': canvas.clientWidth, 'height': canvas.clientHeight});
+        });
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * ************************************************************************************************/
+    function onBeforeUnload(){
+        if (isShuttingDown) return;
+        isShuttingDown = true;
+        if (backgroundLoadTimeout) clearTimeout(backgroundLoadTimeout);
+        if (paramsLoadTimeout) clearTimeout(paramsLoadTimeout);
+        window.removeEventListener('resize', onResize);
+        window.removeEventListener('beforeunload', onBeforeUnload);
+        if (worker){
+            try {
+                worker.postMessage({'shutdown':true});
+            } catch (e) {}
+            worker.terminate();
+            worker = undefined;
+        }
     }
 
     /**************************************************************************************************
@@ -111,17 +178,224 @@ EM_JS (bool, javascript_run_ui, (), {
     * ************************************************************************************************/
     function handelMessage(msg){
         if(msg.data.hasOwnProperty('loaded')){  //Initial Worker Loaded Message
+            backgroundLoaded = true;
+            clearStartupError();
+            if (backgroundLoadTimeout) clearTimeout(backgroundLoadTimeout);
             syncFormState();
             worker.postMessage({'seed':seed, 'isPreview':false});
             sendCanvasToWorker(worker);
+            paramsLoadTimeout = setTimeout(function(){
+                if (!paramsLoaded) showStartupError('Startup timeout: render workers failed to publish parameters.');
+            }, 10000);
             Module["on_worker_load"]();   //callback to c++
+            return;
+        }
+        if(msg.data.hasOwnProperty('paramDefs')){  //Parameter definitions forwarded from first render worker.
+            paramsLoaded = true;
+            clearStartupError();
+            if (paramsLoadTimeout) clearTimeout(paramsLoadTimeout);
+            buildParameterForm(JSON.parse(msg.data['paramDefs']));
             return;
         }
         Module["on_worker_message"](msg);
     }
-    
+
+    /**************************************************************************************************
+    * Javascript function:
+    * Builds the parameter form dynamically from the list supplied by the render worker.
+    * Each entry in defs corresponds to one ParameterEntry from the C++ ParameterList.
+    * ************************************************************************************************/
+    function buildParameterForm(defs){
+        let container = document.getElementById('parameters');
+        let previous = document.getElementById('dynamic-parameters');
+        if (previous) previous.remove();
+        let section = document.createElement('div');
+        section.id = 'dynamic-parameters';
+        section.className = 'menugroup';
+        let heading = document.createElement('div');
+        heading.className = 'paramheading';
+        heading.textContent = 'Parameters:';
+        section.appendChild(heading);
+        container.appendChild(section);
+
+        let currentGroup = section;
+
+        for (let p of defs) {
+            const pType = p['type'];
+            const pName = p['name'];
+            const pId = p['id'];
+
+            if (pType === 'colour') continue;
+            if (pType === 'seed')   continue;
+
+            if (pType === 'group_start') {
+                let grp = document.createElement('div');
+                grp.className = 'paramgroup';
+                let grpName = document.createElement('div');
+                grpName.className = 'paramgroupname';
+                grpName.textContent = pName;
+                grp.appendChild(grpName);
+                section.appendChild(grp);
+                currentGroup = grp;
+                continue;
+            }
+            if (pType === 'group_end') {
+                currentGroup = section;
+                continue;
+            }
+
+            let row = document.createElement('div');
+            row.className = 'paramrow';
+
+            if (pType === 'number' || pType === 'angle' || pType === 'percent') {
+                let labelText = pName;
+                if (pType === 'angle')   labelText += ' \u00b0';
+                if (pType === 'percent') labelText += ' %';
+                let precision = Number(p['precision']);
+                if (!Number.isFinite(precision)) precision = 0;
+                let step = precision > 0 ? 1.0 / Math.pow(10, precision) : 1;
+                let sliderMin = Number(p['slider_min']);
+                let sliderMax = Number(p['slider_max']);
+                let valueMin = Number(p['min']);
+                let valueMax = Number(p['max']);
+                let initialValue = Number(p['initial_value']);
+                if (!Number.isFinite(sliderMin)) sliderMin = 0;
+                if (!Number.isFinite(sliderMax)) sliderMax = 1;
+                if (!Number.isFinite(valueMin)) valueMin = sliderMin;
+                if (!Number.isFinite(valueMax)) valueMax = sliderMax;
+                if (!Number.isFinite(initialValue)) initialValue = 0;
+
+                let label = document.createElement('label');
+                label.className = 'paramlabel';
+                label.textContent = labelText;
+
+                let controls = document.createElement('div');
+                controls.className = 'paramcontrols';
+
+                let slider = document.createElement('input');
+                slider.type = 'range';
+                slider.className = 'paramslider';
+                slider.min = String(sliderMin);
+                slider.max = String(sliderMax);
+                slider.step = step;
+                slider.value = String(initialValue);
+
+                let numInput = document.createElement('input');
+                numInput.type = 'number';
+                numInput.className = 'paramnumber';
+                numInput.setAttribute('data-param-id', String(pId));
+                numInput.setAttribute('data-param-type', pType);
+                numInput.setAttribute('data-param-default', String(initialValue));
+                numInput.min = String(valueMin);
+                numInput.max = String(valueMax);
+                numInput.step = step;
+                numInput.value = String(initialValue);
+
+                slider.addEventListener('input', function(){
+                    numInput.value = slider.value;
+                    onParamsChanged();
+                });
+                numInput.addEventListener('change', function(){
+                    slider.value = numInput.value;
+                    onParamsChanged();
+                });
+
+                controls.appendChild(slider);
+                controls.appendChild(numInput);
+                row.appendChild(label);
+                row.appendChild(controls);
+
+            } else if (pType === 'list') {
+                let label = document.createElement('label');
+                label.className = 'paramlabel';
+                label.textContent = pName;
+
+                let select = document.createElement('select');
+                select.className = 'paramselect';
+                select.setAttribute('data-param-id', String(pId));
+                select.setAttribute('data-param-type', 'list');
+                let listItems = p['list'];
+                if (!Array.isArray(listItems)) listItems = [];
+                listItems.forEach(function(item){
+                    let opt = document.createElement('option');
+                    opt.value = item;
+                    opt.textContent = item;
+                    select.appendChild(opt);
+                });
+                let initialIndex = Number(p['initial_value']);
+                if (Number.isFinite(initialIndex)) {
+                    initialIndex = Math.floor(initialIndex);
+                    if (initialIndex >= 0 && initialIndex < select.options.length) {
+                        select.selectedIndex = initialIndex;
+                    }
+                }
+                select.addEventListener('change', onParamsChanged);
+                row.appendChild(label);
+                row.appendChild(select);
+
+            } else if (pType === 'check') {
+                let label = document.createElement('label');
+                label.className = 'paramlabel';
+                let cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.setAttribute('data-param-id', String(pId));
+                cb.setAttribute('data-param-type', 'check');
+                let checkedValue = Number(p['initial_value']);
+                cb.checked = Number.isFinite(checkedValue) && checkedValue !== 0;
+                cb.addEventListener('change', onParamsChanged);
+                label.appendChild(cb);
+                label.appendChild(document.createTextNode(' ' + pName));
+                row.appendChild(label);
+            }
+
+            currentGroup.appendChild(row);
+        }
+
+        onParamsChanged();
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * Reads all parameter controls and sends their current values to the background worker.
+    * Triggered whenever any parameter control changes.
+    * ************************************************************************************************/
+    function collectParams(){
+        let params = {};
+        document.querySelectorAll('[data-param-id]').forEach(function(el){
+            let id = parseInt(el.getAttribute('data-param-id'),10);
+            if (!Number.isFinite(id)) return;
+            let type = el.getAttribute('data-param-type');
+            if (type === 'list') {
+                params[id] = el.value;
+            } else if (type === 'check') {
+                params[id] = el.checked ? 1.0 : 0.0;
+            } else {
+                let v = parseFloat(el.value);
+                if (!Number.isFinite(v)) v = parseFloat(el.getAttribute('data-param-default'));
+                params[id] = Number.isFinite(v) ? v : 0.0;
+            }
+        });
+        return params;
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * Reads all parameter controls and sends their current values to the background worker.
+    * Triggered whenever any parameter control changes.
+    * ************************************************************************************************/
+    function onParamsChanged(){
+        if (isShuttingDown || !worker) return;
+        if (paramsPending) return;
+        paramsPending = true;
+        requestAnimationFrame(function(){
+            paramsPending = false;
+            if (isShuttingDown || !worker) return;
+            worker.postMessage({'params': collectParams()});
+        });
+    }
+
     return true;
-    
+
 })
 
 

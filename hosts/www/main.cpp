@@ -47,7 +47,8 @@ EM_JS (bool, check_browser_support, (), {
  * [Inline Javascript]
  * ************************************************************************************************/
 EM_JS (bool, setLoaded, (), {
-    eval("cppLoaded=true;");
+    globalThis['cppLoaded'] = true;
+    return true;
 });
 
 

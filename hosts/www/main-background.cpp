@@ -56,8 +56,10 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
     let linesRendered=0;      /// Number of lines completed by workers
     let renderStartTime = 0;  /// Timing variable
     let lastBufferSwap=0;     /// Timer variable used to rate limit updating of canvas.
+    let currentParams = {};   /// Latest parameter values received from the GUI thread.
 
-    let numberWorkers = navigator.hardwareConcurrency;
+    let numberWorkers = Number(navigator.hardwareConcurrency) || 4;
+    if (numberWorkers<1) numberWorkers=1;
     if (numberWorkers<4) numberWorkers=4;
     if (numberWorkers>64) numberWorkers=64;  //We start getting memory allocation issues above 80 or so.
 
@@ -89,6 +91,7 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
             'line':lineNumber++,
             'seed':seed,
             'isPreview':isPreview,
+            'params': currentParams,
         };
         w.postMessage(msg);
         
@@ -98,11 +101,12 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
     * Javascript function:  Perform Render
     * ************************************************************************************************/
     function doRender(){
-        //At least one worker needs to be started.        
+        //At least one worker needs to be started.
         if (workerCount == 0) {
            setTimeout(doRender, 20);
            return;
         }
+        if (typeof offscreen === 'undefined') return; //Canvas not yet transferred.
         
         renderStartTime = performance.now();
         lastBufferSwap = performance.now();
@@ -150,6 +154,22 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
         if(msg.data.hasOwnProperty('seed')){
             seed = msg.data['seed'];
             isPreview = msg.data['isPreview'];
+            return;
+        }
+
+        if(msg.data.hasOwnProperty('params')){
+            currentParams = msg.data['params'];
+            doRender();
+            return;
+        }
+
+        if (msg.data.hasOwnProperty('shutdown')) {
+            for (let i = 0; i < workers.length; i++) {
+                workers[i].terminate();
+            }
+            workers = [];
+            workerCount = 0;
+            close();
             return;
         }
 
@@ -204,8 +224,9 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
             return;
         }
 
-        if(msg.data.hasOwnProperty('loaded')){  
-            if (jobNumber>0) startWorkerRender(w); //If we have already started rendering we should initiate this thread              
+        if(msg.data.hasOwnProperty('loaded')){
+            if (workerCount == 0) postMessage({'paramDefs': msg.data['paramDefs']}); //Forward param defs from first worker to GUI.
+            if (jobNumber>0) startWorkerRender(w); //If we have already started rendering we should initiate this thread.
             workers.push(w);
             workerCount++;
             if (workerCount == numberWorkers) console.log(workerCount + " workers started.");
