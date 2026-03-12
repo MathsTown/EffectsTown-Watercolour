@@ -2,7 +2,10 @@
 
 Emscripten-based web host for general web deployment.
 
-## Testing locally
+Status: operational.
+
+
+## Testing Locally
 
 Run the no-cache dev server from the project root:
 
@@ -10,6 +13,8 @@ Run the no-cache dev server from the project root:
 python server/nocache.py
 ```
 
-Then open: `http://localhost:8080/effects/watercolour-texture/www/`
+Then open:
+
+`http://localhost:8080/effects/watercolour-texture/www/`
 
 See [server/README.md](../../server/README.md) for full server options.
