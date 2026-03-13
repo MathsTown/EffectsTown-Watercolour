@@ -34,6 +34,13 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	#define MT_SIMD_ARCH_X64 0
 #endif
 
+// Canonical WebAssembly check used by all headers.
+#if defined(__wasm__) || defined(__wasm32__) || defined(__wasm64__)
+	#define MT_SIMD_ARCH_WASM 1
+#else
+	#define MT_SIMD_ARCH_WASM 0
+#endif
+
 // Only MSVC exposes vector lane member fields (m128_f32, m256i_i32, ...).
 #if defined(_MSC_VER) && !defined(__clang__)
 	#define MT_SIMD_HAS_MSVC_VECTOR_MEMBERS 1
@@ -87,21 +94,22 @@ namespace mt::environment {
 #endif
 
 
-#if defined(__EMSCRIPTEN__)
-	constexpr static bool is_emscripten = true;
-#else
-	constexpr static bool is_emscripten = false;
-#endif
-	// Backward-compatible typo alias.
-	constexpr static bool is_emsctipten = is_emscripten;
-	constexpr static bool emsctipten = is_emscripten;
-
-
-//Check the arhitecture
 #if MT_SIMD_ARCH_X64
-	constexpr static bool is_x64 = true;
+	constexpr static bool is_x86_64 = true;
 #else
-	constexpr static bool is_x64 = false;
+	constexpr static bool is_x86_64 = false;
+#endif
+
+#if MT_SIMD_ARCH_WASM
+	constexpr static bool is_wasm = true;
+#else
+	constexpr static bool is_wasm = false;
+#endif
+
+#if MT_SIMD_ARCH_WASM && defined(__wasm_simd128__)
+	constexpr static bool is_wasm_simd_level_1 = true;
+#else
+	constexpr static bool is_wasm_simd_level_1 = false;
 #endif
 
 
@@ -191,8 +199,12 @@ namespace mt::environment {
 	constexpr static bool compiler_has_f16c = false;
 #endif
 
+	// WebAssembly SIMD support is compile-time selected only.
+	constexpr static bool compiler_has_wasm_simd128 = is_wasm_simd_level_1;
+
 	// Selected math backend.
 	constexpr static bool use_svml = (MT_USE_SVML != 0);
+	constexpr static bool uses_runtime_x86_dispatch = MT_SIMD_HAS_MSVC_VECTOR_MEMBERS && is_x86_64;
 
 
 // Compile-time gating for full SIMD type declarations.
@@ -256,10 +268,15 @@ namespace mt::environment {
 #endif
 
 	// Compiler-mode x86_64 microarchitecture level checks.
-	constexpr static bool compiler_is_level_1 = compiler_has_sse && compiler_has_sse2;
-	constexpr static bool compiler_is_level_2 = compiler_is_level_1 && compiler_has_sse3 && compiler_has_ssse3 && compiler_has_sse4_1 && compiler_has_sse4_2;
-	constexpr static bool compiler_is_level_3 = compiler_is_level_2 && compiler_has_avx && compiler_has_avx2 && compiler_has_fma && compiler_has_f16c;
-	constexpr static bool compiler_is_level_4 = compiler_is_level_3 && compiler_has_avx512f && compiler_has_avx512dq && compiler_has_avx512vl && compiler_has_avx512bw && compiler_has_avx512cd;
+	constexpr static bool is_x86_64_level_1 = is_x86_64 && compiler_has_sse && compiler_has_sse2;
+	constexpr static bool is_x86_64_level_2 = is_x86_64_level_1 && compiler_has_sse3 && compiler_has_ssse3 && compiler_has_sse4_1 && compiler_has_sse4_2;
+	constexpr static bool is_x86_64_level_3 = is_x86_64_level_2 && compiler_has_avx && compiler_has_avx2 && compiler_has_fma && compiler_has_f16c;
+	constexpr static bool is_x86_64_level_4 = is_x86_64_level_3 && compiler_has_avx512f && compiler_has_avx512dq && compiler_has_avx512vl && compiler_has_avx512bw && compiler_has_avx512cd;
+
+	// Test/runtime-dispatch aware availability checks.
+	constexpr static bool compiler_can_use_x86_64_level_1_types = uses_runtime_x86_dispatch ? is_x86_64 : is_x86_64_level_1;
+	constexpr static bool compiler_can_use_x86_64_level_3_types = uses_runtime_x86_dispatch ? (MT_SIMD_ALLOW_LEVEL3_TYPES != 0) : is_x86_64_level_3;
+	constexpr static bool compiler_can_use_x86_64_level_4_types = uses_runtime_x86_dispatch ? (MT_SIMD_ALLOW_LEVEL4_TYPES != 0) : is_x86_64_level_4;
 
 
 

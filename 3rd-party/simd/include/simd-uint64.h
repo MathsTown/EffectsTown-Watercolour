@@ -73,6 +73,7 @@ I've included FallbackUInt64 for use with Emscripen, but use SimdNativeUInt64 as
 #include "simd-cpuid.h"
 #include "simd-concepts.h"
 #include "simd-mask.h"
+#include "simd-wasm-helpers.h"
 
 #include <stdint.h>
 #include <bit>
@@ -102,11 +103,8 @@ struct FallbackUInt64 {
 	//Performs a runtime CPU check to see if this type is supported.  Checks this type ONLY (integers in same the same level may not be supported) 
 	static bool cpu_supported() { return true; }
 
-#if MT_SIMD_ARCH_X64
 	//Performs a runtime CPU check to see if this type is supported.  Checks this type ONLY (integers in same the same level may not be supported) 
 	static bool cpu_supported(CpuInformation) { return true; }
-
-#endif
 
 	//Performs a compile time CPU check to see if this type is supported.  Checks this type ONLY (integers in same the same level may not be supported) 
 	static constexpr bool compiler_supported() {
@@ -349,7 +347,7 @@ struct Simd512UInt64 {
 	
 	//Performs a compile time support. Checks this type ONLY (integers in same class may not be supported) 
 	static constexpr bool compiler_supported() {
-		return mt::environment::compiler_is_level_4;
+		return mt::environment::compiler_can_use_x86_64_level_4_types;
 	}
 
 
@@ -484,7 +482,7 @@ struct Simd256UInt64 {
 
 	//Performs a compile time support. Checks this type ONLY (integers in same class may not be supported) 
 	static constexpr bool compiler_supported() {
-		return mt::environment::compiler_is_level_3;
+		return mt::environment::compiler_can_use_x86_64_level_3_types;
 	}
 
 	//*****Elements*****
@@ -681,7 +679,7 @@ struct Simd128UInt64 {
 
 	//Performs a compile time support. Checks this type ONLY (integers in same class may not be supported) 
 	static constexpr bool compiler_supported() {
-		return mt::environment::compiler_is_level_1;
+		return mt::environment::compiler_can_use_x86_64_level_1_types;
 	}
 
 
@@ -902,7 +900,118 @@ inline static Simd128UInt64 blend(const Simd128UInt64 if_false, const Simd128UIn
 }
 
 
-#endif //x86_64
+#elif MT_SIMD_ARCH_WASM && defined(__wasm_simd128__)
+
+struct Simd128UInt64 {
+	v128_t v;
+	typedef uint64_t F;
+	typedef v128_t MaskType;
+
+	Simd128UInt64() = default;
+	Simd128UInt64(v128_t a) : v(a) {}
+	Simd128UInt64(F a) : v(mt::simd_wasm_detail::splat<uint64_t>(a)) {}
+
+	static bool cpu_supported() {
+		CpuInformation cpuid{};
+		return cpu_supported(cpuid);
+	}
+	static bool cpu_supported(CpuInformation cpuid) {
+		return cpuid.has_wasm_simd();
+	}
+	static constexpr bool compiler_supported() {
+		return mt::environment::is_wasm_simd_level_1;
+	}
+
+	static constexpr int size_of_element() { return sizeof(uint64_t); }
+	static constexpr int number_of_elements() { return 2; }
+	F element(int i) const { return mt::simd_wasm_detail::lane_get<uint64_t, 2>(v, i); }
+	void set_element(int i, F value) { v = mt::simd_wasm_detail::lane_set<uint64_t, 2>(v, i, value); }
+	static Simd128UInt64 make_sequential(uint64_t first) noexcept { return Simd128UInt64(mt::simd_wasm_detail::make_sequential<uint64_t, 2>(first)); }
+	static Simd128UInt64 make_set1(uint64_t value) noexcept { return Simd128UInt64(mt::simd_wasm_detail::splat<uint64_t>(value)); }
+
+	Simd128UInt64& operator+=(const Simd128UInt64& rhs) noexcept { v = wasm_i64x2_add(v, rhs.v); return *this; }
+	Simd128UInt64& operator+=(uint64_t rhs) noexcept { v = wasm_i64x2_add(v, make_set1(rhs).v); return *this; }
+	Simd128UInt64& operator-=(const Simd128UInt64& rhs) noexcept { v = wasm_i64x2_sub(v, rhs.v); return *this; }
+	Simd128UInt64& operator-=(uint64_t rhs) noexcept { v = wasm_i64x2_sub(v, make_set1(rhs).v); return *this; }
+	Simd128UInt64& operator*=(const Simd128UInt64& rhs) noexcept { v = wasm_i64x2_mul(v, rhs.v); return *this; }
+	Simd128UInt64& operator*=(uint64_t rhs) noexcept { v = wasm_i64x2_mul(v, make_set1(rhs).v); return *this; }
+	Simd128UInt64& operator/=(const Simd128UInt64& rhs) noexcept {
+		v = mt::simd_wasm_detail::map_binary<uint64_t, 2>(v, rhs.v, [](uint64_t a, uint64_t b) { return a / b; });
+		return *this;
+	}
+	Simd128UInt64& operator/=(uint64_t rhs) noexcept { return *this /= make_set1(rhs); }
+	Simd128UInt64& operator&=(const Simd128UInt64& rhs) noexcept { v = wasm_v128_and(v, rhs.v); return *this; }
+	Simd128UInt64& operator|=(const Simd128UInt64& rhs) noexcept { v = wasm_v128_or(v, rhs.v); return *this; }
+	Simd128UInt64& operator^=(const Simd128UInt64& rhs) noexcept { v = wasm_v128_xor(v, rhs.v); return *this; }
+};
+
+inline static Simd128UInt64 operator+(Simd128UInt64 lhs, const Simd128UInt64& rhs) noexcept { lhs += rhs; return lhs; }
+inline static Simd128UInt64 operator+(Simd128UInt64 lhs, uint64_t rhs) noexcept { lhs += rhs; return lhs; }
+inline static Simd128UInt64 operator+(uint64_t lhs, Simd128UInt64 rhs) noexcept { rhs += lhs; return rhs; }
+inline static Simd128UInt64 operator-(Simd128UInt64 lhs, const Simd128UInt64& rhs) noexcept { lhs -= rhs; return lhs; }
+inline static Simd128UInt64 operator-(Simd128UInt64 lhs, uint64_t rhs) noexcept { lhs -= rhs; return lhs; }
+inline static Simd128UInt64 operator-(uint64_t lhs, const Simd128UInt64& rhs) noexcept { return Simd128UInt64::make_set1(lhs) - rhs; }
+inline static Simd128UInt64 operator*(Simd128UInt64 lhs, const Simd128UInt64& rhs) noexcept { lhs *= rhs; return lhs; }
+inline static Simd128UInt64 operator*(Simd128UInt64 lhs, uint64_t rhs) noexcept { lhs *= rhs; return lhs; }
+inline static Simd128UInt64 operator*(uint64_t lhs, Simd128UInt64 rhs) noexcept { rhs *= lhs; return rhs; }
+inline static Simd128UInt64 operator/(Simd128UInt64 lhs, const Simd128UInt64& rhs) noexcept { lhs /= rhs; return lhs; }
+inline static Simd128UInt64 operator/(Simd128UInt64 lhs, uint64_t rhs) noexcept { lhs /= rhs; return lhs; }
+inline static Simd128UInt64 operator/(uint64_t lhs, const Simd128UInt64& rhs) noexcept { return Simd128UInt64::make_set1(lhs) / rhs; }
+inline static Simd128UInt64 operator&(Simd128UInt64 lhs, const Simd128UInt64& rhs) noexcept { lhs &= rhs; return lhs; }
+inline static Simd128UInt64 operator|(Simd128UInt64 lhs, const Simd128UInt64& rhs) noexcept { lhs |= rhs; return lhs; }
+inline static Simd128UInt64 operator^(Simd128UInt64 lhs, const Simd128UInt64& rhs) noexcept { lhs ^= rhs; return lhs; }
+inline static Simd128UInt64 operator~(const Simd128UInt64& lhs) noexcept { return Simd128UInt64(wasm_v128_not(lhs.v)); }
+inline static Simd128UInt64 operator<<(const Simd128UInt64& lhs, int bits) noexcept { return Simd128UInt64(wasm_i64x2_shl(lhs.v, static_cast<uint32_t>(bits))); }
+inline static Simd128UInt64 operator>>(const Simd128UInt64& lhs, int bits) noexcept { return Simd128UInt64(wasm_u64x2_shr(lhs.v, static_cast<uint32_t>(bits))); }
+
+inline static Simd128UInt64 rotl(const Simd128UInt64& a, int bits) {
+	const int n = bits & 63;
+	if (n == 0) {
+		return a;
+	}
+	return (a << n) | (a >> (64 - n));
+}
+
+inline static Simd128UInt64 rotr(const Simd128UInt64& a, int bits) {
+	const int n = bits & 63;
+	if (n == 0) {
+		return a;
+	}
+	return (a >> n) | (a << (64 - n));
+}
+
+inline static Simd128UInt64 min(Simd128UInt64 a, Simd128UInt64 b) noexcept {
+	return Simd128UInt64(mt::simd_wasm_detail::map_binary<uint64_t, 2>(a.v, b.v, [](uint64_t x, uint64_t y) { return std::min(x, y); }));
+}
+inline static Simd128UInt64 max(Simd128UInt64 a, Simd128UInt64 b) noexcept {
+	return Simd128UInt64(mt::simd_wasm_detail::map_binary<uint64_t, 2>(a.v, b.v, [](uint64_t x, uint64_t y) { return std::max(x, y); }));
+}
+
+inline static v128_t compare_equal(const Simd128UInt64 a, const Simd128UInt64 b) noexcept { return wasm_i64x2_eq(a.v, b.v); }
+inline static v128_t bias_for_unsigned_compare() noexcept {
+	return mt::simd_wasm_detail::splat<uint64_t>(0x8000000000000000ull);
+}
+inline static v128_t compare_greater(const Simd128UInt64 a, const Simd128UInt64 b) noexcept {
+	const v128_t bias = bias_for_unsigned_compare();
+	return wasm_i64x2_gt(wasm_v128_xor(a.v, bias), wasm_v128_xor(b.v, bias));
+}
+inline static v128_t compare_less(const Simd128UInt64 a, const Simd128UInt64 b) noexcept {
+	const v128_t bias = bias_for_unsigned_compare();
+	return wasm_i64x2_lt(wasm_v128_xor(a.v, bias), wasm_v128_xor(b.v, bias));
+}
+inline static v128_t compare_less_equal(const Simd128UInt64 a, const Simd128UInt64 b) noexcept {
+	const v128_t bias = bias_for_unsigned_compare();
+	return wasm_i64x2_le(wasm_v128_xor(a.v, bias), wasm_v128_xor(b.v, bias));
+}
+inline static v128_t compare_greater_equal(const Simd128UInt64 a, const Simd128UInt64 b) noexcept {
+	const v128_t bias = bias_for_unsigned_compare();
+	return wasm_i64x2_ge(wasm_v128_xor(a.v, bias), wasm_v128_xor(b.v, bias));
+}
+inline static Simd128UInt64 blend(const Simd128UInt64 if_false, const Simd128UInt64 if_true, v128_t mask) noexcept {
+	return Simd128UInt64(wasm_v128_bitselect(if_true.v, if_false.v, mask));
+}
+
+#endif //x86_64 / wasm
 
 
 /**************************************************************************************************
@@ -982,13 +1091,15 @@ static_assert(SimdCompareOps<Simd512UInt64>, "Simd512UInt64 does not implement t
  Define SimdNativeUInt64 as the best supported type at compile time.
 *************************************************************************************************/
 #if MT_SIMD_ARCH_X64
-#if MT_SIMD_ALLOW_LEVEL4_TYPES
-typedef Simd512UInt64 SimdNativeUInt64;
-#elif MT_SIMD_ALLOW_LEVEL3_TYPES
-typedef Simd256UInt64 SimdNativeUInt64;
-#else
+	#if MT_SIMD_ALLOW_LEVEL4_TYPES
+		typedef Simd512UInt64 SimdNativeUInt64;
+	#elif MT_SIMD_ALLOW_LEVEL3_TYPES
+		typedef Simd256UInt64 SimdNativeUInt64;
+	#else
+		typedef Simd128UInt64 SimdNativeUInt64;
+	#endif
+#elif MT_SIMD_ARCH_WASM && defined(__wasm_simd128__)
 typedef Simd128UInt64 SimdNativeUInt64;
-#endif
 #else
 typedef FallbackUInt64 SimdNativeUInt64;
 #endif

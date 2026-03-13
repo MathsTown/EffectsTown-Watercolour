@@ -239,7 +239,16 @@ Windows (PowerShell), from the repository root (default generator/compiler on yo
 ```powershell
 cmake -S tests -B build
 cmake --build build --config Release
+```
+
+Run the executable from the location your generator uses:
+
+```powershell
+# Visual Studio generators
 .\build\Release\simd_test.exe
+
+# Single-config generators such as Ninja or MinGW Makefiles
+.\build\simd_test.exe
 ```
 
 ### Test Microsoft C++ Compiler
@@ -252,6 +261,8 @@ cmake --build build\msvc --config Release
 .\build\msvc\Release\simd_test.exe
 ```
 
+This path is configured as a runtime-dispatch build. The binary is compiled with `/arch:AVX2`, and the test harness uses runtime CPU detection to decide whether the `Simd128`, `Simd256`, and `Simd512` suites should execute.
+
 ### Test Clang (clang-cl) C++ Compiler
 
 Windows (PowerShell), explicitly with Clang (`clang-cl`):
@@ -261,6 +272,8 @@ cmake -S tests -B build\clang -G "Visual Studio 17 2022" -A x64 -T ClangCL
 cmake --build build\clang --config Release
 .\build\clang\Release\simd_test.exe
 ```
+
+This path is compile-time gated. Only the SIMD widths enabled by the compiler flags/macros for that build are expected to execute.
 
 ### Test GCC C++ Compiler 
 GCC really does not like to see intrinsics from higher levels in the code, even if they are unreachable. There is a separate compilation mode to test each level of support, to make sure I don't rely on runtime checks for this in GCC.  (Whereas other compilers we just check at runtime)
@@ -288,3 +301,20 @@ cmake -S tests -B build\gcc-avx512 -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER=g++
 cmake --build build\gcc-avx512
 .\build\gcc-avx512\simd_test.exe
 ```
+
+The `gcc-avx512` executable is a true AVX-512 target. It must be run on a machine that supports the AVX-512 feature set compiled into that binary.
+
+### Test Emscripten / WebAssembly
+
+The browser build writes the generated site bundle into `build/public_html`. The Emscripten compile and link steps both use `-msimd128`, so the Wasm SIMD128 `Simd128*` tests run when the browser supports Wasm SIMD.
+
+```powershell
+emcmake cmake -S tests -B build\emscripten -G Ninja
+cmake --build build\emscripten
+```
+
+Run 
+```
+python -m http.server 8081 --directory build/public_html  
+```
+to start a small testing server on port 8081
