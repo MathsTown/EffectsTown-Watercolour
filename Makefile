@@ -85,7 +85,7 @@ $(builddir_fxhash):
 
 
 #WWW Host
-watercolour-texture-www: $(htmldir_www) $(builddir_www) $(htmldir_www)\index.html $(htmldir_www)\main-cpp.js $(htmldir_www)\main-background-cpp.js $(htmldir_www)\main-render-worker-cpp.js 
+watercolour-texture-www: $(htmldir_www) $(builddir_www) $(htmldir_www)\index.html $(htmldir_www)\main-cpp.js $(htmldir_www)\main-background-cpp.js $(htmldir_www)\main-render-worker-cpp.js $(htmldir_www)\main-render-worker-cpp-simd.js 
 #HTML
 $(htmldir_www)\index.html: hosts\www\index.html
 	copy /y hosts\www\index.html $@
@@ -113,6 +113,12 @@ $(htmldir_www)\main-render-worker-cpp.js : $(builddir_www)\main-render-worker.o 
 
 $(builddir_www)\main-render-worker.o: hosts\www\main-render-worker.cpp watercolour-texture\renderer.h watercolour-texture\parameters.h watercolour-texture\parameter-id.h $(common_depend)
 	emcc hosts\www\main-render-worker.cpp -I$(project_dir) -I$(simd_include)  -std=c++20 -c -o $@ -O2 -Wall -Wno-unknown-pragmas -Wpedantic -Wextra
+
+$(htmldir_www)\main-render-worker-cpp-simd.js : $(builddir_www)\main-render-worker-simd.o $(builddir_www)\jsutil.o $(builddir_www)\parameters.o
+	emcc $^ -o  $@ -lembind -O2 -std=c++20 -msimd128 -sENVIRONMENT=worker --closure 1 
+
+$(builddir_www)\main-render-worker-simd.o: hosts\www\main-render-worker.cpp watercolour-texture\renderer.h watercolour-texture\parameters.h watercolour-texture\parameter-id.h $(common_depend)
+	emcc hosts\www\main-render-worker.cpp -I$(project_dir) -I$(simd_include) -std=c++20 -c -o $@ -O2 -msimd128 -Wall -Wno-unknown-pragmas -Wpedantic -Wextra
 
 $(builddir_www)\parameters.o: watercolour-texture\parameters.h watercolour-texture\parameters.cpp watercolour-texture\parameter-id.h
 	emcc watercolour-texture\parameters.cpp  -I$(project_dir) -I$(simd_include)  -std=c++20 -c -o $@ -O2 -Wall -Wno-unknown-pragmas -Wpedantic -Wextra

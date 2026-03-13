@@ -50,6 +50,7 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
 
     let workers = [];
     let workerCount = 0;
+    let renderWorkerScript = "main-render-worker-cpp.js";
 
     let jobNumber = 0;        /// Current Job (update on resize etc).  Zero indicates not ready.
     let lineNumber = 0;       /// Next line to send to worker for rendering
@@ -63,12 +64,30 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
     if (numberWorkers<4) numberWorkers=4;
     if (numberWorkers>64) numberWorkers=64;  //We start getting memory allocation issues above 80 or so.
 
+    function supportsWasmSimd() {
+        if (typeof WebAssembly !== "object" || typeof WebAssembly.validate !== "function") return false;
+        const simdProbe = new Uint8Array([
+            0x00,0x61,0x73,0x6d, 0x01,0x00,0x00,0x00,
+            0x01,0x04,0x01,0x60,0x00,0x00,
+            0x03,0x02,0x01,0x00,
+            0x0a,0x17,0x01,0x15,0x00,
+            0xfd,0x0c,
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+            0x1a,0x0b
+        ]);
+        return WebAssembly.validate(simdProbe);
+    }
+
+    const simdSupported = supportsWasmSimd();
+    renderWorkerScript = simdSupported ? "main-render-worker-cpp-simd.js" : "main-render-worker-cpp.js";
+    console.log("[www background] WebAssembly SIMD support: " + (simdSupported ? "enabled" : "not available") + "; loading " + renderWorkerScript);
+
     //Setup message handling.
     self.onmessage = handleMessageParent;
 
     //Start Render Workers
     for (let i=0; i<numberWorkers; i++){
-        let worker = new Worker("main-render-worker-cpp.js", {name:'render'});
+        let worker = new Worker(renderWorkerScript, {name:'render'});
         worker.onmessage = handleMessageRender;       
     }
 

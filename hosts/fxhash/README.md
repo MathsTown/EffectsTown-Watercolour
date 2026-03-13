@@ -2,6 +2,8 @@
 
 Emscripten-based web host targeting the [fxhash](https://www.fxhash.xyz/) generative art platform.
 
+This is not fully developed.
+
 ## Testing locally
 
 Run the dev server from the project root (required — browsers block WASM under `file://`):
