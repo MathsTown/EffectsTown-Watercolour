@@ -6,7 +6,7 @@ Licence:        The MIT License
 
 *********************************************************************************************************
 Float32 SIMD tests.
-Uses FallbackFloat32 as the reference implementation.
+Uses independent scalar/std:: math as the reference implementation.
 *********************************************************************************************************/
 
 #include "test_f32.h"
@@ -19,6 +19,7 @@ Uses FallbackFloat32 as the reference implementation.
 #include <random>
 #include <string_view>
 #include <tuple>
+#include <type_traits>
 
 #include "../include/simd-cpuid.h"
 #include "../include/simd-f32.h"
@@ -133,17 +134,17 @@ bool float_matches_exact(float actual, float expected) {
     return std::bit_cast<uint32_t>(actual) == std::bit_cast<uint32_t>(expected);
 }
 
-float apply_fallback_binary(float lhs, float rhs, ArithmeticOp op) {
+float apply_scalar_binary(float lhs, float rhs, ArithmeticOp op) {
     if (op == ArithmeticOp::add) {
-        return (FallbackFloat32(lhs) + FallbackFloat32(rhs)).v;
+        return lhs + rhs;
     }
     if (op == ArithmeticOp::sub) {
-        return (FallbackFloat32(lhs) - FallbackFloat32(rhs)).v;
+        return lhs - rhs;
     }
     if (op == ArithmeticOp::mul) {
-        return (FallbackFloat32(lhs) * FallbackFloat32(rhs)).v;
+        return lhs * rhs;
     }
-    return (FallbackFloat32(lhs) / FallbackFloat32(rhs)).v;
+    return lhs / rhs;
 }
 
 template <typename SimdType>
@@ -191,36 +192,26 @@ void apply_simd_op_with_path(
     else { out /= scalar; }
 }
 
-float apply_fallback_op_with_path(
+float apply_scalar_op_with_path(
     float lhs,
     float rhs,
     float scalar,
     ArithmeticOp op,
     ArithmeticPath path) {
     if (path == ArithmeticPath::vector_vector) {
-        return apply_fallback_binary(lhs, rhs, op);
+        return apply_scalar_binary(lhs, rhs, op);
     }
     if (path == ArithmeticPath::vector_scalar_right) {
-        return apply_fallback_binary(lhs, scalar, op);
+        return apply_scalar_binary(lhs, scalar, op);
     }
     if (path == ArithmeticPath::scalar_left_vector) {
-        return apply_fallback_binary(scalar, rhs, op);
+        return apply_scalar_binary(scalar, rhs, op);
     }
     if (path == ArithmeticPath::compound_vector) {
-        FallbackFloat32 out(lhs);
-        if (op == ArithmeticOp::add) { out += FallbackFloat32(rhs); }
-        else if (op == ArithmeticOp::sub) { out -= FallbackFloat32(rhs); }
-        else if (op == ArithmeticOp::mul) { out *= FallbackFloat32(rhs); }
-        else { out /= FallbackFloat32(rhs); }
-        return out.v;
+        return apply_scalar_binary(lhs, rhs, op);
     }
 
-    FallbackFloat32 out(lhs);
-    if (op == ArithmeticOp::add) { out += scalar; }
-    else if (op == ArithmeticOp::sub) { out -= scalar; }
-    else if (op == ArithmeticOp::mul) { out *= scalar; }
-    else { out /= scalar; }
-    return out.v;
+    return apply_scalar_binary(lhs, scalar, op);
 }
 
 float finite_scalar_for_op(ArithmeticOp op) {
@@ -291,79 +282,71 @@ std::string_view fma_name(FmaOp op) {
     return "unknown";
 }
 
-float apply_fallback_unary(float value, UnaryMathOp op) {
-    const FallbackFloat32 a(value);
+float apply_scalar_unary(float value, UnaryMathOp op) {
     switch (op) {
-    case UnaryMathOp::floor_op: return floor(a).v;
-    case UnaryMathOp::ceil_op: return ceil(a).v;
-    case UnaryMathOp::trunc_op: return trunc(a).v;
-    case UnaryMathOp::round_op: return round(a).v;
-    case UnaryMathOp::fract_op: return fract(a).v;
-    case UnaryMathOp::sqrt_op: return sqrt(a).v;
-    case UnaryMathOp::abs_op: return abs(a).v;
-    case UnaryMathOp::exp_op: return exp(a).v;
-    case UnaryMathOp::exp2_op: return exp2(a).v;
-    case UnaryMathOp::exp10_op: return exp10(a).v;
-    case UnaryMathOp::expm1_op: return expm1(a).v;
-    case UnaryMathOp::log_op: return log(a).v;
-    case UnaryMathOp::log1p_op: return log1p(a).v;
-    case UnaryMathOp::log2_op: return log2(a).v;
-    case UnaryMathOp::log10_op: return log10(a).v;
-    case UnaryMathOp::cbrt_op: return cbrt(a).v;
-    case UnaryMathOp::sin_op: return sin(a).v;
-    case UnaryMathOp::cos_op: return cos(a).v;
-    case UnaryMathOp::tan_op: return tan(a).v;
-    case UnaryMathOp::asin_op: return asin(a).v;
-    case UnaryMathOp::acos_op: return acos(a).v;
-    case UnaryMathOp::atan_op: return atan(a).v;
-    case UnaryMathOp::tanh_op: return tanh(a).v;
-    case UnaryMathOp::sinh_op: return sinh(a).v;
-    case UnaryMathOp::cosh_op: return cosh(a).v;
-    case UnaryMathOp::asinh_op: return asinh(a).v;
-    case UnaryMathOp::acosh_op: return acosh(a).v;
-    case UnaryMathOp::atanh_op: return atanh(a).v;
+    case UnaryMathOp::floor_op: return std::floor(value);
+    case UnaryMathOp::ceil_op: return std::ceil(value);
+    case UnaryMathOp::trunc_op: return std::trunc(value);
+    case UnaryMathOp::round_op: return std::round(value);
+    case UnaryMathOp::fract_op: return value - std::floor(value);
+    case UnaryMathOp::sqrt_op: return std::sqrt(value);
+    case UnaryMathOp::abs_op: return std::abs(value);
+    case UnaryMathOp::exp_op: return std::exp(value);
+    case UnaryMathOp::exp2_op: return std::exp2(value);
+    case UnaryMathOp::exp10_op: return std::pow(10.0f, value);
+    case UnaryMathOp::expm1_op: return std::expm1(value);
+    case UnaryMathOp::log_op: return std::log(value);
+    case UnaryMathOp::log1p_op: return std::log1p(value);
+    case UnaryMathOp::log2_op: return std::log2(value);
+    case UnaryMathOp::log10_op: return std::log10(value);
+    case UnaryMathOp::cbrt_op: return std::cbrt(value);
+    case UnaryMathOp::sin_op: return std::sin(value);
+    case UnaryMathOp::cos_op: return std::cos(value);
+    case UnaryMathOp::tan_op: return std::tan(value);
+    case UnaryMathOp::asin_op: return std::asin(value);
+    case UnaryMathOp::acos_op: return std::acos(value);
+    case UnaryMathOp::atan_op: return std::atan(value);
+    case UnaryMathOp::tanh_op: return std::tanh(value);
+    case UnaryMathOp::sinh_op: return std::sinh(value);
+    case UnaryMathOp::cosh_op: return std::cosh(value);
+    case UnaryMathOp::asinh_op: return std::asinh(value);
+    case UnaryMathOp::acosh_op: return std::acosh(value);
+    case UnaryMathOp::atanh_op: return std::atanh(value);
     }
     return value;
 }
 
-float apply_fallback_binary_math(float lhs, float rhs, BinaryMathOp op) {
-    const FallbackFloat32 a(lhs);
-    const FallbackFloat32 b(rhs);
+float apply_scalar_binary_math(float lhs, float rhs, BinaryMathOp op) {
     switch (op) {
-    case BinaryMathOp::pow_op: return pow(a, b).v;
-    case BinaryMathOp::hypot_op: return hypot(a, b).v;
-    case BinaryMathOp::atan2_op: return atan2(a, b).v;
+    case BinaryMathOp::pow_op: return std::pow(lhs, rhs);
+    case BinaryMathOp::hypot_op: return std::hypot(lhs, rhs);
+    case BinaryMathOp::atan2_op: return std::atan2(lhs, rhs);
     }
     return lhs;
 }
 
-float apply_fallback_compare_math(float lhs, float rhs, CompareMathOp op) {
-    const FallbackFloat32 a(lhs);
-    const FallbackFloat32 b(rhs);
+float apply_scalar_compare_math(float lhs, float rhs, CompareMathOp op) {
     switch (op) {
-    case CompareMathOp::min_op: return min(a, b).v;
-    case CompareMathOp::max_op: return max(a, b).v;
+    case CompareMathOp::min_op: return std::min(lhs, rhs);
+    case CompareMathOp::max_op: return std::max(lhs, rhs);
     }
     return lhs;
 }
 
-float apply_fallback_clamp_unit(float value) {
-    return clamp(FallbackFloat32(value)).v;
+float apply_scalar_clamp_unit(float value) {
+    return std::min(std::max(value, 0.0f), 1.0f);
 }
 
-float apply_fallback_clamp_range(float value, float lo, float hi) {
-    return clamp(FallbackFloat32(value), FallbackFloat32(lo), FallbackFloat32(hi)).v;
+float apply_scalar_clamp_range(float value, float lo, float hi) {
+    return std::min(std::max(value, lo), hi);
 }
 
-float apply_fallback_fma(float a, float b, float c, FmaOp op) {
-    const FallbackFloat32 lhs(a);
-    const FallbackFloat32 rhs(b);
-    const FallbackFloat32 addend(c);
+float apply_scalar_fma(float a, float b, float c, FmaOp op) {
     switch (op) {
-    case FmaOp::fma_op: return fma(lhs, rhs, addend).v;
-    case FmaOp::fms_op: return fms(lhs, rhs, addend).v;
-    case FmaOp::fnma_op: return fnma(lhs, rhs, addend).v;
-    case FmaOp::fnms_op: return fnms(lhs, rhs, addend).v;
+    case FmaOp::fma_op: return std::fma(a, b, c);
+    case FmaOp::fms_op: return std::fma(a, b, -c);
+    case FmaOp::fnma_op: return std::fma(-a, b, c);
+    case FmaOp::fnms_op: return std::fma(-a, b, -c);
     }
     return a;
 }
@@ -594,7 +577,7 @@ bool run_float32_binary_test_for_type(
             for (int lane = 0; lane < lanes; ++lane) {
                 const float lhs = a.element(lane);
                 const float rhs = b.element(lane);
-                const float expected = apply_fallback_op_with_path(lhs, rhs, scalar, op, path);
+                const float expected = apply_scalar_op_with_path(lhs, rhs, scalar, op, path);
                 const float actual = result.element(lane);
                 if (!float_matches_exact(actual, expected)) {
                     harness.add_result(
@@ -643,7 +626,7 @@ bool run_float32_binary_test_for_type(
             for (int lane = 0; lane < lanes; ++lane) {
                 const float lhs = a.element(lane);
                 const float rhs = b.element(lane);
-                const float expected = apply_fallback_op_with_path(lhs, rhs, scalar, op, path);
+                const float expected = apply_scalar_op_with_path(lhs, rhs, scalar, op, path);
                 const float actual = result.element(lane);
                 if (!float_matches_exact(actual, expected)) {
                     harness.add_result(
@@ -687,7 +670,7 @@ bool run_float32_binary_test_for_type(
             for (int lane = 0; lane < lanes; ++lane) {
                 const float lhs = a.element(lane);
                 const float rhs = b.element(lane);
-                const float expected = apply_fallback_op_with_path(lhs, rhs, scalar, op, path);
+                const float expected = apply_scalar_op_with_path(lhs, rhs, scalar, op, path);
                 const float actual = result.element(lane);
                 if (!float_matches_exact(actual, expected)) {
                     harness.add_result(
@@ -700,7 +683,7 @@ bool run_float32_binary_test_for_type(
         }
     }
 
-    harness.add_result(test_name, true, "Random + finite/special edges matched fallback");
+    harness.add_result(test_name, true, "Random + finite/special edges matched scalar reference");
     return true;
 }
 
@@ -733,7 +716,7 @@ bool run_float32_math_test_for_type(const std::string& type_name, CpuInformation
 
             const SimdType result = apply_simd_unary_math(value, op);
             for (int lane = 0; lane < lanes; ++lane) {
-                const float expected = apply_fallback_unary(value.element(lane), op);
+                const float expected = apply_scalar_unary(value.element(lane), op);
                 const float actual = result.element(lane);
                 if (!float_matches_fallback(actual, expected)) {
                     harness.add_result(test_name, false, "mismatch, lane " + std::to_string(lane));
@@ -741,7 +724,7 @@ bool run_float32_math_test_for_type(const std::string& type_name, CpuInformation
                 }
             }
         }
-        harness.add_result(test_name, true, "matched fallback");
+        harness.add_result(test_name, true, "matched scalar reference");
     }
 
     const BinaryMathOp binary_ops[] = { BinaryMathOp::pow_op, BinaryMathOp::hypot_op, BinaryMathOp::atan2_op };
@@ -758,7 +741,7 @@ bool run_float32_math_test_for_type(const std::string& type_name, CpuInformation
 
             const SimdType result = apply_simd_binary_math(lhs, rhs, op);
             for (int lane = 0; lane < lanes; ++lane) {
-                const float expected = apply_fallback_binary_math(lhs.element(lane), rhs.element(lane), op);
+                const float expected = apply_scalar_binary_math(lhs.element(lane), rhs.element(lane), op);
                 const float actual = result.element(lane);
                 if (!float_matches_fallback(actual, expected)) {
                     harness.add_result(test_name, false, "mismatch, lane " + std::to_string(lane));
@@ -766,7 +749,7 @@ bool run_float32_math_test_for_type(const std::string& type_name, CpuInformation
                 }
             }
         }
-        harness.add_result(test_name, true, "matched fallback");
+        harness.add_result(test_name, true, "matched scalar reference");
     }
 
     const CompareMathOp compare_ops[] = { CompareMathOp::min_op, CompareMathOp::max_op };
@@ -783,7 +766,7 @@ bool run_float32_math_test_for_type(const std::string& type_name, CpuInformation
 
             const SimdType result = apply_simd_compare_math(lhs, rhs, op);
             for (int lane = 0; lane < lanes; ++lane) {
-                const float expected = apply_fallback_compare_math(lhs.element(lane), rhs.element(lane), op);
+                const float expected = apply_scalar_compare_math(lhs.element(lane), rhs.element(lane), op);
                 const float actual = result.element(lane);
                 if (!float_matches_fallback(actual, expected)) {
                     harness.add_result(test_name, false, "mismatch, lane " + std::to_string(lane));
@@ -791,7 +774,7 @@ bool run_float32_math_test_for_type(const std::string& type_name, CpuInformation
                 }
             }
         }
-        harness.add_result(test_name, true, "matched fallback");
+        harness.add_result(test_name, true, "matched scalar reference");
     }
 
     {
@@ -810,8 +793,8 @@ bool run_float32_math_test_for_type(const std::string& type_name, CpuInformation
             const SimdType unit_result = clamp(value);
             const SimdType range_result = clamp(value, lo, hi);
             for (int lane = 0; lane < lanes; ++lane) {
-                const float unit_expected = apply_fallback_clamp_unit(value.element(lane));
-                const float range_expected = apply_fallback_clamp_range(value.element(lane), lo.element(lane), hi.element(lane));
+                const float unit_expected = apply_scalar_clamp_unit(value.element(lane));
+                const float range_expected = apply_scalar_clamp_range(value.element(lane), lo.element(lane), hi.element(lane));
                 if (!float_matches_fallback(unit_result.element(lane), unit_expected)) {
                     harness.add_result(test_name, false, "unit clamp mismatch, lane " + std::to_string(lane));
                     return false;
@@ -822,7 +805,7 @@ bool run_float32_math_test_for_type(const std::string& type_name, CpuInformation
                 }
             }
         }
-        harness.add_result(test_name, true, "matched fallback");
+        harness.add_result(test_name, true, "matched scalar reference");
     }
 
     const FmaOp fma_ops[] = { FmaOp::fma_op, FmaOp::fms_op, FmaOp::fnma_op, FmaOp::fnms_op };
@@ -841,7 +824,7 @@ bool run_float32_math_test_for_type(const std::string& type_name, CpuInformation
 
             const SimdType result = apply_simd_fma(a, b, c, op);
             for (int lane = 0; lane < lanes; ++lane) {
-                const float expected = apply_fallback_fma(a.element(lane), b.element(lane), c.element(lane), op);
+                const float expected = apply_scalar_fma(a.element(lane), b.element(lane), c.element(lane), op);
                 const float actual = result.element(lane);
                 if (!float_matches_fallback(actual, expected)) {
                     harness.add_result(test_name, false, "mismatch, lane " + std::to_string(lane));
@@ -849,13 +832,13 @@ bool run_float32_math_test_for_type(const std::string& type_name, CpuInformation
                 }
             }
         }
-        harness.add_result(test_name, true, "matched fallback");
+        harness.add_result(test_name, true, "matched scalar reference");
     }
 
     return true;
 }
 
-bool reciprocal_matches_true(float actual, float expected) {
+[[maybe_unused]] bool reciprocal_matches_true(float actual, float expected) {
     if (std::isnan(actual) && std::isnan(expected)) {
         return true;
     }
@@ -909,9 +892,33 @@ bool run_float32_helper_test_for_type(const std::string& type_name, CpuInformati
         }
         const SimdType converted = SimdType::make_from_int32(ints);
         for (int lane = 0; lane < lanes; ++lane) {
-            const float expected = static_cast<float>(ints.element(lane));
+            const float expected = static_cast<float>(static_cast<int32_t>(ints.element(lane)));
             if (!float_matches_fallback(converted.element(lane), expected)) {
                 harness.add_result(test_name, false, "make_from_int32 mismatch, lane " + std::to_string(lane));
+                return false;
+            }
+        }
+    }
+
+    {
+        constexpr uint32_t signed_edge_values[] = {
+            0x00000000u,
+            0x00000001u,
+            0x7fffffffu,
+            0x80000000u,
+            0x80000001u,
+            0xffffffffu
+        };
+        alignas(UIntType) UIntType ints{};
+        for (int lane = 0; lane < lanes; ++lane) {
+            ints.set_element(lane, signed_edge_values[lane % static_cast<int>(sizeof(signed_edge_values) / sizeof(signed_edge_values[0]))]);
+        }
+        const SimdType converted = SimdType::make_from_int32(ints);
+        for (int lane = 0; lane < lanes; ++lane) {
+            const uint32_t raw = ints.element(lane);
+            const float expected = static_cast<float>(static_cast<int32_t>(raw));
+            if (!float_matches_fallback(converted.element(lane), expected)) {
+                harness.add_result(test_name, false, "make_from_int32 signed-edge mismatch, lane " + std::to_string(lane));
                 return false;
             }
         }
@@ -960,7 +967,7 @@ bool run_float32_helper_test_for_type(const std::string& type_name, CpuInformati
             for (int lane = 0; lane < lanes; ++lane) {
                 const float lane_value = value.element(lane);
                 const float reciprocal_expected = 1.0f / lane_value;
-                const float clamp_expected = clamp(FallbackFloat32(lane_value), -2.25f, 7.5f).v;
+                const float clamp_expected = apply_scalar_clamp_range(lane_value, -2.25f, 7.5f);
                 const bool reciprocal_ok = []<typename T>(float actual, float expected) {
                     if constexpr (std::is_same_v<T, FallbackFloat32>) {
                         return actual == expected;
@@ -981,7 +988,7 @@ bool run_float32_helper_test_for_type(const std::string& type_name, CpuInformati
         }
     }
 
-    harness.add_result(test_name, true, "helpers matched fallback");
+    harness.add_result(test_name, true, "helpers matched scalar reference");
     return true;
 }
 
@@ -993,7 +1000,9 @@ bool run_float32_compare_test_for_type(const std::string& type_name, CpuInformat
     }
 
     constexpr int lanes = SimdType::number_of_elements();
-    std::mt19937 rng(20260304u);
+    std::random_device rd;
+    std::seed_seq seed{rd(), rd(), rd(), rd()};
+    std::mt19937 rng(seed);
     std::uniform_real_distribution<float> value_dist(-1000.0f, 1000.0f);
     std::uniform_real_distribution<float> choice_dist(-100.0f, 100.0f);
 
@@ -1025,6 +1034,7 @@ bool run_float32_compare_test_for_type(const std::string& type_name, CpuInformat
         const auto mask_gt = compare_greater(a, b);
         const auto mask_ge = compare_greater_equal(a, b);
         const auto mask_nan = isnan(nan_input);
+        const auto mask_eq_nan_self = compare_equal(nan_input, nan_input);
 
         const SimdType blend_eq = blend(zero, ones, mask_eq);
         const SimdType blend_lt = blend(zero, ones, mask_lt);
@@ -1032,6 +1042,7 @@ bool run_float32_compare_test_for_type(const std::string& type_name, CpuInformat
         const SimdType blend_gt = blend(zero, ones, mask_gt);
         const SimdType blend_ge = blend(zero, ones, mask_ge);
         const SimdType blend_nan = blend(zero, ones, mask_nan);
+        const SimdType blend_eq_nan_self = blend(zero, ones, mask_eq_nan_self);
 
         const SimdType if_eq = if_equal(a, b, if_true, if_false);
         const SimdType if_lt = if_less(a, b, if_true, if_false);
@@ -1041,21 +1052,20 @@ bool run_float32_compare_test_for_type(const std::string& type_name, CpuInformat
         const SimdType if_is_nan = if_nan(nan_input, if_true, if_false);
 
         for (int lane = 0; lane < lanes; ++lane) {
-            const FallbackFloat32 fa(a.element(lane));
-            const FallbackFloat32 fb(b.element(lane));
-            const bool eq = compare_equal(fa, fb);
-            const bool lt = compare_less(fa, fb);
-            const bool le = compare_less_equal(fa, fb);
-            const bool gt = compare_greater(fa, fb);
-            const bool ge = compare_greater_equal(fa, fb);
+            const bool eq = a.element(lane) == b.element(lane);
+            const bool lt = a.element(lane) < b.element(lane);
+            const bool le = a.element(lane) <= b.element(lane);
+            const bool gt = a.element(lane) > b.element(lane);
+            const bool ge = a.element(lane) >= b.element(lane);
             const bool is_nan = std::isnan(nan_input.element(lane));
 
-            if (!float_matches_fallback(blend_eq.element(lane), eq ? 1.0f : 0.0f) ||
-                !float_matches_fallback(blend_lt.element(lane), lt ? 1.0f : 0.0f) ||
-                !float_matches_fallback(blend_le.element(lane), le ? 1.0f : 0.0f) ||
-                !float_matches_fallback(blend_gt.element(lane), gt ? 1.0f : 0.0f) ||
-                !float_matches_fallback(blend_ge.element(lane), ge ? 1.0f : 0.0f) ||
-                !float_matches_fallback(blend_nan.element(lane), is_nan ? 1.0f : 0.0f)) {
+            if (!float_matches_exact(blend_eq.element(lane), eq ? 1.0f : 0.0f) ||
+                !float_matches_exact(blend_lt.element(lane), lt ? 1.0f : 0.0f) ||
+                !float_matches_exact(blend_le.element(lane), le ? 1.0f : 0.0f) ||
+                !float_matches_exact(blend_gt.element(lane), gt ? 1.0f : 0.0f) ||
+                !float_matches_exact(blend_ge.element(lane), ge ? 1.0f : 0.0f) ||
+                !float_matches_exact(blend_nan.element(lane), is_nan ? 1.0f : 0.0f) ||
+                !float_matches_exact(blend_eq_nan_self.element(lane), is_nan ? 0.0f : 1.0f)) {
                 harness.add_result(test_name, false, "blend(compare/isnan) mismatch, lane " + std::to_string(lane));
                 return false;
             }
@@ -1083,9 +1093,20 @@ bool run_float32_compare_test_for_type(const std::string& type_name, CpuInformat
             harness.add_result(test_name, false, "test_all_true/false failed for all-false mask");
             return false;
         }
+
+        if constexpr (!std::is_same_v<typename SimdType::MaskType, bool>) {
+            alignas(SimdType) SimdType partial_a = a;
+            alignas(SimdType) SimdType partial_b = a;
+            partial_b.set_element(0, std::nextafter(partial_a.element(0), std::numeric_limits<float>::infinity()));
+            const auto partial_mask = compare_equal(partial_a, partial_b);
+            if (test_all_true(partial_mask) || test_all_false(partial_mask)) {
+                harness.add_result(test_name, false, "test_all_true/false failed for partial mask");
+                return false;
+            }
+        }
     }
 
-    harness.add_result(test_name, true, "compare/blend/if_* matched fallback");
+    harness.add_result(test_name, true, "compare/blend/if_* matched scalar reference");
     return true;
 }
 
@@ -1107,10 +1128,10 @@ void run_float32_arithmetic_tests(TestHarness& harness) {
     if (harness.should_halt()) {
         return;
     }
-#if defined(_M_X64) || defined(__x86_64)
     CpuInformation cpu{};
 #define MT_RUN_OR_HALT(expr) do { if (!(expr)) { return; } } while (false)
     MT_RUN_OR_HALT(run_float32_suite_for_type<FallbackFloat32>("Fallback", cpu, harness));
+#if MT_SIMD_ARCH_X64 || (MT_SIMD_ARCH_WASM && defined(__wasm_simd128__))
     MT_RUN_OR_HALT(run_float32_suite_for_type<Simd128Float32>("Simd128", cpu, harness));
 #if MT_SIMD_ALLOW_LEVEL3_TYPES
     MT_RUN_OR_HALT(run_float32_suite_for_type<Simd256Float32>("Simd256", cpu, harness));
@@ -1118,8 +1139,8 @@ void run_float32_arithmetic_tests(TestHarness& harness) {
 #if MT_SIMD_ALLOW_LEVEL4_TYPES
     MT_RUN_OR_HALT(run_float32_suite_for_type<Simd512Float32>("Simd512", cpu, harness));
 #endif
-#undef MT_RUN_OR_HALT
 #endif
+#undef MT_RUN_OR_HALT
     std::cout << "==================================\n";
 }
 

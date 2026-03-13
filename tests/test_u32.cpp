@@ -6,16 +6,19 @@ Licence:        The MIT License
 
 *********************************************************************************************************
 UInt32 SIMD tests.
-Uses FallbackUInt32 as the reference implementation.
+Uses independent scalar/std::bit reference calculations.
 *********************************************************************************************************/
 
 #include "test_u32.h"
 
+#include <algorithm>
+#include <bit>
 #include <cstdint>
 #include <iostream>
 #include <limits>
 #include <random>
 #include <string_view>
+#include <type_traits>
 
 #include "../include/simd-cpuid.h"
 #include "../include/simd-concepts.h"
@@ -71,17 +74,17 @@ uint32_t sanitize_divisor(uint32_t rhs) {
     return rhs == 0u ? 1u : rhs;
 }
 
-uint32_t apply_fallback_binary(uint32_t lhs, uint32_t rhs, ArithmeticOp op) {
+uint32_t apply_scalar_binary(uint32_t lhs, uint32_t rhs, ArithmeticOp op) {
     if (op == ArithmeticOp::add) {
-        return (FallbackUInt32(lhs) + FallbackUInt32(rhs)).v;
+        return lhs + rhs;
     }
     if (op == ArithmeticOp::sub) {
-        return (FallbackUInt32(lhs) - FallbackUInt32(rhs)).v;
+        return lhs - rhs;
     }
     if (op == ArithmeticOp::mul) {
-        return (FallbackUInt32(lhs) * FallbackUInt32(rhs)).v;
+        return lhs * rhs;
     }
-    return (FallbackUInt32(lhs) / FallbackUInt32(rhs)).v;
+    return lhs / rhs;
 }
 
 template <typename SimdType>
@@ -129,36 +132,26 @@ void apply_simd_op_with_path(
     else { out /= scalar; }
 }
 
-uint32_t apply_fallback_op_with_path(
+uint32_t apply_scalar_op_with_path(
     uint32_t lhs,
     uint32_t rhs,
     uint32_t scalar,
     ArithmeticOp op,
     ArithmeticPath path) {
     if (path == ArithmeticPath::vector_vector) {
-        return apply_fallback_binary(lhs, rhs, op);
+        return apply_scalar_binary(lhs, rhs, op);
     }
     if (path == ArithmeticPath::vector_scalar_right) {
-        return apply_fallback_binary(lhs, scalar, op);
+        return apply_scalar_binary(lhs, scalar, op);
     }
     if (path == ArithmeticPath::scalar_left_vector) {
-        return apply_fallback_binary(scalar, rhs, op);
+        return apply_scalar_binary(scalar, rhs, op);
     }
     if (path == ArithmeticPath::compound_vector) {
-        FallbackUInt32 out(lhs);
-        if (op == ArithmeticOp::add) { out += FallbackUInt32(rhs); }
-        else if (op == ArithmeticOp::sub) { out -= FallbackUInt32(rhs); }
-        else if (op == ArithmeticOp::mul) { out *= FallbackUInt32(rhs); }
-        else { out /= FallbackUInt32(rhs); }
-        return out.v;
+        return apply_scalar_binary(lhs, rhs, op);
     }
 
-    FallbackUInt32 out(lhs);
-    if (op == ArithmeticOp::add) { out += scalar; }
-    else if (op == ArithmeticOp::sub) { out -= scalar; }
-    else if (op == ArithmeticOp::mul) { out *= scalar; }
-    else { out /= scalar; }
-    return out.v;
+    return apply_scalar_binary(lhs, scalar, op);
 }
 
 uint32_t scalar_for_op(ArithmeticOp op) {
@@ -268,18 +261,16 @@ void apply_bitwise_compound(const SimdType& a, const SimdType& b, BitwiseOp op, 
     else { out ^= b; }
 }
 
-uint32_t apply_fallback_bitwise_binary(uint32_t lhs, uint32_t rhs, BitwiseOp op) {
-    if (op == BitwiseOp::bit_and) { return (FallbackUInt32(lhs) & FallbackUInt32(rhs)).v; }
-    if (op == BitwiseOp::bit_or) { return (FallbackUInt32(lhs) | FallbackUInt32(rhs)).v; }
-    return (FallbackUInt32(lhs) ^ FallbackUInt32(rhs)).v;
+uint32_t apply_scalar_bitwise_binary(uint32_t lhs, uint32_t rhs, BitwiseOp op) {
+    if (op == BitwiseOp::bit_and) { return lhs & rhs; }
+    if (op == BitwiseOp::bit_or) { return lhs | rhs; }
+    return lhs ^ rhs;
 }
 
-uint32_t apply_fallback_bitwise_compound(uint32_t lhs, uint32_t rhs, BitwiseOp op) {
-    FallbackUInt32 out(lhs);
-    if (op == BitwiseOp::bit_and) { out &= FallbackUInt32(rhs); }
-    else if (op == BitwiseOp::bit_or) { out |= FallbackUInt32(rhs); }
-    else { out ^= FallbackUInt32(rhs); }
-    return out.v;
+uint32_t apply_scalar_bitwise_compound(uint32_t lhs, uint32_t rhs, BitwiseOp op) {
+    if (op == BitwiseOp::bit_and) { return lhs & rhs; }
+    if (op == BitwiseOp::bit_or) { return lhs | rhs; }
+    return lhs ^ rhs;
 }
 
 template <typename SimdType>
@@ -309,8 +300,8 @@ bool run_uint32_bitwise_test_for_type(const std::string& type_name, CpuInformati
             for (int lane = 0; lane < lanes; ++lane) {
                 const uint32_t lhs = a.element(lane);
                 const uint32_t rhs = b.element(lane);
-                const uint32_t expected_binary = apply_fallback_bitwise_binary(lhs, rhs, op);
-                const uint32_t expected_compound = apply_fallback_bitwise_compound(lhs, rhs, op);
+                const uint32_t expected_binary = apply_scalar_bitwise_binary(lhs, rhs, op);
+                const uint32_t expected_compound = apply_scalar_bitwise_compound(lhs, rhs, op);
                 if (binary_result.element(lane) != expected_binary) {
                     harness.add_result(
                         test_name,
@@ -358,8 +349,8 @@ bool run_uint32_bitwise_test_for_type(const std::string& type_name, CpuInformati
             for (int lane = 0; lane < lanes; ++lane) {
                 const uint32_t lhs = a.element(lane);
                 const uint32_t rhs = b.element(lane);
-                const uint32_t expected_binary = apply_fallback_bitwise_binary(lhs, rhs, op);
-                const uint32_t expected_compound = apply_fallback_bitwise_compound(lhs, rhs, op);
+                const uint32_t expected_binary = apply_scalar_bitwise_binary(lhs, rhs, op);
+                const uint32_t expected_compound = apply_scalar_bitwise_compound(lhs, rhs, op);
                 if (binary_result.element(lane) != expected_binary || compound_result.element(lane) != expected_compound) {
                     harness.add_result(
                         test_name,
@@ -379,7 +370,7 @@ bool run_uint32_bitwise_test_for_type(const std::string& type_name, CpuInformati
         alignas(SimdType) SimdType result = ~a;
         for (int lane = 0; lane < lanes; ++lane) {
             const uint32_t lhs = a.element(lane);
-            const uint32_t expected = (~FallbackUInt32(lhs)).v;
+            const uint32_t expected = ~lhs;
             if (result.element(lane) != expected) {
                 harness.add_result(test_name, false, "not mismatch, lane " + std::to_string(lane));
                 return false;
@@ -387,7 +378,7 @@ bool run_uint32_bitwise_test_for_type(const std::string& type_name, CpuInformati
         }
     }
 
-    harness.add_result(test_name, true, "& | ^ ~ with binary and compound paths matched fallback");
+    harness.add_result(test_name, true, "& | ^ ~ with binary and compound paths matched scalar reference");
     return true;
 }
 
@@ -415,8 +406,8 @@ bool run_uint32_shift_test_for_type(const std::string& type_name, CpuInformation
             alignas(SimdType) SimdType right_result = values >> shift;
             for (int lane = 0; lane < lanes; ++lane) {
                 const uint32_t v = values.element(lane);
-                const uint32_t expected_left = (FallbackUInt32(v) << shift).v;
-                const uint32_t expected_right = (FallbackUInt32(v) >> shift).v;
+                const uint32_t expected_left = v << shift;
+                const uint32_t expected_right = v >> shift;
                 if (left_result.element(lane) != expected_left) {
                     harness.add_result(test_name, false, "left shift mismatch, shift=" + std::to_string(shift) + ", lane " + std::to_string(lane));
                     return false;
@@ -440,8 +431,8 @@ bool run_uint32_shift_test_for_type(const std::string& type_name, CpuInformation
             alignas(SimdType) SimdType right_rot = rotr(values, bits);
             for (int lane = 0; lane < lanes; ++lane) {
                 const uint32_t v = values.element(lane);
-                const uint32_t expected_l = rotl(FallbackUInt32(v), bits).v;
-                const uint32_t expected_r = rotr(FallbackUInt32(v), bits).v;
+                const uint32_t expected_l = std::rotl(v, bits);
+                const uint32_t expected_r = std::rotr(v, bits);
                 if (left_rot.element(lane) != expected_l) {
                     harness.add_result(test_name, false, "rotl mismatch, bits=" + std::to_string(bits) + ", lane " + std::to_string(lane));
                     return false;
@@ -454,7 +445,7 @@ bool run_uint32_shift_test_for_type(const std::string& type_name, CpuInformation
         }
     }
 
-    harness.add_result(test_name, true, "<< >> rotl rotr matched fallback");
+    harness.add_result(test_name, true, "<< >> rotl rotr matched scalar reference");
     return true;
 }
 
@@ -483,8 +474,8 @@ bool run_uint32_minmax_test_for_type(const std::string& type_name, CpuInformatio
         for (int lane = 0; lane < lanes; ++lane) {
             const uint32_t lhs = a.element(lane);
             const uint32_t rhs = b.element(lane);
-            const uint32_t expected_min = min(FallbackUInt32(lhs), FallbackUInt32(rhs)).v;
-            const uint32_t expected_max = max(FallbackUInt32(lhs), FallbackUInt32(rhs)).v;
+            const uint32_t expected_min = std::min(lhs, rhs);
+            const uint32_t expected_max = std::max(lhs, rhs);
             if (min_result.element(lane) != expected_min) {
                 harness.add_result(test_name, false, "min mismatch, lane " + std::to_string(lane));
                 return false;
@@ -522,8 +513,8 @@ bool run_uint32_minmax_test_for_type(const std::string& type_name, CpuInformatio
         for (int lane = 0; lane < lanes; ++lane) {
             const uint32_t lhs = a.element(lane);
             const uint32_t rhs = b.element(lane);
-            const uint32_t expected_min = min(FallbackUInt32(lhs), FallbackUInt32(rhs)).v;
-            const uint32_t expected_max = max(FallbackUInt32(lhs), FallbackUInt32(rhs)).v;
+            const uint32_t expected_min = std::min(lhs, rhs);
+            const uint32_t expected_max = std::max(lhs, rhs);
             if (min_result.element(lane) != expected_min || max_result.element(lane) != expected_max) {
                 harness.add_result(test_name, false, "edge mismatch, lane " + std::to_string(lane));
                 return false;
@@ -531,7 +522,7 @@ bool run_uint32_minmax_test_for_type(const std::string& type_name, CpuInformatio
         }
     }
 
-    harness.add_result(test_name, true, "min/max matched fallback");
+    harness.add_result(test_name, true, "min/max matched scalar reference");
     return true;
 }
 
@@ -543,7 +534,9 @@ bool run_uint32_compare_test_for_type(const std::string& type_name, CpuInformati
     }
 
     constexpr int lanes = SimdType::number_of_elements();
-    std::mt19937 rng(20260224u);
+    std::random_device rd;
+    std::seed_seq seed{rd(), rd(), rd(), rd()};
+    std::mt19937 rng(seed);
     std::uniform_int_distribution<uint32_t> dist(0u, std::numeric_limits<uint32_t>::max());
 
     for (int iteration = 0; iteration < 800; ++iteration) {
@@ -584,13 +577,11 @@ bool run_uint32_compare_test_for_type(const std::string& type_name, CpuInformati
         const SimdType if_ge = if_greater_equal(a, b, if_true, if_false);
 
         for (int lane = 0; lane < lanes; ++lane) {
-            const FallbackUInt32 fa(a.element(lane));
-            const FallbackUInt32 fb(b.element(lane));
-            const bool eq = compare_equal(fa, fb);
-            const bool lt = compare_less(fa, fb);
-            const bool le = compare_less_equal(fa, fb);
-            const bool gt = compare_greater(fa, fb);
-            const bool ge = compare_greater_equal(fa, fb);
+            const bool eq = a.element(lane) == b.element(lane);
+            const bool lt = a.element(lane) < b.element(lane);
+            const bool le = a.element(lane) <= b.element(lane);
+            const bool gt = a.element(lane) > b.element(lane);
+            const bool ge = a.element(lane) >= b.element(lane);
 
             const uint32_t all_ones = std::numeric_limits<uint32_t>::max();
             if (blend_eq.element(lane) != (eq ? all_ones : 0u) ||
@@ -624,9 +615,20 @@ bool run_uint32_compare_test_for_type(const std::string& type_name, CpuInformati
             harness.add_result(test_name, false, "test_all_true/false failed for all-false mask");
             return false;
         }
+
+        if constexpr (!std::is_same_v<typename SimdType::MaskType, bool>) {
+            alignas(SimdType) SimdType partial_a = a;
+            alignas(SimdType) SimdType partial_b = a;
+            partial_b.set_element(0, partial_a.element(0) ^ 1u);
+            const auto partial_mask = compare_equal(partial_a, partial_b);
+            if (test_all_true(partial_mask) || test_all_false(partial_mask)) {
+                harness.add_result(test_name, false, "test_all_true/false failed for partial mask");
+                return false;
+            }
+        }
     }
 
-    harness.add_result(test_name, true, "compare/blend/if_* matched fallback");
+    harness.add_result(test_name, true, "compare/blend/if_* matched scalar reference");
     return true;
 }
 
@@ -648,6 +650,18 @@ bool run_uint32_metadata_test_for_type(const std::string& type_name, CpuInformat
         if (sequential.element(lane) != expected) {
             harness.add_result(test_name, false, "make_sequential mismatch, lane " + std::to_string(lane));
             return false;
+        }
+    }
+
+    {
+        const uint32_t start = std::numeric_limits<uint32_t>::max() - static_cast<uint32_t>(SimdType::number_of_elements() - 1);
+        const SimdType wrapped = SimdType::make_sequential(start);
+        for (int lane = 0; lane < SimdType::number_of_elements(); ++lane) {
+            const uint32_t expected = start + static_cast<uint32_t>(lane);
+            if (wrapped.element(lane) != expected) {
+                harness.add_result(test_name, false, "make_sequential wrap mismatch, lane " + std::to_string(lane));
+                return false;
+            }
         }
     }
 
@@ -701,7 +715,7 @@ bool run_uint32_binary_test_for_type(
             for (int lane = 0; lane < lanes; ++lane) {
                 const uint32_t lhs = a.element(lane);
                 const uint32_t rhs = b.element(lane);
-                const uint32_t expected = apply_fallback_op_with_path(lhs, rhs, scalar, op, path);
+                const uint32_t expected = apply_scalar_op_with_path(lhs, rhs, scalar, op, path);
                 const uint32_t actual = result.element(lane);
                 if (actual != expected) {
                     harness.add_result(
@@ -735,7 +749,7 @@ bool run_uint32_binary_test_for_type(
             for (int lane = 0; lane < lanes; ++lane) {
                 const uint32_t lhs = a.element(lane);
                 const uint32_t rhs = b.element(lane);
-                const uint32_t expected = apply_fallback_op_with_path(lhs, rhs, scalar, op, path);
+                const uint32_t expected = apply_scalar_op_with_path(lhs, rhs, scalar, op, path);
                 const uint32_t actual = result.element(lane);
                 if (actual != expected) {
                     harness.add_result(
@@ -748,7 +762,7 @@ bool run_uint32_binary_test_for_type(
         }
     }
 
-    harness.add_result(test_name, true, "Random + overflow/underflow edge cases matched fallback");
+    harness.add_result(test_name, true, "Random + overflow/underflow edge cases matched scalar reference");
     return true;
 }
 
@@ -772,10 +786,10 @@ void run_uint32_arithmetic_tests(TestHarness& harness) {
     if (harness.should_halt()) {
         return;
     }
-#if defined(_M_X64) || defined(__x86_64)
     CpuInformation cpu{};
 #define MT_RUN_OR_HALT(expr) do { if (!(expr)) { return; } } while (false)
     MT_RUN_OR_HALT(run_uint32_suite_for_type<FallbackUInt32>("Fallback", cpu, harness));
+#if MT_SIMD_ARCH_X64 || (MT_SIMD_ARCH_WASM && defined(__wasm_simd128__))
     MT_RUN_OR_HALT(run_uint32_suite_for_type<Simd128UInt32>("Simd128", cpu, harness));
 #if MT_SIMD_ALLOW_LEVEL3_TYPES
     MT_RUN_OR_HALT(run_uint32_suite_for_type<Simd256UInt32>("Simd256", cpu, harness));
@@ -783,7 +797,7 @@ void run_uint32_arithmetic_tests(TestHarness& harness) {
 #if MT_SIMD_ALLOW_LEVEL4_TYPES
     MT_RUN_OR_HALT(run_uint32_suite_for_type<Simd512UInt32>("Simd512", cpu, harness));
 #endif
-#undef MT_RUN_OR_HALT
 #endif
+#undef MT_RUN_OR_HALT
     std::cout << "===================================\n";
 }

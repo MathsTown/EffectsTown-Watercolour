@@ -31,13 +31,14 @@ The static variable x86_64_cpu_level will be initialised to hold a best supporte
 Note: Use constants in "environment.h" to check for compiler enabled CPU features.
 
 
-This is x86_64 only.  
-(We don't bother supporting x86_32 for SIMD code, those machines will use the fallback interfaces)
+Runtime CPUID probing is x86_64 only.  
+Other architectures keep the same class layout, but use compile-time capability reporting.
 
 *********************************************************************************************************/
 
 
 #include "environment.h"
+#include <string>
 
 // CPUID paths are x64-specific; other targets use fallback SIMD types.
 #if MT_SIMD_ARCH_X64
@@ -46,7 +47,6 @@ This is x86_64 only.
 #include <stdint.h>
 #include <intrin.h>
 #include <bitset>
-#include <string>
 
 class CpuInformation {
 private:
@@ -89,6 +89,7 @@ public:
 	bool has_ssse3() const noexcept { return ecx1[9]; }
 	bool has_sse41() const noexcept { return ecx1[19]; }
 	bool has_sse42() const noexcept { return ecx1[20]; }
+	bool has_wasm_simd() const noexcept { return false; }
 	bool has_fma() const noexcept { return ecx1[12] && has_osxsave_state(); }
 	bool has_osxsave_state() const noexcept {
 		if (!ecx1[26] || !ecx1[27]) return false; //XSAVE + OSXSAVE bits
@@ -190,6 +191,7 @@ public:
 		s += "Has SSE3                : " + yes_no(has_sse3()) + "\n";
 		s += "Has SSE4.1              : " + yes_no(has_sse41()) + "\n";
 		s += "Has SSE4.2              : " + yes_no(has_sse42()) + "\n";
+		s += "Has Wasm SIMD128        : " + yes_no(has_wasm_simd()) + "\n";
 		s += "Has FMA                 : " + yes_no(has_fma()) + "\n";
 		s += "Has OSXSAVE configured  : " + yes_no(has_osxsave_state()) + "\n";
 		if (has_avx_nocheck() && !has_osxsave_state()) s+="The CPU supports AVX, but the operating system does not.  All AVX/FMA/AVX2 checks will report \"No\" for safety.\n";
@@ -242,5 +244,61 @@ public:
 * ************************************************************************************************/
 static const int x86_64_cpu_level = CpuInformation().get_level();
 
+#else
+
+class CpuInformation {
+public:
+	bool has_sse() const noexcept { return false; }
+	bool has_sse2() const noexcept { return false; }
+	bool has_sse3() const noexcept { return false; }
+	bool has_ssse3() const noexcept { return false; }
+	bool has_sse41() const noexcept { return false; }
+	bool has_sse42() const noexcept { return false; }
+	bool has_wasm_simd() const noexcept { return mt::environment::is_wasm_simd_level_1; }
+	bool has_fma() const noexcept { return false; }
+	bool has_osxsave_state() const noexcept { return false; }
+	bool is_avx512_safe() const noexcept { return false; }
+	bool has_avx() const noexcept { return false; }
+	bool has_avx_nocheck() const noexcept { return false; }
+	bool has_f16c() const noexcept { return false; }
+	bool has_avx2() const noexcept { return false; }
+	bool has_avx512_f() const noexcept { return false; }
+	bool has_avx512_f_nocheck() const noexcept { return false; }
+	bool has_avx512_dq() const noexcept { return false; }
+	bool has_avx512_ifma() const noexcept { return false; }
+	bool has_avx512_pf() const noexcept { return false; }
+	bool has_avx512_er() const noexcept { return false; }
+	bool has_avx512_cd() const noexcept { return false; }
+	bool has_sha() const noexcept { return false; }
+	bool has_avx512_bw() const noexcept { return false; }
+	bool has_avx512_vl() const noexcept { return false; }
+	bool has_avx512_vbmi() const noexcept { return false; }
+	bool has_avx512_vbmi2() const noexcept { return false; }
+	bool has_avx512_gfni() const noexcept { return false; }
+	bool has_avx512_vaes() const noexcept { return false; }
+	bool has_avx512_vpclmulqdq() const noexcept { return false; }
+	bool has_avx512_vnni() const noexcept { return false; }
+	bool has_avx512_bitalg() const noexcept { return false; }
+	bool has_avx512_vpopcntdq() const noexcept { return false; }
+	bool has_avx512_4vnniw() const noexcept { return false; }
+	bool has_avx512_4fmaps() const noexcept { return false; }
+	bool has_avx512_vp2intersect() const noexcept { return false; }
+	bool has_avx512_bf16() const noexcept { return false; }
+	bool has_avx512_fp16() const noexcept { return false; }
+	bool is_level_1() const noexcept { return has_wasm_simd(); }
+	bool is_level_2() const noexcept { return false; }
+	bool is_level_3() const noexcept { return false; }
+	bool is_level_4() const noexcept { return false; }
+	int get_level() const noexcept { return has_wasm_simd() ? 1 : 0; }
+	std::string to_string() const {
+		std::string s{};
+		s += "Has Wasm SIMD128        : ";
+		s += has_wasm_simd() ? "Yes\n" : "No\n";
+		s += "x86 CPUID probing       : Unavailable on non-x86_64 target.\n";
+		return s;
+	}
+};
+
+static constexpr int x86_64_cpu_level = 0;
 
 #endif //x86

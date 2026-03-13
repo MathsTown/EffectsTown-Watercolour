@@ -78,6 +78,7 @@ I've included FallbackUInt32 for use with Emscripen, but use SimdNativeUInt32 as
 #include "simd-cpuid.h"
 #include "simd-concepts.h"
 #include "simd-mask.h"
+#include "simd-wasm-helpers.h"
 
 /**************************************************************************************************
 * Fallback I32 type.
@@ -101,11 +102,8 @@ struct FallbackUInt32 {
 	//Performs a runtime CPU check to see if this type is supported.  Checks this type ONLY (integers in same the same level may not be supported) 
 	static bool cpu_supported() { return true; }
 
-#if MT_SIMD_ARCH_X64
 	//Performs a runtime CPU check to see if this type is supported.  Checks this type ONLY (integers in same the same level may not be supported) 
 	static bool cpu_supported(CpuInformation) { return true; }
-
-#endif
 
 	//Performs a compile time CPU check to see if this type is supported.  Checks this type ONLY (integers in same the same level may not be supported) 
 	static constexpr bool compiler_supported() {
@@ -361,7 +359,7 @@ struct Simd512UInt32 {
 
 	//Performs a compile time support. Checks this type ONLY (integers in same class may not be supported) 
 	static constexpr bool compiler_supported() {
-		return mt::environment::compiler_is_level_4;
+		return mt::environment::compiler_can_use_x86_64_level_4_types;
 	}
 
 	//*****Elements*****
@@ -495,7 +493,7 @@ struct Simd256UInt32 {
 
 	//Performs a compile time support. Checks this type ONLY (integers in same class may not be supported) 
 	static constexpr bool compiler_supported() {
-		return mt::environment::compiler_is_level_3;
+		return mt::environment::compiler_can_use_x86_64_level_3_types;
 	}
 
 	//*****Elements*****
@@ -648,7 +646,7 @@ struct Simd128UInt32 {
 
 	//Performs a compile time support. Checks this type ONLY (integers in same class may not be supported) 
 	static constexpr bool compiler_supported() {
-		return mt::environment::compiler_is_level_1;
+		return mt::environment::compiler_can_use_x86_64_level_1_types;
 	}
 
 	//*****Elements*****
@@ -817,7 +815,100 @@ inline static Simd128UInt32 blend(const Simd128UInt32 if_false, const Simd128UIn
 }
 
 
-#endif //x86_64
+#elif MT_SIMD_ARCH_WASM && defined(__wasm_simd128__)
+
+struct Simd128UInt32 {
+	v128_t v;
+	typedef uint32_t F;
+	typedef v128_t MaskType;
+
+	Simd128UInt32() = default;
+	Simd128UInt32(v128_t a) : v(a) {}
+	Simd128UInt32(F a) : v(mt::simd_wasm_detail::splat<uint32_t>(a)) {}
+
+	static bool cpu_supported() {
+		CpuInformation cpuid{};
+		return cpu_supported(cpuid);
+	}
+	static bool cpu_supported(CpuInformation cpuid) {
+		return cpuid.has_wasm_simd();
+	}
+	static constexpr bool compiler_supported() {
+		return mt::environment::is_wasm_simd_level_1;
+	}
+
+	static constexpr int size_of_element() { return sizeof(uint32_t); }
+	static constexpr int number_of_elements() { return 4; }
+	F element(int i) const { return mt::simd_wasm_detail::lane_get<uint32_t, 4>(v, i); }
+	void set_element(int i, F value) { v = mt::simd_wasm_detail::lane_set<uint32_t, 4>(v, i, value); }
+
+	static Simd128UInt32 make_sequential(uint32_t first) { return Simd128UInt32(mt::simd_wasm_detail::make_sequential<uint32_t, 4>(first)); }
+	static Simd128UInt32 make_set1(uint32_t value) { return Simd128UInt32(mt::simd_wasm_detail::splat<uint32_t>(value)); }
+
+	Simd128UInt32& operator+=(const Simd128UInt32& rhs) noexcept { v = wasm_i32x4_add(v, rhs.v); return *this; }
+	Simd128UInt32& operator+=(uint32_t rhs) noexcept { v = wasm_i32x4_add(v, make_set1(rhs).v); return *this; }
+	Simd128UInt32& operator-=(const Simd128UInt32& rhs) noexcept { v = wasm_i32x4_sub(v, rhs.v); return *this; }
+	Simd128UInt32& operator-=(uint32_t rhs) noexcept { v = wasm_i32x4_sub(v, make_set1(rhs).v); return *this; }
+	Simd128UInt32& operator*=(const Simd128UInt32& rhs) noexcept { v = wasm_i32x4_mul(v, rhs.v); return *this; }
+	Simd128UInt32& operator*=(uint32_t rhs) noexcept { v = wasm_i32x4_mul(v, make_set1(rhs).v); return *this; }
+	Simd128UInt32& operator/=(const Simd128UInt32& rhs) noexcept {
+		v = mt::simd_wasm_detail::map_binary<uint32_t, 4>(v, rhs.v, [](uint32_t a, uint32_t b) { return a / b; });
+		return *this;
+	}
+	Simd128UInt32& operator/=(uint32_t rhs) noexcept { return *this /= make_set1(rhs); }
+	Simd128UInt32& operator&=(const Simd128UInt32& rhs) noexcept { v = wasm_v128_and(v, rhs.v); return *this; }
+	Simd128UInt32& operator|=(const Simd128UInt32& rhs) noexcept { v = wasm_v128_or(v, rhs.v); return *this; }
+	Simd128UInt32& operator^=(const Simd128UInt32& rhs) noexcept { v = wasm_v128_xor(v, rhs.v); return *this; }
+};
+
+inline static Simd128UInt32 operator+(Simd128UInt32 lhs, const Simd128UInt32& rhs) noexcept { lhs += rhs; return lhs; }
+inline static Simd128UInt32 operator+(Simd128UInt32 lhs, uint32_t rhs) noexcept { lhs += rhs; return lhs; }
+inline static Simd128UInt32 operator+(uint32_t lhs, Simd128UInt32 rhs) noexcept { rhs += lhs; return rhs; }
+inline static Simd128UInt32 operator-(Simd128UInt32 lhs, const Simd128UInt32& rhs) noexcept { lhs -= rhs; return lhs; }
+inline static Simd128UInt32 operator-(Simd128UInt32 lhs, uint32_t rhs) noexcept { lhs -= rhs; return lhs; }
+inline static Simd128UInt32 operator-(uint32_t lhs, const Simd128UInt32& rhs) noexcept { return Simd128UInt32::make_set1(lhs) - rhs; }
+inline static Simd128UInt32 operator*(Simd128UInt32 lhs, const Simd128UInt32& rhs) noexcept { lhs *= rhs; return lhs; }
+inline static Simd128UInt32 operator*(Simd128UInt32 lhs, uint32_t rhs) noexcept { lhs *= rhs; return lhs; }
+inline static Simd128UInt32 operator*(uint32_t lhs, Simd128UInt32 rhs) noexcept { rhs *= lhs; return rhs; }
+inline static Simd128UInt32 operator/(Simd128UInt32 lhs, const Simd128UInt32& rhs) noexcept { lhs /= rhs; return lhs; }
+inline static Simd128UInt32 operator/(Simd128UInt32 lhs, uint32_t rhs) noexcept { lhs /= rhs; return lhs; }
+inline static Simd128UInt32 operator/(uint32_t lhs, const Simd128UInt32& rhs) noexcept { return Simd128UInt32::make_set1(lhs) / rhs; }
+inline static Simd128UInt32 operator&(Simd128UInt32 lhs, const Simd128UInt32& rhs) noexcept { lhs &= rhs; return lhs; }
+inline static Simd128UInt32 operator|(Simd128UInt32 lhs, const Simd128UInt32& rhs) noexcept { lhs |= rhs; return lhs; }
+inline static Simd128UInt32 operator^(Simd128UInt32 lhs, const Simd128UInt32& rhs) noexcept { lhs ^= rhs; return lhs; }
+inline static Simd128UInt32 operator~(const Simd128UInt32& lhs) noexcept { return Simd128UInt32(wasm_v128_not(lhs.v)); }
+inline static Simd128UInt32 operator<<(const Simd128UInt32& lhs, const int bits) noexcept { return Simd128UInt32(wasm_i32x4_shl(lhs.v, static_cast<uint32_t>(bits))); }
+inline static Simd128UInt32 operator>>(const Simd128UInt32& lhs, const int bits) noexcept { return Simd128UInt32(wasm_u32x4_shr(lhs.v, static_cast<uint32_t>(bits))); }
+
+inline static Simd128UInt32 rotl(const Simd128UInt32& a, int bits) {
+	const int n = bits & 31;
+	if (n == 0) {
+		return a;
+	}
+	return (a << n) | (a >> (32 - n));
+}
+
+inline static Simd128UInt32 rotr(const Simd128UInt32& a, int bits) {
+	const int n = bits & 31;
+	if (n == 0) {
+		return a;
+	}
+	return (a >> n) | (a << (32 - n));
+}
+
+inline static Simd128UInt32 min(Simd128UInt32 a, Simd128UInt32 b) { return Simd128UInt32(wasm_u32x4_min(a.v, b.v)); }
+inline static Simd128UInt32 max(Simd128UInt32 a, Simd128UInt32 b) { return Simd128UInt32(wasm_u32x4_max(a.v, b.v)); }
+
+inline static v128_t compare_equal(const Simd128UInt32 a, const Simd128UInt32 b) noexcept { return wasm_i32x4_eq(a.v, b.v); }
+inline static v128_t compare_greater(const Simd128UInt32 a, const Simd128UInt32 b) noexcept { return wasm_u32x4_gt(a.v, b.v); }
+inline static v128_t compare_less(const Simd128UInt32 a, const Simd128UInt32 b) noexcept { return wasm_u32x4_lt(a.v, b.v); }
+inline static v128_t compare_less_equal(const Simd128UInt32 a, const Simd128UInt32 b) noexcept { return wasm_u32x4_le(a.v, b.v); }
+inline static v128_t compare_greater_equal(const Simd128UInt32 a, const Simd128UInt32 b) noexcept { return wasm_u32x4_ge(a.v, b.v); }
+inline static Simd128UInt32 blend(const Simd128UInt32 if_false, const Simd128UInt32 if_true, v128_t mask) noexcept {
+	return Simd128UInt32(wasm_v128_bitselect(if_true.v, if_false.v, mask));
+}
+
+#endif //x86_64 / wasm
 
 
 
@@ -910,6 +1001,8 @@ static_assert(SimdCompareOps<Simd512UInt32>, "Simd512UInt32 does not implement t
 	#else
 		typedef Simd128UInt32 SimdNativeUInt32;
 	#endif
+#elif MT_SIMD_ARCH_WASM && defined(__wasm_simd128__)
+	typedef Simd128UInt32 SimdNativeUInt32;
 #else
 	typedef FallbackUInt32 SimdNativeUInt32;
 #endif

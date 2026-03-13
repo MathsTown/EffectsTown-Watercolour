@@ -28,6 +28,13 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 inline static bool test_all_false(bool mask) noexcept { return !mask; }
 inline static bool test_all_true(bool mask) noexcept { return mask; }
 
+#if MT_SIMD_ARCH_WASM && defined(__wasm_simd128__)
+#include <wasm_simd128.h>
+
+inline static bool test_all_false(v128_t mask) noexcept { return wasm_i8x16_bitmask(mask) == 0; }
+inline static bool test_all_true(v128_t mask) noexcept { return wasm_i8x16_bitmask(mask) == 0xFFFF; }
+#endif
+
 #if MT_SIMD_ARCH_X64
 #include <immintrin.h>
 

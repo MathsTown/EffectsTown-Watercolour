@@ -96,12 +96,19 @@ int TestHarness::summarize_and_exit_code() const {
 
 static void print_environment_summary() {
     const char* math_backend = mt::environment::use_svml ? "SVML" : "NATIVE";
+    const char* x86_dispatch_mode = mt::environment::uses_runtime_x86_dispatch ? "Runtime" : "Compile-time";
 
     std::cout << "===== Build Environment =====\n";
     std::cout << "Visual Studio : " << (mt::environment::is_visual_studio ? "Yes" : "No") << "\n";
     std::cout << "Clang         : " << (mt::environment::is_clang ? "Yes" : "No") << "\n";
     std::cout << "GCC           : " << (mt::environment::is_gcc ? "Yes" : "No") << "\n";
-    std::cout << "x64 target    : " << (mt::environment::is_x64 ? "Yes" : "No") << "\n";
+    std::cout << "x86_64 target : " << (mt::environment::is_x86_64 ? "Yes" : "No") << "\n";
+    std::cout << "x86 dispatch  : " << x86_dispatch_mode << "\n";
+    std::cout << "x86 L1 types  : " << (mt::environment::compiler_can_use_x86_64_level_1_types ? "Yes" : "No") << "\n";
+    std::cout << "x86 L3 types  : " << (mt::environment::compiler_can_use_x86_64_level_3_types ? "Yes" : "No") << "\n";
+    std::cout << "x86 L4 types  : " << (mt::environment::compiler_can_use_x86_64_level_4_types ? "Yes" : "No") << "\n";
+    std::cout << "Wasm target   : " << (mt::environment::is_wasm ? "Yes" : "No") << "\n";
+    std::cout << "Wasm SIMD L1  : " << (mt::environment::is_wasm_simd_level_1 ? "Yes" : "No") << "\n";
     std::cout << "Math backend  : " << math_backend << "\n";
     std::cout << "=============================\n";
 }
@@ -150,11 +157,20 @@ static void runtime_cpu_feature_check(TestHarness& harness) {
     harness.add_warning("Level 4 tests were skipped because this build does not include level 4 types.");
 #endif
 #else
+    CpuInformation cpu{};
     std::cout << "\n===== Runtime CPU SIMD Features =====\n";
-    std::cout << "Non-x86_64 target. CPUID SIMD probing is skipped.\n";
+    std::cout << cpu.to_string();
+    if (mt::environment::is_wasm) {
+        std::cout << "Wasm SIMD Level: " << cpu.get_level() << "\n";
+    } else {
+        std::cout << "Non-x86_64 target. CPUID SIMD probing is skipped.\n";
+    }
     std::cout << "=====================================\n";
 
     harness.add_result("Runtime CPUID executed", true, "Skipped on non-x86_64 target");
+    if (mt::environment::is_wasm) {
+        harness.add_result("Wasm SIMD level 1 present", cpu.has_wasm_simd(), "Compile-time Wasm SIMD128 support");
+    }
     harness.add_warning("Level 3 tests were skipped on non-x86_64 target.");
     harness.add_warning("Level 4 tests were skipped on non-x86_64 target.");
 #endif
