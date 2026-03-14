@@ -253,6 +253,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
           height:auto;
           margin:0 auto 8px auto;
         }
+        .titlelink{
+          display:block;
+          text-decoration:none;
+          color:inherit;
+        }
         .saveimagebuttons{
           display:flex;
           gap:0.2em;
@@ -274,7 +279,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     
     
     <div id="parameters">
-      <img src="/images/effectstowntitle.jpg" alt="Effects Town" class="titleimage">
+      <a href="../" class="titlelink"><img src="/images/effectstowntitle.jpg" alt="Effects Town" class="titleimage"></a>
       <!--<a class="buttonsmaller" id="aspect-auto">Auto</a>-->
       <div class="menugroup">
         <span class="menuheading">Save Image</span>
@@ -300,5 +305,5 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       </div>
     </div>   
   </body>
-  <script src="main-cpp.js"></script>
+  <script src="./main-cpp.js"></script>
 </html>  

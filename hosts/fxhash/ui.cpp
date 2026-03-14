@@ -48,6 +48,10 @@ emscripten::val main_worker {};
  * Browser compatability checks should already be done.
  * ************************************************************************************************/
 EM_JS (bool, javascript_run_ui, (), {
+    function getLocalAssetUrl(fileName){
+        return new URL(fileName, window.location.href);
+    }
+
     let seed = eval("fxhash"); //wrapped in eval to prevent minification
     let isPreview = eval("isFxpreview");  
     console.log("Seed: " + seed);
@@ -55,7 +59,7 @@ EM_JS (bool, javascript_run_ui, (), {
     //Start background worker.  We will eventually hand over the canvas to the background worker.
     let worker;
     if (window.Worker){
-        worker = new Worker("main-background-cpp.js", {name:'background'});
+        worker = new Worker(getLocalAssetUrl("main-background-cpp.js"), {name:'background'});
         worker.onmessage = handelMessage;
         
     }else{

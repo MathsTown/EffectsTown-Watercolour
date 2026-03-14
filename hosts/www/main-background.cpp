@@ -41,6 +41,10 @@ Description:
  * 
  * ************************************************************************************************/
 EM_JS (emscripten::EM_VAL, setup_workers, (), {
+    function getLocalWorkerUrl(fileName){
+        return new URL(fileName, self.location.href);
+    }
+
     let offscreen;
     let ctx;
     let backBuffer;
@@ -57,7 +61,7 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
 
     let workers = [];
     let workerCount = 0;
-    let renderWorkerScript = "main-render-worker-cpp.js";
+    let renderWorkerScript = getLocalWorkerUrl("main-render-worker-cpp.js");
 
     let jobNumber = 0;        /// Current Job (update on resize etc).  Zero indicates not ready.
     let lineNumber = 0;       /// Next line to send to worker for rendering
@@ -86,7 +90,7 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
     }
 
     const simdSupported = supportsWasmSimd();
-    renderWorkerScript = simdSupported ? "main-render-worker-cpp-simd.js" : "main-render-worker-cpp.js";
+    renderWorkerScript = simdSupported ? getLocalWorkerUrl("main-render-worker-cpp-simd.js") : getLocalWorkerUrl("main-render-worker-cpp.js");
     console.log("[www background] WebAssembly SIMD support: " + (simdSupported ? "enabled" : "not available") + "; loading " + renderWorkerScript);
 
     //Setup message handling.
