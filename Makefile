@@ -36,6 +36,7 @@ builddir_fxhash := $(builddir)\watercolour-texture\fxhash
 htmldir_fxhash := $(htmldir)\effects\watercolour-texture\fxhash
 builddir_www := $(builddir)\watercolour-texture\www
 htmldir_www := $(htmldir)\effects\watercolour-texture\www
+imagedir := $(htmldir)\images
 project_dir := .\watercolour-texture
 simd_include := .\3rd-party\simd\include
 
@@ -91,10 +92,13 @@ $(builddir_fxhash):
 
 
 #WWW Host
-watercolour-texture-www: $(htmldir_www) $(builddir_www) $(htmldir_www)\index.html $(htmldir_www)\main-cpp.js $(htmldir_www)\main-background-cpp.js $(htmldir_www)\main-render-worker-cpp.js $(htmldir_www)\main-render-worker-cpp-simd.js 
+watercolour-texture-www: $(htmldir_www) $(builddir_www) $(imagedir) $(htmldir_www)\index.html $(imagedir)\effectstowntitle.jpg $(htmldir_www)\main-cpp.js $(htmldir_www)\main-background-cpp.js $(htmldir_www)\main-render-worker-cpp.js $(htmldir_www)\main-render-worker-cpp-simd.js 
 #HTML
 $(htmldir_www)\index.html: hosts\www\index.html
 	copy /y hosts\www\index.html $@
+
+$(imagedir)\effectstowntitle.jpg: hosts\www\effectstowntitle.jpg
+	copy /y hosts\www\effectstowntitle.jpg $@
 
 #Main Thread
 $(builddir_www)\main.o: hosts\www\main.cpp hosts\www\jsutil.h
@@ -137,6 +141,8 @@ $(builddir_www)\jsutil.o: hosts\www\jsutil.cpp hosts\www\jsutil.h
 $(htmldir_www):
 	mkdir $@
 $(builddir_www):
+	mkdir $@
+$(imagedir):
 	mkdir $@
 
 
