@@ -50,23 +50,43 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
 
     let workers = [];
     let workerCount = 0;
+    let renderWorkerScript = "main-render-worker-cpp.js";
 
     let jobNumber = 0;        /// Current Job (update on resize etc).  Zero indicates not ready.
     let lineNumber = 0;       /// Next line to send to worker for rendering
     let linesRendered=0;      /// Number of lines completed by workers
     let renderStartTime = 0;  /// Timing variable
     let lastBufferSwap=0;     /// Timer variable used to rate limit updating of canvas.
+    let currentParams = {};   /// Latest parameter values to send to render workers.
 
-    let numberWorkers = navigator.hardwareConcurrency;
+    let numberWorkers = Number(navigator.hardwareConcurrency) || 4;
     if (numberWorkers<4) numberWorkers=4;
     if (numberWorkers>64) numberWorkers=64;  //We start getting memory allocation issues above 80 or so.
+
+    function supportsWasmSimd() {
+        if (typeof WebAssembly !== "object" || typeof WebAssembly.validate !== "function") return false;
+        const simdProbe = new Uint8Array([
+            0x00,0x61,0x73,0x6d, 0x01,0x00,0x00,0x00,
+            0x01,0x04,0x01,0x60,0x00,0x00,
+            0x03,0x02,0x01,0x00,
+            0x0a,0x17,0x01,0x15,0x00,
+            0xfd,0x0c,
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+            0x1a,0x0b
+        ]);
+        return WebAssembly.validate(simdProbe);
+    }
+
+    const simdSupported = supportsWasmSimd();
+    renderWorkerScript = simdSupported ? "main-render-worker-cpp-simd.js" : "main-render-worker-cpp.js";
+    console.log("[fxhash background] WebAssembly SIMD support: " + (simdSupported ? "enabled" : "not available") + "; loading " + renderWorkerScript);
 
     //Setup message handeling.
     self.onmessage = handelMessageParent;
 
     //Start Render Workers
     for (let i=0; i<numberWorkers; i++){
-        let worker = new Worker("main-render-worker-cpp.js", {name:'render'});
+        let worker = new Worker(renderWorkerScript, {name:'render'});
         worker.onmessage = handelMessageRender;       
     }
 
@@ -89,6 +109,7 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
             'line':lineNumber++,
             'seed':seed,
             'isPreview':isPreview,
+            'params': currentParams,
         };
         w.postMessage(msg);
         
@@ -103,6 +124,7 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
            setTimeout(doRender, 20);
            return;
         }
+        if (typeof offscreen === 'undefined') return; //Canvas not yet transferred.
         
         renderStartTime = performance.now();
         lastBufferSwap = performance.now();
@@ -149,6 +171,13 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
         if(msg.data.hasOwnProperty('seed')){
             seed = msg.data['seed'];
             isPreview = msg.data['isPreview'];
+            doRender();
+            return;
+        }
+
+        if(msg.data.hasOwnProperty('params')){
+            currentParams = msg.data['params'];
+            doRender();
             return;
         }
 
@@ -204,6 +233,7 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
         }
 
         if(msg.data.hasOwnProperty('loaded')){  
+            if (workerCount == 0 && msg.data.hasOwnProperty('paramDefs')) postMessage({'paramDefs': msg.data['paramDefs']});
             if (jobNumber>0) startWorkerRender(w); //If we have already started rendering we should initiate this thread              
             workers.push(w);
             workerCount++;
