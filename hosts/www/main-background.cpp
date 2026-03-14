@@ -47,6 +47,13 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
 
     let isPreview=false;
     let seed = "";
+    let renderIsPreview = false;
+    let renderSeed = "";
+    let renderParams = {};
+    let previewWidth = 0;
+    let previewHeight = 0;
+    let activeJobKind = 'preview';
+    let activeExportInfo = undefined;
 
     let workers = [];
     let workerCount = 0;
@@ -108,9 +115,9 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
             'width': offscreen.width,
             'height': offscreen.height,
             'line':lineNumber++,
-            'seed':seed,
-            'isPreview':isPreview,
-            'params': currentParams,
+            'seed':renderSeed,
+            'isPreview':renderIsPreview,
+            'params': renderParams,
         };
         w.postMessage(msg);
         
@@ -119,10 +126,12 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
     /**************************************************************************************************
     * Javascript function:  Perform Render
     * ************************************************************************************************/
-    function doRender(){
+    function doRender(kind, exportInfo){
         //At least one worker needs to be started.
         if (workerCount == 0) {
-           setTimeout(doRender, 20);
+           setTimeout(function(){
+                doRender(kind, exportInfo);
+           }, 20);
            return;
         }
         if (typeof offscreen === 'undefined') return; //Canvas not yet transferred.
@@ -132,6 +141,11 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
         jobNumber++;
         lineNumber=0;
         linesRendered=0;
+        renderSeed = seed;
+        renderIsPreview = isPreview;
+        renderParams = currentParams;
+        activeJobKind = kind || 'preview';
+        activeExportInfo = exportInfo;
         
 
         for (let i=0; i< workerCount; i++){
@@ -146,12 +160,12 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
     * Javascript function:  Resize event.
     * A resize event is sent via message from the GUI thread, but we need to resize canvas here.
     * ************************************************************************************************/
-    function resizeCanvas(width,height){
+    function resizeCanvas(width,height, kind, exportInfo){
         
         offscreen.width = width;
         offscreen.height = height;
         backBuffer = new ImageData(offscreen.width,offscreen.height);
-        doRender();
+        doRender(kind, exportInfo);
     }
 
     /**************************************************************************************************
@@ -164,6 +178,8 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
             offscreen = msg.data.canvas;
             ctx = offscreen.getContext('2d');
             backBuffer = new ImageData(offscreen.width,offscreen.height);
+            previewWidth = offscreen.width;
+            previewHeight = offscreen.height;
             
             doRender();
             
@@ -196,12 +212,55 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
         // Don't process resize or render work if we don't have the canvas yet.
         if (typeof(offscreen) == "undefined" || typeof(ctx) == "undefined") return;
 
-        //Canvas needs to be resized to match page.
-        if (msg.data.hasOwnProperty('resize')){
-            resizeCanvas(msg.data.width, msg.data.height);
+        if (msg.data.hasOwnProperty('exportImage')){
+            if (activeJobKind === 'export') {
+                postMessage({'exportFailed':true, 'message':'Save already in progress.'});
+                return;
+            }
+
+            let exportWidth = Number(msg.data['width']);
+            let exportHeight = Number(msg.data['height']);
+            if (!Number.isFinite(exportWidth) || !Number.isFinite(exportHeight) || exportWidth <= 0 || exportHeight <= 0) {
+                postMessage({'exportFailed':true, 'message':'Save failed: invalid export size.'});
+                return;
+            }
+
+            if (msg.data.hasOwnProperty('previewWidth')) {
+                let width = Number(msg.data['previewWidth']);
+                if (Number.isFinite(width) && width > 0) previewWidth = width;
+            }
+            if (msg.data.hasOwnProperty('previewHeight')) {
+                let height = Number(msg.data['previewHeight']);
+                if (Number.isFinite(height) && height > 0) previewHeight = height;
+            }
+            if (msg.data.hasOwnProperty('seed')) seed = msg.data['seed'];
+            if (msg.data.hasOwnProperty('params')) currentParams = msg.data['params'];
+            isPreview = false;
+
+            resizeCanvas(
+                Math.round(exportWidth),
+                Math.round(exportHeight),
+                'export',
+                {
+                    filename: msg.data['filename'] || 'effects-town.png',
+                    label: msg.data['label'] || 'image',
+                }
+            );
             return;
         }
 
+        //Canvas needs to be resized to match page.
+        if (msg.data.hasOwnProperty('resize')){
+            let width = Number(msg.data.width);
+            let height = Number(msg.data.height);
+            if (Number.isFinite(width) && width > 0) previewWidth = Math.round(width);
+            if (Number.isFinite(height) && height > 0) previewHeight = Math.round(height);
+            if (activeJobKind === 'export') return;
+            resizeCanvas(previewWidth, previewHeight);
+            return;
+        }
+
+        if (activeJobKind === 'export') return;
         if (needsRender) doRender();
 
     }
@@ -212,6 +271,33 @@ EM_JS (emscripten::EM_VAL, setup_workers, (), {
     function onRenderComplete(){
         const timeTaken = performance.now() - renderStartTime;
         console.log("Render Complete: " + timeTaken.toFixed(1) + " ms (" + offscreen.width + " x " + offscreen.height  +" pixels)");
+
+        if (activeJobKind !== 'export') return;
+
+        let exportInfo = activeExportInfo || {};
+        let filename = exportInfo.filename || 'effects-town.png';
+        let completedWidth = offscreen.width;
+        let completedHeight = offscreen.height;
+
+        offscreen.convertToBlob({type:'image/png'}).then(function(blob){
+            postMessage({
+                'exportComplete': true,
+                'blob': blob,
+                'filename': filename,
+                'width': completedWidth,
+                'height': completedHeight,
+            });
+        }).catch(function(){
+            postMessage({'exportFailed':true, 'message':'Save failed: unable to encode PNG.'});
+        }).finally(function(){
+            activeJobKind = 'preview';
+            activeExportInfo = undefined;
+            if (previewWidth > 0 && previewHeight > 0) {
+                resizeCanvas(previewWidth, previewHeight);
+            } else {
+                doRender();
+            }
+        });
     }
 
     /**************************************************************************************************

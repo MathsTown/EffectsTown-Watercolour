@@ -50,11 +50,23 @@ emscripten::val main_worker {};
  * ************************************************************************************************/
 EM_JS (bool, javascript_run_ui, (), {
     let seedInputEl = document.getElementById('seed-input');
+    let exportStatusEl = document.getElementById('save-image-status');
+    let exportButtons = {
+        '4k': document.getElementById('save-image-4k'),
+        '8k': document.getElementById('save-image-8k'),
+        '16k': document.getElementById('save-image-16k'),
+    };
+    let exportLongEdges = {
+        '4k': 3840,
+        '8k': 7680,
+        '16k': 15360,
+    };
     let seed = (seedInputEl && seedInputEl.value) ? seedInputEl.value : "Effects Town";
     console.log("Seed: " + seed);
     let isShuttingDown = false;
     let backgroundLoaded = false;
     let paramsLoaded = false;
+    let exportInProgress = false;
     let flushPending = false;
     let dirtySeed = false;
     let dirtyParams = false;
@@ -94,6 +106,145 @@ EM_JS (bool, javascript_run_ui, (), {
     function clearStartupError(){
         let node = document.getElementById('startup-status');
         if (node) node.remove();
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * ************************************************************************************************/
+    function setExportStatus(message){
+        if (exportStatusEl) exportStatusEl.textContent = message || "";
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * ************************************************************************************************/
+    function refreshExportControls(){
+        Object.keys(exportButtons).forEach(function(key){
+            let button = exportButtons[key];
+            if (!button) return;
+            button.disabled = (!backgroundLoaded) || exportInProgress;
+        });
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * ************************************************************************************************/
+    function getCurrentAspectMode(){
+        let checked = document.querySelector('input[name="aspect"]:checked');
+        return checked ? checked.value : 'auto';
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * ************************************************************************************************/
+    function getCurrentAspectRatio(){
+        let mode = getCurrentAspectMode();
+        if (mode === '1-1') return 1.0;
+        if (mode === '16-9') return 16.0 / 9.0;
+        if (mode === '9-16') return 9.0 / 16.0;
+
+        let canvas = document.getElementById('canvas');
+        if (!canvas) return 1.0;
+        let width = Number(canvas.clientWidth);
+        let height = Number(canvas.clientHeight);
+        if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return 1.0;
+        return width / height;
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * ************************************************************************************************/
+    function roundDimension(value){
+        let rounded = Math.round(value);
+        return rounded > 0 ? rounded : 1;
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * ************************************************************************************************/
+    function computeExportSize(label){
+        let longEdge = exportLongEdges[label];
+        if (!Number.isFinite(longEdge) || longEdge <= 0) return undefined;
+
+        let ratio = getCurrentAspectRatio();
+        if (!Number.isFinite(ratio) || ratio <= 0) ratio = 1.0;
+
+        let width = longEdge;
+        let height = longEdge;
+        if (ratio >= 1.0) {
+            height = roundDimension(longEdge / ratio);
+        } else {
+            width = roundDimension(longEdge * ratio);
+        }
+
+        return {
+            width: width,
+            height: height,
+            longEdge: longEdge,
+        };
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * ************************************************************************************************/
+    function sanitiseFilenamePart(value){
+        let text = String(value || "").trim().toLowerCase();
+        text = text.replace(/[^a-z0-9]+/g, '-');
+        while (text.startsWith('-')) text = text.slice(1);
+        while (text.endsWith('-')) text = text.slice(0, -1);
+        return text || 'effects-town';
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * ************************************************************************************************/
+    function createExportFilename(label, width, height){
+        return sanitiseFilenamePart(seed) + '-' + label + '-' + width + 'x' + height + '.png';
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * ************************************************************************************************/
+    function triggerDownload(blob, filename){
+        let url = URL.createObjectURL(blob);
+        let link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(function(){
+            URL.revokeObjectURL(url);
+        }, 1000);
+    }
+
+    /**************************************************************************************************
+    * Javascript function:
+    * ************************************************************************************************/
+    function requestImageExport(label){
+        if (!backgroundLoaded || !worker || exportInProgress) return;
+
+        let canvas = document.getElementById('canvas');
+        if (!canvas) return;
+
+        let size = computeExportSize(label);
+        if (!size) return;
+
+        exportInProgress = true;
+        refreshExportControls();
+        setExportStatus('Rendering ' + label + '...');
+
+        worker.postMessage({
+            'exportImage': true,
+            'label': label,
+            'width': size.width,
+            'height': size.height,
+            'previewWidth': roundDimension(canvas.clientWidth),
+            'previewHeight': roundDimension(canvas.clientHeight),
+            'filename': createExportFilename(label, size.width, size.height),
+            'seed': seed,
+            'params': collectParams(),
+        });
     }
 
     backgroundLoadTimeout = setTimeout(function(){
@@ -160,6 +311,14 @@ EM_JS (bool, javascript_run_ui, (), {
         });
     });
 
+    Object.keys(exportButtons).forEach(function(label){
+        let button = exportButtons[label];
+        if (!button) return;
+        button.addEventListener('click', function(){
+            requestImageExport(label);
+        });
+    });
+
 
     /**************************************************************************************************
     * Javascript function:
@@ -190,6 +349,8 @@ EM_JS (bool, javascript_run_ui, (), {
             worker.terminate();
             worker = undefined;
         }
+        exportInProgress = false;
+        refreshExportControls();
     }
 
     /**************************************************************************************************
@@ -224,6 +385,7 @@ EM_JS (bool, javascript_run_ui, (), {
             syncFormState();
             worker.postMessage({'seed':seed, 'isPreview':false});
             sendCanvasToWorker(worker);
+            refreshExportControls();
             paramsLoadTimeout = setTimeout(function(){
                 if (!paramsLoaded) showStartupError('Startup timeout: render workers failed to publish parameters.');
             }, 10000);
@@ -239,6 +401,24 @@ EM_JS (bool, javascript_run_ui, (), {
             } catch (e) {
                 showStartupError('Failed to parse parameters from render worker.');
             }
+            return;
+        }
+        if(msg.data.hasOwnProperty('exportComplete')){
+            exportInProgress = false;
+            refreshExportControls();
+            if (msg.data['blob']) {
+                triggerDownload(msg.data['blob'], msg.data['filename'] || 'effects-town.png');
+                setExportStatus('Downloaded ' + msg.data['width'] + ' x ' + msg.data['height'] + '.');
+            } else {
+                setExportStatus('Save failed: missing image data.');
+            }
+            return;
+        }
+        if(msg.data.hasOwnProperty('exportFailed')){
+            exportInProgress = false;
+            refreshExportControls();
+            let message = msg.data['message'] || 'Unable to save image.';
+            setExportStatus(message);
             return;
         }
         Module["on_worker_message"](msg);
@@ -457,6 +637,7 @@ EM_JS (bool, javascript_run_ui, (), {
         queueWorkerFlush();
     }
 
+    refreshExportControls();
     return true;
 
 })

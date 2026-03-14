@@ -177,6 +177,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         .buttonsmaller:hover{
           background-image: linear-gradient(#f9ecdb 45%,#f9cc8b 100%, #f9dcbb);
         }
+        .buttonsmaller:disabled{
+          cursor: default;
+          color:#666666;
+          border-color:#999999;
+          background-image: linear-gradient(#f4f4f4 45%,#e4e4e4 100%, #f4f4f4);
+        }
         [type="radio"]{
             appearance: none;
             display:none;
@@ -225,6 +231,24 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         .resetbutton:hover{
           background-image: linear-gradient(#f9ecdb 45%,#f9cc8b 100%, #f9dcbb);
         }
+        .savestatus{
+          min-height:1.2em;
+          margin-top:4px;
+          font-size:0.82em;
+          color:#444444;
+        }
+        .saveimagebuttons{
+          display:flex;
+          gap:0.2em;
+          justify-content:center;
+          flex-wrap:nowrap;
+        }
+        .saveimagebuttons .buttonsmaller{
+          min-width:0;
+          flex:1 1 0;
+          margin-right:0;
+          padding:0.2em 0.1em;
+        }
     </style>
   </head>
   <body>    
@@ -236,6 +260,15 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     <div id="parameters">
       <!--<a class="buttonsmaller" id="aspect-auto">Auto</a>-->
       <div class="menugroup">
+        <span class="menuheading">Save Image</span>
+        <div class="saveimagebuttons">
+          <button type="button" id="save-image-4k" class="buttonsmaller" disabled>4k</button>
+          <button type="button" id="save-image-8k" class="buttonsmaller" disabled>8k</button>
+          <button type="button" id="save-image-16k" class="buttonsmaller" disabled>16k</button>
+        </div>
+        <div id="save-image-status" class="savestatus"></div>
+      </div>
+      <div class="menugroup" style="margin-top:5px;">
         <span class="menuheading">Aspect Ratio</span>
         <div class="radiolist"><input id="i1" name="aspect" type="radio" value="auto" checked/><label for="i1">Auto
           </label><input id="i2" name="aspect" type="radio" value="1-1"/><label for="i2">1:1
