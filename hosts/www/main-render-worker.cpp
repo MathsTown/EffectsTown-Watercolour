@@ -38,12 +38,25 @@ Description:
 #include "../../watercolour-texture/renderer.h"
 #include "../../common/colour.h"
 #include "jsutil.h"
+#include <algorithm>
 #include <sstream>
+#include <vector>
 
-//We force the renderer to use the fallback type because we are in WASM.
-thread_local Renderer<FallbackFloat32> renderer {};
+//We use the native type, so it can switch between wasm-simd and scalar opertions depending on compiler support.
+thread_local Renderer<SimdNativeFloat32> renderer {};
 thread_local ParameterList current_params {};
 thread_local bool params_initialized = false;
+thread_local std::vector<uint32_t> line_buffer {};
+
+template <SimdFloat S>
+static uint32_t pack_colour_lane(const ColourRGBA<S>& c, int lane) noexcept {
+    return Colour8(
+        float_to_8bit(c.red.element(lane)),
+        float_to_8bit(c.green.element(lane)),
+        float_to_8bit(c.blue.element(lane)),
+        float_to_8bit(c.alpha.element(lane))
+    ).to_uint32_keep_memory_layout();
+}
 
 /**************************************************************************************************
  * [Inline Javascript]
@@ -53,7 +66,7 @@ EM_JS (bool, run_javascript, (), {
     //console.log("Render Worker Loaded");
 
     //***Javascript function to render a line.  Called by handleMessage***
-    function render_line(data){
+    function render_line_job(data){
         //Apply parameters sent from the background worker before rendering.
         if (data.hasOwnProperty('params')) {
             let params = data['params'];
@@ -67,14 +80,15 @@ EM_JS (bool, run_javascript, (), {
             }
         }
 
-        var buf = new ArrayBuffer(data['width']*4);
-        var u32 = new Uint32Array(buf);
-
         Module["setup_renderer"](data['width'], data['height']);
         Module["set_seed"](data['seed']);
-        for (let x=0; x< data['width']; x++){
-            u32[x] = Module["render_pixel"](x, data['line']);
-        }
+        Module["render_line"](data['line']);
+
+        const pixelCount = Module["get_line_buffer_length"]();
+        const ptr = Module["get_line_buffer_ptr"]() >>> 2;
+        const src = HEAPU32.subarray(ptr, ptr + pixelCount);
+        var buf = new ArrayBuffer(pixelCount * 4);
+        new Uint32Array(buf).set(src);
 
         postMessage({'result':true, 'buffer':buf, 'jobNumber': data['jobNumber'], 'line':data['line']},[buf]);
     }
@@ -82,7 +96,7 @@ EM_JS (bool, run_javascript, (), {
     //*** Handel incoming messages ***
     function handleMessage(msg){
         if(msg.data.hasOwnProperty('render')){
-            render_line(msg.data);
+            render_line_job(msg.data);
             return;
         }
     }
@@ -219,18 +233,44 @@ void set_seed(const std::string str){
 }
 
 /**************************************************************************************************
- * Render Pixel
+ * Render an entire line into a wasm-side buffer.
  * Exported to JS
  * ************************************************************************************************/
-uint32_t render_pixel(uint32_t x, uint32_t y){
-    if (renderer.get_width() <= 0 || renderer.get_height() <=0) return 0xff0000ff; //Return red if caller has not set size.
-    
+void render_line(uint32_t y){
+    if (renderer.get_width() <= 0 || renderer.get_height() <= 0) {
+        line_buffer.assign(1, 0xff0000ff);
+        return;
+    }
 
-    auto c = renderer.render_pixel( x,y);
-    //if (y==0) js_console_log(std::to_string(x) +  " " + std::to_string(c.red.v) + " " + std::to_string(c.green.v) + " " +  std::to_string(c.blue.v) );
+    using S = SimdNativeFloat32;
+    constexpr int lane_width = S::number_of_elements();
+    const uint32_t width = static_cast<uint32_t>(renderer.get_width());
+    line_buffer.resize(width);
 
-    return c.to_colour8().to_uint32_keep_memory_layout();
+    const S y_vec(static_cast<S::F>(y));
+    for (uint32_t x = 0; x < width; x += lane_width) {
+        auto c = renderer.render_pixel(S::make_sequential(static_cast<S::F>(x)), y_vec);
+        const uint32_t valid_lanes = std::min<uint32_t>(lane_width, width - x);
+        for (uint32_t lane = 0; lane < valid_lanes; ++lane) {
+            line_buffer[x + lane] = pack_colour_lane(c, static_cast<int>(lane));
+        }
+    }
+}
 
+/**************************************************************************************************
+ * Return the current line buffer pointer.
+ * Exported to JS
+ * ************************************************************************************************/
+uint32_t get_line_buffer_ptr(){
+    return static_cast<uint32_t>(reinterpret_cast<uintptr_t>(line_buffer.data()));
+}
+
+/**************************************************************************************************
+ * Return the current line buffer length in pixels.
+ * Exported to JS
+ * ************************************************************************************************/
+uint32_t get_line_buffer_length(){
+    return static_cast<uint32_t>(line_buffer.size());
 }
 
 
@@ -248,7 +288,9 @@ int main(){
 }
 using namespace emscripten;
 EMSCRIPTEN_BINDINGS(main_render_worker){
-    function("render_pixel", &render_pixel);
+    function("render_line", &render_line);
+    function("get_line_buffer_ptr", &get_line_buffer_ptr);
+    function("get_line_buffer_length", &get_line_buffer_length);
     function("setup_renderer", &setup_renderer);
     function("set_seed", &set_seed);
     function("get_parameters_json", &get_parameters_json);
