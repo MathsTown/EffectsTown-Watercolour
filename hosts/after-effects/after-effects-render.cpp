@@ -41,7 +41,7 @@ Description:
 #include "simd-f32.h"
 #include "simd-uint32.h"
 
-template <SimdFloat S>
+template <mt::SimdFloat S>
 struct RenderData {
 	int width{};
 	int height{};
@@ -59,7 +59,7 @@ constexpr unsigned short adobe_white16 = 0x8000;
 Copies a value to the output buffer. (32-bit components)
 Note: If we are using SIMD the value may contain multiple pixels.
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 void copy_to_output_32(PF_EffectWorld* output, int x, int y, int max_x, const ColourRGBA<S>& c) {
 	//Advance pointer to correct line (y).  (We must multiply by rowbytes in case the lines are padded.)  
 	auto ptrY = (uint8_t*)output->data;
@@ -83,7 +83,7 @@ Note: If we are using SIMD the value may contain multiple pixels.
 Note: Adobe uses ARGB colour order, with unmultiplied alpha.
 Note: Adobe 16-bit is not full 16-bit.  White is 0x8000
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 void copy_to_output_16(PF_EffectWorld* output, int x, int y, int max_x, ColourRGBA<S> c) {
 
 	
@@ -118,7 +118,7 @@ Copies a value to the output buffer. (8-bit components)
 Note: If we are using SIMD the value may contain multiple pixels.
 Note: Adobe uses ARGB colour order, with unmultiplied alpha.
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 void copy_to_output_8(PF_EffectWorld* output, int x, int y, int max_x, ColourRGBA<S> c) {
 	constexpr unsigned short adobe_white8 = 0xff;
 	
@@ -149,7 +149,7 @@ void copy_to_output_8(PF_EffectWorld* output, int x, int y, int max_x, ColourRGB
 Gathers 32-bit ARGB data into SIMD vectors, returning a ColourRGBA struct.
 SSE 128 bit registers
 *******************************************************************************************************/
-static inline ColourRGBA<Simd128Float32> gather_image_data_sse(float* in) {
+static inline ColourRGBA<mt::Simd128Float32> gather_image_data_sse(float* in) {
 	const auto in1 = _mm_loadu_ps(in);
 	const auto in2 = _mm_loadu_ps(in + 4);
 	const auto in3 = _mm_loadu_ps(in + 8);
@@ -165,7 +165,7 @@ static inline ColourRGBA<Simd128Float32> gather_image_data_sse(float* in) {
 	auto green = _mm_movelh_ps(r2, r4);
 	auto blue =  _mm_movehl_ps(r4, r2);
 
-	return ColourRGBA<Simd128Float32>(red, green, blue, alpha);
+	return ColourRGBA<mt::Simd128Float32>(red, green, blue, alpha);
 }
 
 /*******************************************************************************************************
@@ -173,12 +173,12 @@ Gathers 32-bit ARGB data into SIMD vectors, returning a ColourRGBA struct.
 AVX 256 bit registers
 AVX2 Required.
 *******************************************************************************************************/
-static inline ColourRGBA<Simd256Float32> gather_image_data_avx(float* in) {	
+static inline ColourRGBA<mt::Simd256Float32> gather_image_data_avx(float* in) {	
 	const auto alpha = _mm256_i32gather_ps(in, _mm256_set_epi32(28, 24, 20, 16, 12, 8, 4, 0), 4);
 	const auto red =   _mm256_i32gather_ps(in, _mm256_set_epi32(29, 25, 21, 17, 13, 9, 5, 1), 4);
 	const auto green = _mm256_i32gather_ps(in, _mm256_set_epi32(30, 26, 22, 18, 14, 10, 6, 2), 4);
 	const auto blue =  _mm256_i32gather_ps(in, _mm256_set_epi32(31, 27, 23, 19, 15, 11, 7, 3), 4);	 
-	return ColourRGBA<Simd256Float32>(red, green, blue, alpha);
+	return ColourRGBA<mt::Simd256Float32>(red, green, blue, alpha);
 }
 
 /*******************************************************************************************************
@@ -186,12 +186,12 @@ Gathers 32-bit ARGB data into SIMD vectors, returning a ColourRGBA struct.
 AVX 512 bit registers
 AVX-512F Required.
 *******************************************************************************************************/
-static inline ColourRGBA<Simd512Float32> gather_image_data_avx512(float* in) {
+static inline ColourRGBA<mt::Simd512Float32> gather_image_data_avx512(float* in) {
 	const auto alpha = _mm512_i32gather_ps(_mm512_set_epi32(60, 56, 52, 48, 44, 40, 36, 32, 28, 24, 20, 16, 12, 8, 4, 0), in, 4);
 	const auto red =   _mm512_i32gather_ps(_mm512_set_epi32(61, 57, 53, 49, 45, 41, 37, 33, 29, 25, 21, 17, 13, 9, 5, 1), in, 4);
 	const auto green = _mm512_i32gather_ps(_mm512_set_epi32(62, 58, 54, 50, 46, 42, 38, 34, 30, 26, 22, 18, 14, 10, 6, 2), in, 4);
 	const auto blue =  _mm512_i32gather_ps(_mm512_set_epi32(63, 59, 55, 51, 47, 43, 39, 35, 31, 27, 23, 19, 15, 11, 7, 3), in, 4);
-	return ColourRGBA<Simd512Float32>(red, green, blue, alpha);
+	return ColourRGBA<mt::Simd512Float32>(red, green, blue, alpha);
 }
 
 
@@ -201,7 +201,7 @@ static inline ColourRGBA<Simd512Float32> gather_image_data_avx512(float* in) {
 /*******************************************************************************************************
 8-bit
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 static inline ColourRGBA<S> read_input_pixel8(const RenderData<S>* rd, int x, int y) {	
 	const int sourceOffset = ((rd->inputLayer->rowbytes * y) + (x * 4 * sizeof(uint8_t)));
 	uint8_t* ptr = reinterpret_cast<uint8_t*>(sourceOffset + reinterpret_cast<uint8_t*>(rd->inputLayer->data));
@@ -225,7 +225,7 @@ static inline ColourRGBA<S> read_input_pixel8(const RenderData<S>* rd, int x, in
 /*******************************************************************************************************
 16-bit
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 static inline ColourRGBA<S> read_input_pixel16(const RenderData<S>* rd, int x, int y) {
 	const int sourceOffset = ((rd->inputLayer->rowbytes * y) + (x * 4 * sizeof(uint16_t)));
 	uint16_t* ptr = reinterpret_cast<uint16_t*>(sourceOffset + reinterpret_cast<uint8_t*>(rd->inputLayer->data));
@@ -248,7 +248,7 @@ static inline ColourRGBA<S> read_input_pixel16(const RenderData<S>* rd, int x, i
 /*******************************************************************************************************
 32-bit
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 static inline ColourRGBA<S> read_input_pixel32(const RenderData<S>* rd, int x, int y) {
 	const int sourceOffset = ((rd->inputLayer->rowbytes * y) + (x * 4 * sizeof(float))) ;
 	float* ptr = reinterpret_cast<float*>(sourceOffset + reinterpret_cast<uint8_t*>(rd->inputLayer->data));
@@ -274,7 +274,7 @@ static inline ColourRGBA<S> read_input_pixel32(const RenderData<S>* rd, int x, i
 Renders a pixel (or a simd vector's worth of pixels)
 Passes of to actual project renderer
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 static inline void render_pixel8(const RenderData<S> * rd, int x, int y) {
 	if constexpr (project_uses_input) {
 		ColourRGBA<S> input_colour = read_input_pixel8(rd,x,y);
@@ -292,7 +292,7 @@ static inline void render_pixel8(const RenderData<S> * rd, int x, int y) {
 Renders a pixel (or a simd vector's worth of pixels)
 Passes of to actual project renderer
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 static inline void render_pixel16(const RenderData<S>* rd, int x, int y) {
 	if constexpr (project_uses_input) {
 		ColourRGBA<S> input_colour = read_input_pixel16(rd,x,y);
@@ -310,7 +310,7 @@ static inline void render_pixel16(const RenderData<S>* rd, int x, int y) {
 Renders a pixel (or a simd vector's worth of pixels)
 Passes of to actual project renderer
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 static inline void render_pixel32(const RenderData<S>* rd, int x, int y) {
 	if constexpr (project_uses_input) {
 		ColourRGBA<S> input_colour = read_input_pixel32(rd,x,y);
@@ -330,7 +330,7 @@ Callback for After Effects Iteration Suite.  Renders an 32-bit line of pixels.
 This thread callback will give us a line to render.
 Note: Adobe uses ARGB colour order, with unmultiplied alpha.
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 static PF_Err render_8bit_pixel_callback(void* refcon, [[maybe_unused]]  A_long thread_idxL, A_long  i, [[maybe_unused]] A_long itrtL) noexcept {
 	const auto rd = static_cast<RenderData<S> *>(refcon);
 	const auto y = i;
@@ -356,7 +356,7 @@ Callback for After Effects Iteration Suite.  Renders an 16-bit pixel.
 Note: Adobe 16 bit is not full 16-bit.  White is 0x8000
 Note: Adobe uses ARGB colour order, with unmultiplied alpha.
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 static PF_Err render_16bit_pixel_callback(void* refcon, A_long , A_long  i, [[maybe_unused]]  A_long itrtL) noexcept {
 	const auto rd = static_cast<RenderData<S> *>(refcon);
 	const auto y = i;
@@ -382,7 +382,7 @@ Callback for After Effects Iteration Suite.  Renders an 32-bit line of pixels.
 This thread callback will give us a line to render.
 Note: Adobe uses ARGB colour order, with unmultiplied alpha.
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 static PF_Err render_32bit_pixel_callback(void* refcon, A_long , A_long  i, [[maybe_unused]]  A_long itrtL) noexcept {
 	const auto rd = static_cast<RenderData<S> *>(refcon);
 	const auto y = i;
@@ -518,7 +518,7 @@ void after_effects_smart_pre_render(const PF_InData* in_data, PF_PreRenderExtra*
 /*******************************************************************************************************
 Template function built based on SIMD type (which is CPU dependant)
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 void after_effect_cpu_dispatch(int width, int height, PF_InData* in_data, [[maybe_unused]]  const PF_Rect& area, int bit_depth, [[maybe_unused]]  PF_EffectWorld* inputLayer, [[maybe_unused]] PF_EffectWorld* output, RenderData<S>& rd) {
 	//Setup parameters
 	setup_render(rd.renderer, in_data, width, height);
@@ -561,7 +561,7 @@ void after_effects_common_render(int width, int height, PF_InData* in_data, cons
 	if constexpr (mt::environment::compiler_has_avx512dq && mt::environment::compiler_has_avx512f) {
 		//Compiler mode supports micro architecture level 4 (AVX-512).  
 		if (precision == 0) {
-			RenderData<Simd512Float32> rd{};
+			RenderData<mt::Simd512Float32> rd{};
 			rd.width = width;
 			rd.height = height;
 			rd.area = area;
@@ -570,7 +570,7 @@ void after_effects_common_render(int width, int height, PF_InData* in_data, cons
 			after_effect_cpu_dispatch(width, height, in_data, area, bit_depth, inputLayer, output, rd);
 		}
 		else {
-			RenderData<Simd512Float64> rd{};
+			RenderData<mt::Simd512Float64> rd{};
 			rd.width = width;
 			rd.height = height;
 			rd.area = area;
@@ -582,7 +582,7 @@ void after_effects_common_render(int width, int height, PF_InData* in_data, cons
 	else if constexpr (mt::environment::compiler_has_avx2 && mt::environment::compiler_has_avx && mt::environment::compiler_has_fma) {
 		if (precision == 0) {
 			//Compiler mode supports micro architecture level 3 (AVX2).  
-			RenderData<Simd256Float32> rd{};
+			RenderData<mt::Simd256Float32> rd{};
 			rd.width = width;
 			rd.height = height;
 			rd.area = area;
@@ -592,7 +592,7 @@ void after_effects_common_render(int width, int height, PF_InData* in_data, cons
 		}
 		else if (precision == 1) {
 			//Compiler mode supports micro architecture level 3 (AVX2).  
-			RenderData<Simd256Float64> rd{};
+			RenderData<mt::Simd256Float64> rd{};
 			rd.width = width;
 			rd.height = height;
 			rd.area = area;
@@ -603,11 +603,11 @@ void after_effects_common_render(int width, int height, PF_InData* in_data, cons
 	}
 	else {
 		//Compiler mode just supports basic x86_64 (SSE2), so we will perform runtime dispatch to AVX2 code if supported..
-		CpuInformation cpu_info{};
-		if (Simd256UInt32::cpu_supported(cpu_info) && Simd256Float32::cpu_supported(cpu_info)) {
+		mt::CpuInformation cpu_info{};
+		if (mt::Simd256UInt32::cpu_supported(cpu_info) && mt::Simd256Float32::cpu_supported(cpu_info)) {
 			if (precision == 0) {
 				//AVX & AVX2
-				RenderData<Simd256Float32> rd{};
+				RenderData<mt::Simd256Float32> rd{};
 				rd.width = width;
 				rd.height = height;
 				rd.area = area;
@@ -617,7 +617,7 @@ void after_effects_common_render(int width, int height, PF_InData* in_data, cons
 			}
 			else if (precision == 1) {
 				//AVX & AVX2
-				RenderData<Simd256Float64> rd{};
+				RenderData<mt::Simd256Float64> rd{};
 				rd.width = width;
 				rd.height = height;
 				rd.area = area;
@@ -629,7 +629,7 @@ void after_effects_common_render(int width, int height, PF_InData* in_data, cons
 		else {
 			if (precision == 0) {
 				//SSE2 (Generic x86_64)
-				RenderData<Simd128Float32> rd{};
+				RenderData<mt::Simd128Float32> rd{};
 				rd.width = width;
 				rd.height = height;
 				rd.area = area;
@@ -639,7 +639,7 @@ void after_effects_common_render(int width, int height, PF_InData* in_data, cons
 			}
 			else {
 				//SSE2 (Generic x86_64)
-				RenderData<Simd128Float64> rd{};
+				RenderData<mt::Simd128Float64> rd{};
 				rd.width = width;
 				rd.height = height;
 				rd.area = area;

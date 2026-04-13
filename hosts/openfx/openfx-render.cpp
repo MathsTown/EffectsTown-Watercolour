@@ -50,7 +50,7 @@ TODO: 8-BIT Support
 
 
 //Contains data that will be sent to different threads.
-template <SimdFloat S>
+template <mt::SimdFloat S>
 struct RenderThreadData {
     Renderer<S>* renderer {};
     ClipHolder* output{};
@@ -62,12 +62,12 @@ struct RenderThreadData {
 /***Forward Declarations***/
 static void ReplaceTransparentWithSource(OfxRectI renderWindow, ClipHolder& source, ClipHolder& output) noexcept;
 static ParameterList read_parameters(ParameterHelper& parameter_helper, OfxTime time);
-template <SimdFloat S> void thread_entry_pixel_render(unsigned int threadIndex, [[maybe_unused]] unsigned int threadMax, void* customArg);
-template <SimdFloat S> static void render_line(RenderThreadData<S>* rd, int y);
-template <SimdFloat S> static void do_render(OfxImageEffectHandle instance, OfxRectI& render_window, Renderer<S>& renderer, [[maybe_unused]] int width, [[maybe_unused]] int height, ClipHolder& output, const OfxTime& time);
-template <SimdFloat S> static void setup_render(Renderer<S>& renderer, int width, int height, ParameterHelper& parameter_helper, OfxTime time);
-template <SimdFloat S> static inline void render_pixel32(RenderThreadData<S>* rd, int x, int y);
-template <SimdFloat S> static void render_line32(RenderThreadData<S>* rd, int y);
+template <mt::SimdFloat S> void thread_entry_pixel_render(unsigned int threadIndex, [[maybe_unused]] unsigned int threadMax, void* customArg);
+template <mt::SimdFloat S> static void render_line(RenderThreadData<S>* rd, int y);
+template <mt::SimdFloat S> static void do_render(OfxImageEffectHandle instance, OfxRectI& render_window, Renderer<S>& renderer, [[maybe_unused]] int width, [[maybe_unused]] int height, ClipHolder& output, const OfxTime& time);
+template <mt::SimdFloat S> static void setup_render(Renderer<S>& renderer, int width, int height, ParameterHelper& parameter_helper, OfxTime time);
+template <mt::SimdFloat S> static inline void render_pixel32(RenderThreadData<S>* rd, int x, int y);
+template <mt::SimdFloat S> static void render_line32(RenderThreadData<S>* rd, int y);
 
 
 
@@ -117,27 +117,27 @@ OfxStatus openfx_render(const OfxImageEffectHandle instance, OfxPropertySetHandl
     static_assert(mt::environment::is_x86_64, "Only x86_64 implemented");
     if constexpr (mt::environment::compiler_has_avx512dq && mt::environment::compiler_has_avx512f) {
         //AVX-512 & AVX-512DQ supported by compiler.
-        Renderer<Simd512Float32> renderer{};
+        Renderer<mt::Simd512Float32> renderer{};
         setup_render(renderer, width, height, instance_data->parameter_helper, time);
         do_render(instance, renderWindow, renderer, width, height, output_clip, time);
     }
     else if constexpr (mt::environment::compiler_has_avx2 && mt::environment::compiler_has_avx && mt::environment::compiler_has_fma) {
-        Renderer<Simd256Float32> renderer{};
+        Renderer<mt::Simd256Float32> renderer{};
         setup_render(renderer, width, height, instance_data->parameter_helper, time);
         do_render(instance, renderWindow, renderer, width, height, output_clip, time);
     }
     else {
         //Compiler mode just supports basic x86_64 (SSE2), so we will perform runtime dispatch to AVX2 code if supported.
-        CpuInformation cpu_info{};
-        if (Simd256UInt64::cpu_supported(cpu_info) && Simd256Float32::cpu_supported(cpu_info) && Simd256UInt32::cpu_supported(cpu_info)) {
+        mt::CpuInformation cpu_info{};
+        if (mt::Simd256UInt64::cpu_supported(cpu_info) && mt::Simd256Float32::cpu_supported(cpu_info) && mt::Simd256UInt32::cpu_supported(cpu_info)) {
             //AVX & AVX2
-            Renderer<Simd256Float32> renderer{};
+            Renderer<mt::Simd256Float32> renderer{};
             setup_render(renderer, width, height, instance_data->parameter_helper, time);
             do_render(instance, renderWindow, renderer, width, height, output_clip, time);
         }
         else {
             //SSE2 (Generic x86_64)
-            Renderer<Simd128Float32> renderer{};
+            Renderer<mt::Simd128Float32> renderer{};
             setup_render(renderer, width, height, instance_data->parameter_helper, time);
             do_render(instance, renderWindow, renderer, width, height, output_clip, time);
         }
@@ -168,7 +168,7 @@ OfxStatus openfx_render(const OfxImageEffectHandle instance, OfxPropertySetHandl
 Sets up the host-independant renderer object. 
 Templated on the datatype
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 static void setup_render(Renderer<S>& renderer, int width, int height, ParameterHelper& parameter_helper, OfxTime time) {
     auto params = read_parameters(parameter_helper, time);
 
@@ -213,7 +213,7 @@ static ParameterList read_parameters(ParameterHelper& parameter_helper, OfxTime 
 /*******************************************************************************************************
 
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 inline static void copy_pixel_to_output_buffer(ClipHolder& output, int x, int y, int max_x, ColourRGBA<S> c) {
     const bool hasAlpha = output.componentsPerPixel == 4;
 
@@ -298,7 +298,7 @@ Used as a callback by OpenFX host.
 
 Currently just balances worklaod using % operator.
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 void thread_entry_pixel_render(unsigned int threadIndex, [[maybe_unused]] unsigned int threadMax, void* customArg) {
     RenderThreadData<S>* rd = static_cast<RenderThreadData<S>*>(customArg);
     for (int y = rd->render_window->y1; y < rd->render_window->y2; y++) {
@@ -313,7 +313,7 @@ Do a full render.
 Dispatches lines to worker threads.
 (Called on a worker thread)
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 static void do_render(OfxImageEffectHandle instance, OfxRectI& render_window, Renderer<S>& renderer, [[maybe_unused]] int width, [[maybe_unused]] int height, ClipHolder& output, const OfxTime& time) {
 
     RenderThreadData<S> rd{};
@@ -347,7 +347,7 @@ static void do_render(OfxImageEffectHandle instance, OfxRectI& render_window, Re
 Render a line.
 (Called on a worker thread)
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 static void render_line(RenderThreadData<S>* rd, int y) {
     if (rd->output->bitDepth == 32 && rd->output->componentsPerPixel == 4) {
         render_line32(rd, y);
@@ -359,7 +359,7 @@ static void render_line(RenderThreadData<S>* rd, int y) {
 Render a line.  
 (Called on a worker thread)
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 static void render_line32(RenderThreadData<S>* rd, int y) {
     //dev_log("Render Line " + std::to_string(y));
 
@@ -382,7 +382,7 @@ static void render_line32(RenderThreadData<S>* rd, int y) {
 Renders a pixel (or a simd vector's worth of pixels)
 Passes of to actual project renderer
 *******************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 static inline void render_pixel32(RenderThreadData<S>* rd, int x, int y) {
     ColourRGBA<S> c;
     if constexpr (project_uses_input) {

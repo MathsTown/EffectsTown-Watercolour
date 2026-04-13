@@ -76,7 +76,7 @@ inline void build_input_transforms_parameter_list(ParameterList& params) {
 /**************************************************************************************************
  *
  * ************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 vec2<S> perform_input_transform(const std::string& transform_name, vec2<S> p, const ParameterList& params) {
 	constexpr typename S::F pi = 3.1415926535897932384626433832795;
 	

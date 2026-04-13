@@ -93,19 +93,19 @@ OfxExport int OfxGetNumberOfPlugins(void){
 
     //Check if the CPU is supported by this build
     if constexpr (mt::environment::compiler_has_avx512dq) {
-        int level = CpuInformation().get_level();
+        int level = mt::CpuInformation().get_level();
         if (level < 4) {
              return 0;
         }
     }
     if constexpr (mt::environment::compiler_has_avx2) {
-        int level = CpuInformation().get_level();
+        int level = mt::CpuInformation().get_level();
         if (level < 3) {
             return 0;
         }
     }
     if constexpr (mt::environment::compiler_has_sse4_2) {
-        int level = CpuInformation().get_level();
+        int level = mt::CpuInformation().get_level();
         if (level < 2) {
             return 0;
         }

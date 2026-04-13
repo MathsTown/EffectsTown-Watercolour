@@ -52,7 +52,7 @@ Description:
  * Implements a host independent pixel renderer.
  * Use type parameter to select floating point precision.
  * ************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 class Renderer{
     
 
@@ -105,7 +105,7 @@ class Renderer{
 /**************************************************************************************************
  * Set the size of the image to render in pixels.
  * ************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 void Renderer<S>::set_size(int w, int h) noexcept {
     this->width = w;
     this->height = h;
@@ -123,7 +123,7 @@ void Renderer<S>::set_size(int w, int h) noexcept {
  * Render a pixel (or batch of pixels if using SIMD)
  * 
  * ************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 ColourRGBA<S> Renderer<S>::render_pixel(S x, S y) const {
     if (width <=0 || height <=0) return ColourRGBA<S>{};
     next_random<typename S::F>(seed); //Reset random seed so it is the same for each pixel
@@ -195,7 +195,7 @@ ColourRGBA<S> Renderer<S>::render_pixel(S x, S y) const {
  * Render a pixel (or batch of pixels if using SIMD)
  * an input pixel is given
  * ************************************************************************************************/
-template <SimdFloat S>
+template <mt::SimdFloat S>
 ColourRGBA<S> Renderer<S>::render_pixel_with_input(S x, S y, ColourRGBA<S>) const {
     render_pixel(x, y);
 }

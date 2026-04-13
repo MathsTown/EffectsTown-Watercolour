@@ -45,21 +45,21 @@ Types:
 #include "linear-algebra.h"
 
 template <typename T>
-concept FloatType = SimdFloat<T> || std::floating_point<T>;
+concept FloatType = mt::SimdFloat<T> || std::floating_point<T>;
 
 /****Forward Declaration of Types***/
 struct Colour8;
 template <FloatType F> struct ColourLinear;
-template <typename F> requires SimdFloat<F> || std::floating_point<F> struct ColourRGBA;
+template <typename F> requires mt::SimdFloat<F> || std::floating_point<F> struct ColourRGBA;
 
 /****Forward Declaration of Functions***/
-template <typename F> requires SimdFloat<F> || std::floating_point<F> static constexpr F srgb_to_linear(F c) noexcept;
+template <typename F> requires mt::SimdFloat<F> || std::floating_point<F> static constexpr F srgb_to_linear(F c) noexcept;
 
 static constexpr uint8_t float_to_8bit(std::floating_point auto c) noexcept;
-static uint8_t float_to_8bit(SimdFloat auto c) noexcept;
+static uint8_t float_to_8bit(mt::SimdFloat auto c) noexcept;
 
 //template <typename F> std::floating_point<F> static constexpr uint32_t float_to_uint(F c) noexcept;
-template <typename F> requires SimdFloat<F> || std::floating_point<F> static constexpr ColourRGBA<F> HSLtoRGB(F alpha, F h, F s, F l) noexcept;
+template <typename F> requires mt::SimdFloat<F> || std::floating_point<F> static constexpr ColourRGBA<F> HSLtoRGB(F alpha, F h, F s, F l) noexcept;
 
 
 /***Constants****/
@@ -132,7 +132,7 @@ Gamma:          SRGB
 Colour Order :  RGBA
 
 *************************************************************************************************/
-template <typename F> requires SimdFloat<F> || std::floating_point<F>
+template <typename F> requires mt::SimdFloat<F> || std::floating_point<F>
 struct ColourRGBA {
     public:
         F red{ 0.0 };
@@ -205,6 +205,7 @@ struct ColourRGBA {
                   2. that no gamma is applied to the alpha channel.
         *************************************************************************************************/
         ColourLinear<F> to_linear_simple() const noexcept {
+            using std::pow;
             return ColourLinear<F>(pow(red, F{ 2.2 }), pow(green, static_cast<F>(2.2)), pow(blue, F{ 2.2 }), alpha);
         } 
 
@@ -248,10 +249,11 @@ struct ColourRGBA {
             c.blue /= c.alpha;
             return c;
         }
-        ColourRGBA<F> un_premultiply_alpha() const noexcept requires SimdFloat<F> {
+        ColourRGBA<F> un_premultiply_alpha() const noexcept requires mt::SimdFloat<F> {
             auto c = *this;
             
             // Replace zero alpha lanes with 1.0 if alpha is zero so division is always safe.
+            using mt::if_equal;
             const auto safe_alpha = if_equal(c.alpha, F(0.0f), F(1.0f), c.alpha);            
             c.red = c.red / safe_alpha;
             c.green = c.green / safe_alpha;
@@ -271,6 +273,7 @@ struct ColourRGBA {
         } 
 
         ColourRGBA<F> no_negatives() const noexcept {
+            using std::max;
             const auto r = max(0.0f,red);
             const auto g = max(0.0f, green);
             const auto b = max(0.0f, blue);
@@ -328,7 +331,7 @@ inline static constexpr uint8_t float_to_8bit(std::floating_point auto c) noexce
     return static_cast<uint8_t>(a);
 }
 
-inline static uint8_t float_to_8bit(SimdFloat auto c) noexcept {
+inline static uint8_t float_to_8bit(mt::SimdFloat auto c) noexcept {
     const decltype(c) a = clamp(c * white8, 0.0, white8);
     return static_cast<uint8_t>(a.v);
 }

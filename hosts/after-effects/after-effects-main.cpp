@@ -66,7 +66,7 @@ We want to known when the dll is loaded so we can store the hInstance.
 BOOL WINAPI DllMain(_In_ HINSTANCE hinstDLL, _In_ DWORD, _In_ LPVOID) {
 	//Try and fail gracefully if user tries to run on the incorrect CPU.
 	if constexpr (mt::environment::compiler_has_avx512dq) {
-		int level = CpuInformation().get_level();
+		int level = mt::CpuInformation().get_level();
 		if (level < 4) {
 			if (level == 3) MessageBoxA(NULL, "Incorrect plug-in version for CPU.\n\nThis plug-in was built for x86_64 Level 4 (AVX-512).\nYour CPU only supports x86_64 Level 3 (AVX2).\n\nPlease install the correct version of the plug-in and try again.", "Effects Town", 0);
 			if (level == 2) MessageBoxA(NULL, "Incorrect plug-in version for CPU.\n\nThis plug-in was built for x86_64 Level 4 (AVX-512).\nYour CPU only supports x86_64 Level 2.\n\nPlease install the correct version of the plug-in and try again.", "Effects Town", 0);
@@ -75,7 +75,7 @@ BOOL WINAPI DllMain(_In_ HINSTANCE hinstDLL, _In_ DWORD, _In_ LPVOID) {
 		}
 	}
 	if constexpr (mt::environment::compiler_has_avx2) {
-		int level = CpuInformation().get_level();
+		int level = mt::CpuInformation().get_level();
 		if (level < 3) {			
 			if (level == 2) MessageBoxA(NULL, "Incorrect plug-in version for CPU.\n\nThis plug-in was built for x86_64 Level 3 (AVX2).\nYour CPU only supports x86_64 Level 2.\nPlease install the correct version of the plug-in and try again.", "Effects Town", 0);
 			if (level == 1) MessageBoxA(NULL, "Incorrect plug-in version for CPU.\n\nThis plug-in was built for x86_64 Level 3 (AVX2).\nYour CPU only supports x86_64 Level 1.\nPlease install the correct version of the plug-in and try again.", "Effects Town", 0);
@@ -83,7 +83,7 @@ BOOL WINAPI DllMain(_In_ HINSTANCE hinstDLL, _In_ DWORD, _In_ LPVOID) {
 		}
 	}
 	if constexpr (mt::environment::compiler_has_sse4_2) {
-		int level = CpuInformation().get_level();
+		int level = mt::CpuInformation().get_level();
 		if (level < 2) {
 			if (level == 1) MessageBoxA(NULL, "Incorrect plug-in version for CPU.\n\nThis plug-in was built for x86_64 Level 2.\nYour CPU only supports x86_64 Level 1.\nPlease install the correct version of the plug-in and try again.", "Effects Town", 0);
 			return FALSE;

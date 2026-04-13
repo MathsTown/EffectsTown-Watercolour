@@ -43,12 +43,12 @@ Description:
 #include <vector>
 
 //We use the native type, so it can switch between wasm-simd and scalar opertions depending on compiler support.
-thread_local Renderer<SimdNativeFloat32> renderer {};
+thread_local Renderer<mt::SimdNativeFloat32> renderer {};
 thread_local ParameterList current_params {};
 thread_local bool params_initialized = false;
 thread_local std::vector<uint32_t> line_buffer {};
 
-template <SimdFloat S>
+template <mt::SimdFloat S>
 static uint32_t pack_colour_lane(const ColourRGBA<S>& c, int lane) noexcept {
     return Colour8(
         float_to_8bit(c.red.element(lane)),
@@ -242,7 +242,7 @@ void render_line(uint32_t y){
         return;
     }
 
-    using S = SimdNativeFloat32;
+    using S = mt::SimdNativeFloat32;
     constexpr int lane_width = S::number_of_elements();
     const uint32_t width = static_cast<uint32_t>(renderer.get_width());
     line_buffer.resize(width);

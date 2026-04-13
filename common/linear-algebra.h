@@ -46,7 +46,7 @@ struct mat4;
  * ************************************************************************************************/
 template <typename F>
 constexpr inline F fract(F value){
-	
+	using std::floor; // Keep std overloads visible for scalar types; ADL can still select mt::floor for SIMD types.
 	return value - floor(value); 	
 }
 
@@ -81,18 +81,19 @@ struct vec2 {
 	
 	
 	//Specilisations for SIMD Types
-	//vec2& operator+=(const float rhs) noexcept requires(SimdFloat<F>) { x += F(rhs); y += F(rhs); return *this; }
-	//vec2& operator-=(const float rhs) noexcept requires(SimdFloat<F>) { x -= F(rhs); y -= F(rhs); return *this; }
-	//vec2& operator*=(const float rhs) noexcept requires(SimdFloat<F>) { x *= F(rhs); y *= F(rhs); return *this; }
-	//vec2& operator/=(const float rhs) noexcept requires(SimdFloat<F>) { x /= F(rhs); y /= F(rhs); return *this; }
+	//vec2& operator+=(const float rhs) noexcept requires(mt::SimdFloat<F>) { x += F(rhs); y += F(rhs); return *this; }
+	//vec2& operator-=(const float rhs) noexcept requires(mt::SimdFloat<F>) { x -= F(rhs); y -= F(rhs); return *this; }
+	//vec2& operator*=(const float rhs) noexcept requires(mt::SimdFloat<F>) { x *= F(rhs); y *= F(rhs); return *this; }
+	//vec2& operator/=(const float rhs) noexcept requires(mt::SimdFloat<F>) { x /= F(rhs); y /= F(rhs); return *this; }
 
-	//vec2& operator+=(const vec2<float>& rhs) noexcept requires(SimdFloat32<F>) { x += F(rhs.x); y += F(rhs.y); return *this; }
+	//vec2& operator+=(const vec2<float>& rhs) noexcept requires(mt::SimdFloat32<F>) { x += F(rhs.x); y += F(rhs.y); return *this; }
 	
 	//Calculate the magnitude (length) of the vector.
 	[[nodiscard("Value Calculated and not used(magnitude)")]]
 	inline F magnitude() const noexcept { 
-		if constexpr (SimdFloat<F>) {
-			return sqrt(fma(x,x,y*y));
+		if constexpr (mt::SimdFloat<F>) {
+			using std::fma;
+			return sqrt(fma(x, x, y * y));
 		}else {
 			return sqrt(x * x + y * y);
 		};
@@ -126,7 +127,8 @@ template <typename F, typename F2> inline vec2<F> operator*(F2 lhs, vec2<F> rhs)
 template <typename F> 
 [[nodiscard("Value Calculated and not used (dot)")]]
 inline static F dot(const vec2<F>& a, const vec2<F>& b) noexcept { 
-	if constexpr (SimdFloat<F>) {
+	if constexpr (mt::SimdFloat<F>) {
+		using std::fma;
 		return fma(a.x, b.x, a.y * b.y);
 	}else{
 		return a.x * b.x + a.y * b.y;
@@ -138,13 +140,28 @@ template <typename F>
 [[nodiscard("Value Calculated and not used (normalize).  Note: This value is not calulated in place")]]
 inline vec2<F> normalize(const vec2<F>& v) noexcept { return v.normalize(); }
 
-template <typename F> inline F distance(const vec2<F>& a, const vec2<F> & b) { return sqrt((b.x-a.x)*(b.x - a.x) + (b.y - a.y)*(b.y - a.y)); }
+template <typename F> inline F distance(const vec2<F>& a, const vec2<F> & b) {
+	using std::sqrt;
+	return sqrt((b.x-a.x)*(b.x - a.x) + (b.y - a.y)*(b.y - a.y));
+}
 
-template <typename F> inline vec2<F> floor(const vec2<F>& a) { return vec2(floor(a.x), floor(a.y)); }
+template <typename F> inline vec2<F> floor(const vec2<F>& a) {
+	using std::floor;
+	return vec2(floor(a.x), floor(a.y));
+}
 template <typename F> inline vec2<F> fract(const vec2<F>& a) { return vec2(fract(a.x), fract(a.y)); }
-template <typename F> inline vec2<F> trunc(const vec2<F>& a) { return vec2(trunc(a.x), trunc(a.y)); }
-template <typename F> inline vec2<F> abs(const vec2<F>& a) { return vec2(abs(a.x), abs(a.y)); }
-template <typename F> inline vec2<F> sqrt(const vec2<F>& a) { return vec2(sqrt(a.x), sqrt(a.y)); }
+template <typename F> inline vec2<F> trunc(const vec2<F>& a) {
+	using std::trunc;
+	return vec2(trunc(a.x), trunc(a.y));
+}
+template <typename F> inline vec2<F> abs(const vec2<F>& a) {
+	using std::abs;
+	return vec2(abs(a.x), abs(a.y));
+}
+template <typename F> inline vec2<F> sqrt(const vec2<F>& a) {
+	using std::sqrt;
+	return vec2(sqrt(a.x), sqrt(a.y));
+}
 template <typename F> inline F length(const vec2<F>& a) { return a.magnitude(); }
 template <typename F> inline F magnitude(const vec2<F>& a) { return a.magnitude(); }
 
@@ -181,7 +198,10 @@ struct vec3 {
 	vec3<F>& operator*=(const F rhs) noexcept { x *= rhs; y *= rhs; z *= rhs; return *this; }
 	vec3<F>& operator/=(const F rhs) noexcept { x /= rhs; y /= rhs; z /= rhs; return *this; }
 
-	inline F magnitude() const noexcept { return sqrt(x * x + y * y + z * z); }
+	inline F magnitude() const noexcept {
+		using std::sqrt;
+		return sqrt(x * x + y * y + z * z);
+	}
 	inline F length() const noexcept { return this->magnitude(); }
 	
 	[[nodiscard("Value Calculated and not used (normalize).  Note: This value is not calulated in place")]]
@@ -213,9 +233,15 @@ inline vec3<F> normalize(const vec3<F>& v) noexcept {return v.normalize();}
 
 template <typename F> inline static F dot(const vec3<F>& a, const vec3<F>& b) noexcept {return a.x * b.x + a.y * b.y + a.z * b.z;}
 template <typename F> inline static vec3<F> cross(const vec3<F>& a, const vec3<F>& b) noexcept {return vec3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);}
-template <typename F> inline vec3<F> floor(const vec3<F>& a) { return vec3(std::floor(a.x), std::floor(a.y), std::floor(a.z)); }
+template <typename F> inline vec3<F> floor(const vec3<F>& a) {
+	using std::floor;
+	return vec3(floor(a.x), floor(a.y), floor(a.z));
+}
 template <typename F> inline vec3<F> fract(const vec3<F>& a) { return vec3(fract(a.x), fract(a.y), fract(a.z)); }
-template <typename F> inline vec3<F> trunc(const vec3<F>& a) { return vec3(trunc(a.x), trunc(a.y), trunc(a.z)); }
+template <typename F> inline vec3<F> trunc(const vec3<F>& a) {
+	using std::trunc;
+	return vec3(trunc(a.x), trunc(a.y), trunc(a.z));
+}
 template <typename F> inline F length(const vec3<F>& a) { return a.magnitude(); }
 
 
@@ -259,8 +285,14 @@ struct vec4{
 	inline vec3<F> xyz() const noexcept { return vec3<F>(x, y, z); }
 	inline vec3<F> yzw() const noexcept { return vec3<F>(y, z, w); }
 
-	inline F magnitude() const noexcept { return sqrt(x * x + y*y + z*z+ w*w); }
-	inline F length() const noexcept { return sqrt(x * x + y * y + z * z + w * w); }
+	inline F magnitude() const noexcept {
+		using std::sqrt;
+		return sqrt(x * x + y*y + z*z+ w*w);
+	}
+	inline F length() const noexcept {
+		using std::sqrt;
+		return sqrt(x * x + y * y + z * z + w * w);
+	}
 	inline void normalize() noexcept { const F m = magnitude(); x /= m; y /= m; z /= m; w /= m; }
 };
 template <typename F> inline vec4<F> operator+(vec4<F> lhs, const vec4<F>& rhs) noexcept { lhs += rhs;	return lhs; }
@@ -281,9 +313,15 @@ template <typename F> inline vec4<F> operator*(F lhs, vec4<F> rhs) noexcept { re
 
 template <typename F> inline static F dot(const vec4<F>& a, const vec4<F>& b) noexcept {return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;}
 template <typename F> inline vec4<F> normalize(vec4<F> v) noexcept { v.normalize(); return v; }
-template <typename F> inline vec4<F> floor(const vec4<F>& a) { return vec4(floor(a.x), floor(a.y), floor(a.z), floor(a.w)); }
+template <typename F> inline vec4<F> floor(const vec4<F>& a) {
+	using std::floor;
+	return vec4(floor(a.x), floor(a.y), floor(a.z), floor(a.w));
+}
 template <typename F> inline vec4<F> fract(const vec4<F>& a) { return vec4(fract(a.x), fract(a.y), fract(a.z), fract(a.w)); }
-template <typename F> inline vec4<F> trunc(const vec4<F>& a) { return vec4(trunc(a.x), trunc(a.y), trunc(a.z, trunc(a.w))); }
+template <typename F> inline vec4<F> trunc(const vec4<F>& a) {
+	using std::trunc;
+	return vec4(trunc(a.x), trunc(a.y), trunc(a.z), trunc(a.w));
+}
 template <typename F> inline F length(const vec4<F>& a) { return a.magnitude(); }
 
 
@@ -570,6 +608,7 @@ inline static T reflect(const T & incident, const T & normal) noexcept {
  * ************************************************************************************************/
 template <class T, typename F>
 inline static T refract(const T & incident, const T & normal, F eta) noexcept {
+	using std::sqrt;
 	const auto n_dot_i = dot(incident, normal); 
     const auto k = 1.0f - eta * eta (1.0f - n_dot_i * n_dot_i);
     if (k<0.0f) return T{};
@@ -606,16 +645,16 @@ constexpr inline F rescale(F value, F oldMin, F oldMax, F newMin, F newMax) noex
  * Clamp a value
  * ************************************************************************************************/
 template <typename F>
-constexpr inline F clamp(F value, F min, F max) requires(! Simd<F>) {
+constexpr inline F clamp(F value, F min, F max) requires(! mt::Simd<F>) {
 	return (value < min) ? min : ((value > max) ? max : value);
 }
 
 /**************************************************************************************************
  * Clamp a value to the range 0..1
  * ************************************************************************************************/
-template <SimdFloat S>
-constexpr inline S clamp_01(S value) requires(Simd<S>) {
-	//return if_greater(value, S{ 1.0 }, S{ 1.0 }, if_less(value, S{}, S{}, value));
+template <mt::SimdFloat S>
+constexpr inline S clamp_01(S value) requires(mt::Simd<S>) {
+	//return mt::if_greater(value, S{ 1.0 }, S{ 1.0 }, mt::if_less(value, S{}, S{}, value));
 	return max(0.0f, min(1.0f, value));
 
 }
@@ -625,7 +664,7 @@ constexpr inline float clamp_01(float value) {
 }
 
 template <typename F>
-constexpr inline F clamp_01(F value) requires(!Simd<F>) {
+constexpr inline F clamp_01(F value) requires(!mt::Simd<F>) {
 	return (value < 0.0) ? 0.0 : ((value > 1.0) ? 1.0 : value);
 }
 
@@ -634,7 +673,8 @@ constexpr inline F clamp_01(F value) requires(!Simd<F>) {
  * ************************************************************************************************/
 template <typename F>
 inline int clamp_to_int(F value, int min, int max) noexcept {
-	const int v = static_cast<int>(std::round(value));
+	using std::round;
+	const int v = static_cast<int>(round(value));
 	return (v < min) ? min : ((v > max) ? max : v);
 }
 
