@@ -210,7 +210,8 @@ inline static FallbackFloat64 fnms(const FallbackFloat64  a, const FallbackFloat
 inline static FallbackFloat64 floor(FallbackFloat64 a) { return  FallbackFloat64(std::floor(a.v)); }
 inline static FallbackFloat64 ceil(FallbackFloat64 a) { return  FallbackFloat64(std::ceil(a.v)); }
 inline static FallbackFloat64 trunc(FallbackFloat64 a) { return  FallbackFloat64(std::trunc(a.v)); }
-inline static FallbackFloat64 round(FallbackFloat64 a) { return  FallbackFloat64(std::round(a.v)); }
+// Project default: round() uses nearest-even (banker's rounding).
+inline static FallbackFloat64 round(FallbackFloat64 a) { return  FallbackFloat64(std::nearbyint(a.v)); }
 inline static FallbackFloat64 fract(FallbackFloat64 a) { return a - floor(a); }
 
 
@@ -428,7 +429,8 @@ namespace simd_detail_f64 {
 		inline __m512d name##_pd(__m512d a, __m512d b) { return map_binary(a, b, [](double x, double y) { return (expr); }); }
 
 	MT_F64_UNARY(trunc, std::trunc(x))
-	MT_F64_UNARY(round, std::round(x))
+	// Project default: round() uses nearest-even (banker's rounding).
+	MT_F64_UNARY(round, std::nearbyint(x))
 	MT_F64_UNARY(floor, std::floor(x))
 	MT_F64_UNARY(ceil, std::ceil(x))
 	MT_F64_UNARY(exp, std::exp(x))
@@ -698,6 +700,7 @@ inline static Simd512Float64 fnms(const Simd512Float64  a, const Simd512Float64 
 inline static Simd512Float64 floor(Simd512Float64 a) {return  Simd512Float64(_mm512_floor_pd(a.v)); }
 inline static Simd512Float64 ceil(Simd512Float64 a) { return  Simd512Float64(_mm512_ceil_pd(a.v)); }
 inline static Simd512Float64 trunc(Simd512Float64 a) { return  Simd512Float64(_mm512_trunc_pd(a.v)); }
+// Project default: round() uses nearest-even (banker's rounding).
 inline static Simd512Float64 round(Simd512Float64 a) { return  Simd512Float64(_mm512_roundscale_pd(a.v, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC)); }
 inline static Simd512Float64 fract(Simd512Float64 a) { return a - floor(a);}
 
@@ -970,6 +973,7 @@ inline static Simd256Float64 fnms(const Simd256Float64  a, const Simd256Float64 
 inline static Simd256Float64 floor(Simd256Float64 a) { return  Simd256Float64(_mm256_floor_pd(a.v)); }
 inline static Simd256Float64 ceil(Simd256Float64 a) { return  Simd256Float64(_mm256_ceil_pd(a.v)); }
 inline static Simd256Float64 trunc(Simd256Float64 a) { return  Simd256Float64(_mm256_trunc_pd(a.v)); }
+// Project default: round() uses nearest-even (banker's rounding).
 inline static Simd256Float64 round(Simd256Float64 a) { return  Simd256Float64(_mm256_round_pd(a.v, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC)); }
 inline static Simd256Float64 fract(Simd256Float64 a) { return a - floor(a); }
 
@@ -1233,10 +1237,11 @@ inline static Simd128Float64 trunc(Simd128Float64 a) noexcept {
 [[nodiscard("Value calculated and not used (round)")]]
 inline static Simd128Float64 round(Simd128Float64 a) noexcept {
 	if constexpr (mt::environment::compiler_has_sse4_1) {
+		// Project default: round() uses nearest-even (banker's rounding).
 		return Simd128Float64(_mm_round_pd(a.v, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC)); //SSE4.1
 	}
 	else {
-		return Simd128Float64(_mm_set_pd( std::round(a.element(1)), std::round(a.element(0))));
+		return Simd128Float64(_mm_set_pd( std::nearbyint(a.element(1)), std::nearbyint(a.element(0))));
 	}
 }
 

@@ -294,12 +294,17 @@ std::string_view fma_name(FmaOp op) {
     return "unknown";
 }
 
+double round_nearest_even_default(double value) {
+    // Project default: round() uses nearest-even (banker's rounding).
+    return std::nearbyint(value);
+}
+
 double apply_scalar_unary(double value, UnaryMathOp op) {
     switch (op) {
     case UnaryMathOp::floor_op: return std::floor(value);
     case UnaryMathOp::ceil_op: return std::ceil(value);
     case UnaryMathOp::trunc_op: return std::trunc(value);
-    case UnaryMathOp::round_op: return std::round(value);
+    case UnaryMathOp::round_op: return round_nearest_even_default(value);
     case UnaryMathOp::fract_op: return value - std::floor(value);
     case UnaryMathOp::sqrt_op: return std::sqrt(value);
     case UnaryMathOp::abs_op: return std::abs(value);
@@ -769,6 +774,25 @@ bool run_float64_math_test_for_type(const std::string& type_name, CpuInformation
                 const double actual = result.element(lane);
                 if (!double_matches_fallback(actual, expected)) {
                     harness.add_result(test_name, false, "mismatch, lane " + std::to_string(lane));
+                    return false;
+                }
+            }
+        }
+        if (op == UnaryMathOp::round_op) {
+            constexpr double tie_inputs[] = {
+                -4.5, -3.5, -2.5, -1.5, -0.5,
+                 0.5,  1.5,  2.5,  3.5,  4.5
+            };
+            constexpr int tie_input_count = static_cast<int>(sizeof(tie_inputs) / sizeof(tie_inputs[0]));
+            alignas(SimdType) SimdType tie_values{};
+            for (int lane = 0; lane < lanes; ++lane) {
+                tie_values.set_element(lane, tie_inputs[lane % tie_input_count]);
+            }
+            const SimdType tie_result = apply_simd_unary_math(tie_values, op);
+            for (int lane = 0; lane < lanes; ++lane) {
+                const double expected = round_nearest_even_default(tie_values.element(lane));
+                if (!double_matches_fallback(tie_result.element(lane), expected)) {
+                    harness.add_result(test_name, false, "nearest-even tie mismatch, lane " + std::to_string(lane));
                     return false;
                 }
             }
