@@ -557,7 +557,7 @@ void after_effects_common_render(int width, int height, PF_InData* in_data, cons
 		precision = ParameterHelper::ReadList(ParameterID::render_precision) - 1;
 	}
 
-	static_assert(mt::environment::is_x64, "Only x86_64 implemented");
+	static_assert(mt::environment::is_x86_64, "Only x86_64 implemented");
 	if constexpr (mt::environment::compiler_has_avx512dq && mt::environment::compiler_has_avx512f) {
 		//Compiler mode supports micro architecture level 4 (AVX-512).  
 		if (precision == 0) {

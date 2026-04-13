@@ -9,7 +9,7 @@ This is a simple plug-in I built test intergrating OpenFX and After Effects into
 ## License:
 My code may be used under the MIT License.
 
-Code in the 3rd-party folder is subject to its own license.
+Code in the external folder is subject to its own license.
 
 
 

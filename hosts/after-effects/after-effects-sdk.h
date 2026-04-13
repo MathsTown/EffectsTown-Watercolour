@@ -35,7 +35,7 @@ Project Configuration Notes :
 
 A Visual Studio project should have the following set to complile After Effects Effects SDK.
 
-	"Additional Include Directories": ../../3rd-party/AfterEffectsSDK/Examples/Headers/;../../3rd-party/AfterEffectsSDK/Examples/Headers/SP;../../3rd-party/AfterEffectsSDK/Examples/Util;
+	"Additional Include Directories": ../../external/AfterEffectsSDK/Examples/Headers/;../../external/AfterEffectsSDK/Examples/Headers/SP;../../external/AfterEffectsSDK/Examples/Util;
 	"Preprocessor Definitions": MSWindows;WIN32;_WINDOWS;
 
 	"Struct Member Alignment": default
@@ -46,8 +46,8 @@ A Visual Studio project should have the following set to complile After Effects 
 Setup a custom build tool for PIPL resource file "ae.r"  (put in project directory):
 
 	"Command": 
-	cl /I "$(ProjectDir)..\..\3rd-party\AfterEffectsSDK\Examples\Headers" /EP "%(Filename).r" > "$(IntDir)"\\"%(Filename).rr"
-	"$(ProjectDir)..\..\3rd-party\AfterEffectsSDK\Examples\Resources\PiPLTool" "$(IntDir)%(Filename).rr" "$(IntDir)%(Filename).rrc"
+	cl /I "$(ProjectDir)..\..\external\AfterEffectsSDK\Examples\Headers" /EP "%(Filename).r" > "$(IntDir)"\\"%(Filename).rr"
+	"$(ProjectDir)..\..\external\AfterEffectsSDK\Examples\Resources\PiPLTool" "$(IntDir)%(Filename).rr" "$(IntDir)%(Filename).rrc"
 	cl /D "MSWindows" /EP $(IntDir)%(Filename).rrc >               "$(ProjectDir)"\\"%(Filename)".rc
 
 	"Outputs":

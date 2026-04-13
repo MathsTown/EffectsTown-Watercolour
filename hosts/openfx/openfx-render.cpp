@@ -114,7 +114,7 @@ OfxStatus openfx_render(const OfxImageEffectHandle instance, OfxPropertySetHandl
 
 
     //CPU Dispatch (assuming x86_64 for now)
-    static_assert(mt::environment::is_x64, "Only x86_64 implemented");
+    static_assert(mt::environment::is_x86_64, "Only x86_64 implemented");
     if constexpr (mt::environment::compiler_has_avx512dq && mt::environment::compiler_has_avx512f) {
         //AVX-512 & AVX-512DQ supported by compiler.
         Renderer<Simd512Float32> renderer{};

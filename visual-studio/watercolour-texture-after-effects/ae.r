@@ -1,5 +1,5 @@
-#include "../../3rd-party/AfterEffectsSDK/Examples/Headers/AEConfig.h"
-#include "../../3rd-party/AfterEffectsSDK/Examples/Headers/AE_EffectVers.h"
+#include "../../external/AfterEffectsSDK/Examples/Headers/AEConfig.h"
+#include "../../external/AfterEffectsSDK/Examples/Headers/AE_EffectVers.h"
 
 #ifndef AE_OS_WIN
 	#include <AE_General.r>

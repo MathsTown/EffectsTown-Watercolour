@@ -27,7 +27,7 @@ htmldir := .\public_html
 
 
 #headers used by renderer
-common_depend = common\colour.h common\linear-algebra.h common\noise.h common\parameter-list.h common\input-transforms.h 3rd-party\simd\include\simd-f32.h 3rd-party\simd\include\simd-f64.h 3rd-party\simd\include\simd-concepts.h 3rd-party\simd\include\simd-uint32.h 3rd-party\simd\include\simd-uint64.h
+common_depend = common\colour.h common\linear-algebra.h common\noise.h common\parameter-list.h common\input-transforms.h external\simd\include\simd-f32.h external\simd\include\simd-f64.h external\simd\include\simd-concepts.h external\simd\include\simd-uint32.h external\simd\include\simd-uint64.h
 
 #===========================
 #Watercolour texture project
@@ -38,7 +38,7 @@ builddir_www := $(builddir)\watercolour-texture\www
 htmldir_www := $(htmldir)\effects\watercolour-texture\www
 imagedir := $(htmldir)\images
 project_dir := .\watercolour-texture
-simd_include := .\3rd-party\simd\include
+simd_include := .\external\simd\include
 
 watercolour-texture: watercolour-texture-fxhash watercolour-texture-www
 
