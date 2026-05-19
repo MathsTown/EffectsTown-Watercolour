@@ -155,29 +155,29 @@ ColourRGBA<S> Renderer<S>::render_pixel(S x, S y) const {
     auto evolve_y = S(parameter_evolve1 * sin(parameter_evolve2));
     
     
-    auto p3 = vec4(p, evolve_x, evolve_y);
+    auto p3 = vec4<S>(p, evolve_x, evolve_y);
     
 
 
-    auto nVec2 = p + (vec2(fbm(p3*0.05, 8, seed), fbm(p3*0.05 + 10.0f, 8, seed)) - 0.5f)*5.0f;
+    auto nVec2 = p + (vec2<S>(fbm(p3*0.05, 8, seed), fbm(p3*0.05 + 10.0f, 8, seed)) - 0.5f)*5.0f;
     
 
 
 
-    p3 = vec4(nVec2, evolve_x + 99.2 , evolve_y-99.2);    
-    auto nVec3 = nVec2 + vec2(fbm(p3 + 55.0f, 4, seed), fbm(p3 + 79.0f, 4, seed)) - 0.5f;
+    p3 = vec4<S>(nVec2, evolve_x + 99.2 , evolve_y-99.2);    
+    auto nVec3 = nVec2 + vec2<S>(fbm(p3 + 55.0f, 4, seed), fbm(p3 + 79.0f, 4, seed)) - 0.5f;
 
-    p3 = vec4(nVec3, nVec3.x+ evolve_x - 44.2, nVec3.y+evolve_y + 44.2);
-    auto nVec4 = nVec3 + vec2(fbm(p3 + 25.0f, 4, seed), fbm(p3 + 19.0f, 4, seed)) - 0.5f;
+    p3 = vec4<S>(nVec3, nVec3.x+ evolve_x - 44.2, nVec3.y+evolve_y + 44.2);
+    auto nVec4 = nVec3 + vec2<S>(fbm(p3 + 25.0f, 4, seed), fbm(p3 + 19.0f, 4, seed)) - 0.5f;
 
 
-    auto nVec5 = nVec4 + vec2(fbm(nVec4 - 12.0f, 4, seed), fbm(nVec4 - 19.0f, 4, seed)) - 0.5f;
-    auto nVec6 = nVec5 + vec2(fbm(nVec5 - 35.0f, 4, seed), fbm(nVec5 + 99.0f, 4, seed)) - 0.5f;
-    auto nVec7 = nVec6 + vec2(fbm(nVec6 - 88.0f, 4, seed), fbm(nVec6 - 1.0f, 4, seed)) - 0.5f;
+    auto nVec5 = nVec4 + vec2<S>(fbm(nVec4 - 12.0f, 4, seed), fbm(nVec4 - 19.0f, 4, seed)) - 0.5f;
+    auto nVec6 = nVec5 + vec2<S>(fbm(nVec5 - 35.0f, 4, seed), fbm(nVec5 + 99.0f, 4, seed)) - 0.5f;
+    auto nVec7 = nVec6 + vec2<S>(fbm(nVec6 - 88.0f, 4, seed), fbm(nVec6 - 1.0f, 4, seed)) - 0.5f;
     
-    auto r = fbm(vec4(nVec5, evolve_x*0.3f, evolve_y * 0.3f), 8,seed) * 0.65f;
-    auto g = fbm(vec4(nVec6, evolve_x*0.25f, evolve_y * 0.3f), 8, seed) * 0.65f;
-    auto b = fbm(vec4(nVec7, evolve_x*0.19f, evolve_y * 0.3f), 8, seed) * 0.65f;
+    auto r = fbm(vec4<S>(nVec5, evolve_x*0.3f, evolve_y * 0.3f), 8,seed) * 0.65f;
+    auto g = fbm(vec4<S>(nVec6, evolve_x*0.25f, evolve_y * 0.3f), 8, seed) * 0.65f;
+    auto b = fbm(vec4<S>(nVec7, evolve_x*0.19f, evolve_y * 0.3f), 8, seed) * 0.65f;
     
 
     

@@ -108,7 +108,7 @@ vec2<S> perform_input_transform(const std::string& transform_name, vec2<S> p, co
 	if (transform_name == "Wave") {
 		auto x = p.x;
 		auto y = p.y + 0.1f * special2* sin(2.0 * pi * p.x * special1);
-		return vec2{x, y};
+		return vec2<S>{x, y};
 	}
 	
 	
@@ -127,7 +127,7 @@ vec2<S> perform_input_transform(const std::string& transform_name, vec2<S> p, co
 		auto x = r * cos(theta);
 		auto y = r * sin(theta);
 		
-		return vec2{ x, y };
+		return vec2<S>{ x, y };
 	}
 
 
@@ -139,7 +139,7 @@ vec2<S> perform_input_transform(const std::string& transform_name, vec2<S> p, co
 
 		auto x = cos(p.x) * cosh(p.y);
 		auto y = -sin(p.x) * sinh(p.y);
-		return vec2{ x, y };
+		return vec2<S>{ x, y };
 	}
 
 	if (transform_name == "Complex Cosine Sqrt(r)") {
@@ -154,14 +154,14 @@ vec2<S> perform_input_transform(const std::string& transform_name, vec2<S> p, co
 		if (special2 != 1.0) p.x *= special2;
 		auto x = cos(p.x) * cosh(p.y);
 		auto y = -sin(p.x) * sinh(p.y );
-		return vec2{ x, y };
+		return vec2<S>{ x, y };
 	}
 
 
 	if (transform_name == "Cartesian to Polar") {
 		auto r = p.magnitude();
 		auto theta = atan2(p.y, p.x);
-		return vec2{r,theta };
+		return vec2<S>{r,theta };
 	}
 
 
