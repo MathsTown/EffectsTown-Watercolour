@@ -54,6 +54,7 @@ API:
 #include <concepts>
 #include "simd-concepts.h"
 #include "common_colour.h"
+#include "generic_rgb.h"
 
 namespace mt {
 
@@ -106,6 +107,9 @@ template <ColourComponent F> struct AdobeRgbLinear {
 
 	// Construct with linear Adobe RGB (1998) RGBA values.
 	AdobeRgbLinear(F red, F green, F blue, F alpha) noexcept : red(red), green(green), blue(blue), alpha(alpha) { }
+
+	// Explicitly construct from generic RGB channel values.
+	explicit AdobeRgbLinear(const GenericRgb<F>& colour) noexcept : red(colour.red), green(colour.green), blue(colour.blue), alpha(colour.alpha) { }
 
 	// Add another linear Adobe RGB (1998) colour to this colour, preserving this alpha.
 	AdobeRgbLinear& operator+=(const AdobeRgbLinear& rhs) noexcept;
@@ -166,6 +170,10 @@ template <ColourComponent F> struct AdobeRgbLinear {
 	// Replace NaN, infinities, and negative zero with finite canonical values.
 	[[nodiscard]]
 	AdobeRgbLinear sanitise_floats() const noexcept;
+
+	// Convert to generic RGB channel values.
+	[[nodiscard]]
+	GenericRgb<F> to_generic_rgb() const noexcept;
 
 	// Convert to transfer-encoded Adobe RGB (1998) RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
@@ -364,6 +372,15 @@ template <ColourComponent F>
 [[nodiscard]]
 inline AdobeRgbLinear<F> AdobeRgbLinear<F>::sanitise_floats() const noexcept {
 	return AdobeRgbLinear(detail::sanitise_component(red), detail::sanitise_component(green), detail::sanitise_component(blue), detail::sanitise_component(alpha));
+}
+
+/**************************************************************************************************
+ * Return this colour as generic RGB channel values.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline GenericRgb<F> AdobeRgbLinear<F>::to_generic_rgb() const noexcept {
+	return GenericRgb<F>(red, green, blue, alpha);
 }
 
 } // namespace mt

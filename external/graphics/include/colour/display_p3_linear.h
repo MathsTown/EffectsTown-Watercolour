@@ -52,6 +52,7 @@ API:
 #include <concepts>
 #include "simd-concepts.h"
 #include "common_colour.h"
+#include "generic_rgb.h"
 
 namespace mt {
 
@@ -98,6 +99,9 @@ template <ColourComponent F> struct DisplayP3Linear {
 
 	// Construct with linear Display P3 RGBA values.
 	DisplayP3Linear(F red, F green, F blue, F alpha) noexcept : red(red), green(green), blue(blue), alpha(alpha) { }
+
+	// Explicitly construct from generic RGB channel values.
+	explicit DisplayP3Linear(const GenericRgb<F>& colour) noexcept : red(colour.red), green(colour.green), blue(colour.blue), alpha(colour.alpha) { }
 
 	// Add another linear Display P3 colour to this colour, preserving this alpha.
 	DisplayP3Linear& operator+=(const DisplayP3Linear& rhs) noexcept;
@@ -158,6 +162,10 @@ template <ColourComponent F> struct DisplayP3Linear {
 	// Replace NaN, infinities, and negative zero with finite canonical values.
 	[[nodiscard]]
 	DisplayP3Linear sanitise_floats() const noexcept;
+
+	// Convert to generic RGB channel values.
+	[[nodiscard]]
+	GenericRgb<F> to_generic_rgb() const noexcept;
 
 	// Convert to transfer-encoded Display P3 RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
@@ -348,6 +356,15 @@ template <ColourComponent F>
 [[nodiscard]]
 inline DisplayP3Linear<F> DisplayP3Linear<F>::sanitise_floats() const noexcept {
 	return DisplayP3Linear(detail::sanitise_component(red), detail::sanitise_component(green), detail::sanitise_component(blue), detail::sanitise_component(alpha));
+}
+
+/**************************************************************************************************
+ * Return this colour as generic RGB channel values.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline GenericRgb<F> DisplayP3Linear<F>::to_generic_rgb() const noexcept {
+	return GenericRgb<F>(red, green, blue, alpha);
 }
 
 } // namespace mt

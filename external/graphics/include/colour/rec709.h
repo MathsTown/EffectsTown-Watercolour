@@ -53,6 +53,7 @@ API:
 #include <concepts>
 #include "simd-concepts.h"
 #include "common_colour.h"
+#include "generic_rgb.h"
 
 namespace mt {
 
@@ -106,6 +107,9 @@ template <ColourComponent F> struct Rec709 {
 	// Construct with Rec.709 RGBA values.
 	Rec709(F red, F green, F blue, F alpha) noexcept : red(red), green(green), blue(blue), alpha(alpha) { }
 
+	// Explicitly construct from generic RGB channel values.
+	explicit Rec709(const GenericRgb<F>& colour) noexcept : red(colour.red), green(colour.green), blue(colour.blue), alpha(colour.alpha) { }
+
 	// Premultiply alpha into the red, green, and blue components.
 	[[nodiscard]]
 	Rec709 premultiply_alpha() const noexcept;
@@ -137,6 +141,10 @@ template <ColourComponent F> struct Rec709 {
 	// Replace NaN, infinities, and negative zero with finite canonical values.
 	[[nodiscard]]
 	Rec709 sanitise_floats() const noexcept;
+
+	// Convert to generic RGB channel values.
+	[[nodiscard]]
+	GenericRgb<F> to_generic_rgb() const noexcept;
 
 	// Convert to linear Rec.709 RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
@@ -227,6 +235,15 @@ template <ColourComponent F>
 [[nodiscard]]
 inline Rec709<F> Rec709<F>::sanitise_floats() const noexcept {
 	return Rec709(detail::sanitise_component(red), detail::sanitise_component(green), detail::sanitise_component(blue), detail::sanitise_component(alpha));
+}
+
+/**************************************************************************************************
+ * Return this colour as generic RGB channel values.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline GenericRgb<F> Rec709<F>::to_generic_rgb() const noexcept {
+	return GenericRgb<F>(red, green, blue, alpha);
 }
 
 } // namespace mt

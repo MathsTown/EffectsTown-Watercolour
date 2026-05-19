@@ -53,6 +53,7 @@ API:
 #include <concepts>
 #include "simd-concepts.h"
 #include "common_colour.h"
+#include "generic_rgb.h"
 
 namespace mt {
 
@@ -106,6 +107,9 @@ template <ColourComponent F> struct Srgb {
 	// Construct with red, green, blue, and alpha values.
 	Srgb(F red, F green, F blue, F alpha) noexcept : red(red), green(green), blue(blue), alpha(alpha) { }
 
+	// Explicitly construct from generic RGB channel values.
+	explicit Srgb(const GenericRgb<F>& colour) noexcept : red(colour.red), green(colour.green), blue(colour.blue), alpha(colour.alpha) { }
+
 	// Premultiply alpha into the red, green, and blue components.
 	[[nodiscard]]
 	Srgb premultiply_alpha() const noexcept;
@@ -137,6 +141,10 @@ template <ColourComponent F> struct Srgb {
 	// Replace NaN, infinities, and negative zero with finite canonical values.
 	[[nodiscard]]
 	Srgb sanitise_floats() const noexcept;
+
+	// Convert to generic RGB channel values.
+	[[nodiscard]]
+	GenericRgb<F> to_generic_rgb() const noexcept;
 
 	// Convert to linear sRGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
@@ -227,6 +235,15 @@ template <ColourComponent F>
 [[nodiscard]]
 inline Srgb<F> Srgb<F>::sanitise_floats() const noexcept {
 	return Srgb(detail::sanitise_component(red), detail::sanitise_component(green), detail::sanitise_component(blue), detail::sanitise_component(alpha));
+}
+
+/**************************************************************************************************
+ * Return this colour as generic RGB channel values.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline GenericRgb<F> Srgb<F>::to_generic_rgb() const noexcept {
+	return GenericRgb<F>(red, green, blue, alpha);
 }
 
 } // namespace mt

@@ -36,6 +36,70 @@ Available types are `mt::Vec2`, `mt::Vec3`, `mt::Vec4`, `mt::Mat2`, `mt::Mat3`, 
 
 The vector API includes component-wise arithmetic, scalar arithmetic, swizzles, length/magnitude/normalize, dot/cross, distance, reflect/refract, mix/lerp, clamp/min/max, wrap/remap/rescale, smoothstep/step, degrees/radians, trig, exp/log/pow, and fused multiply-add helpers. The matrix API includes column-major `Mat2`, `Mat3`, and `Mat4` storage, row/column access, matrix and scalar arithmetic, matrix multiplication, vector-matrix multiplication in both orders, determinant, transpose, and inverse.
 
+## Colour
+
+The `colour` headers provide small, header-only colour types, colour-space conversions, gamut helpers, blend operations, and matte operations for scalar floating point code and Maths Town SIMD component types. Include everything with:
+
+```cpp
+#include "colour.h"
+```
+
+Supported colour families include:
+
+- Generic RGB carriers: `mt::GenericRgb`, `mt::Colour8`
+- sRGB: `mt::Srgb`, `mt::SrgbLinear`, `mt::SrgbHsv`, `mt::SrgbHsl`, `mt::SrgbLinearHsv`, `mt::SrgbLinearHsl`
+- Display P3: `mt::DisplayP3`, `mt::DisplayP3Linear`, `mt::DisplayP3Hsv`, `mt::DisplayP3Hsl`
+- Adobe RGB (1998): `mt::AdobeRgb`, `mt::AdobeRgbLinear`, `mt::AdobeRgbHsv`, `mt::AdobeRgbHsl`, `mt::AdobeRgbLinearHsv`, `mt::AdobeRgbLinearHsl`
+- ProPhoto RGB: `mt::ProPhotoRgb`, `mt::ProPhotoRgbLinear`, `mt::ProPhotoRgbHsv`, `mt::ProPhotoRgbHsl`, `mt::ProPhotoRgbLinearHsv`, `mt::ProPhotoRgbLinearHsl`
+- Rec.709: `mt::Rec709`, `mt::Rec709Linear`, `mt::Rec709Hsv`, `mt::Rec709Hsl`, `mt::Rec709LinearHsv`, `mt::Rec709LinearHsl`
+- Rec.2020: `mt::Rec2020`, `mt::Rec2020Linear`, `mt::Rec2020Hsv`, `mt::Rec2020Hsl`, `mt::Rec2020LinearHsv`, `mt::Rec2020LinearHsl`
+- ACES2065-1 / AP0: `mt::Aces2065_1`, `mt::Aces2065_1Hsv`, `mt::Aces2065_1Hsl`
+- ACEScg / AP1: `mt::Acescg`, `mt::AcescgHsv`, `mt::AcescgHsl`
+- XYZ: `mt::Xyz`, `mt::XyzD50`, `mt::XyzAces`
+- CIE Lab/LCh: `mt::Cielab`, `mt::Cielch`
+- Oklab/Oklch: `mt::Oklab`, `mt::Oklch`
+
+Shared colour concepts describe the generic API surface:
+
+- `mt::ColourComponent`: scalar floating point and Maths Town SIMD floating point component types
+- `mt::RgbaColour`: RGB/RGBA colour types with gamut and clipping operations
+- `mt::XyzaColour`: XYZ-style colour types
+- `mt::HsvaColour`: HSV-style colour types
+- `mt::HslaColour`: HSL-style colour types
+- `mt::LabaColour`: Lab-style colour types
+- `mt::LchaColour`: LCh-style colour types
+
+RGB types support operations such as:
+
+- construction from grey, RGB, and RGBA component values
+- explicit construction from `mt::GenericRgb` channel values
+- conversion to colour-space-neutral render/API values with `to_generic_rgb()`
+- alpha handling with `premultiply_alpha()` and `un_premultiply_alpha()`
+- range handling with `clamp()`, `clip()`, `clip_rgb()`, `no_negatives()`, and `sanitise_floats()`
+- gamut mapping with `fit_gamut()`
+- transfer conversion between encoded and linear forms, for example `to_linear()` and `to_transfer()`
+- conversion to XYZ with `to_xyz()`
+- conversion to HSV and HSL companion types with `to_hsv()` and `to_hsl()`
+- arithmetic operators for linear-light RGB types and ACES RGB types
+- SIMD component support through the same API shape where the component type is a Maths Town SIMD float
+
+`mt::GenericRgb` is a colour-space-neutral RGB/RGBA carrier for renderer and host boundaries. Colour-space RGB types convert to it implicitly by copying channel values, while conversion from `GenericRgb` back to a colour-space RGB type is explicit because it interprets generic channel values in that target space. `mt::Colour8` is a scalar 8-bit RGBA carrier with conversions to and from `GenericRgb<float>`.
+
+Shared RGB blend and matte operations include:
+
+- normal/source-over compositing with `blend_normal()`
+- separable blend modes: `blend_multiply()`, `blend_screen()`, `blend_overlay()`, `blend_darken()`, `blend_lighten()`, `blend_color_dodge()`, `blend_color_burn()`, `blend_hard_light()`, `blend_soft_light()`, `blend_difference()`, `blend_exclusion()`
+- arithmetic blend modes: `blend_linear_burn()`, `blend_linear_dodge()`, `blend_add()`, `blend_subtract()`, `blend_divide()`, `blend_linear_light()`, `blend_vivid_light()`, `blend_pin_light()`, `blend_hard_mix()`
+- non-separable blend modes: `blend_hue()`, `blend_saturation()`, `blend_color()`, `blend_luminosity()`
+- matte helpers: `matte_stencil_alpha()`, `matte_stencil_luma()`, `matte_silhouette_alpha()`, `matte_silhouette_luma()`, `matte_alpha_add()`
+
+XYZ, Lab, and LCh-style types support operations such as:
+
+- range handling with `clamp()`, `no_negatives()`, and `sanitise_floats()`
+- conversion between native white points, including D65, D50, and ACES white where appropriate
+- conversion between Cartesian and polar perceptual forms, such as `to_cielch()`, `to_cielab()`, `to_oklch()`, and `to_oklab()`
+- hue wrapping for LCh-style types with `wrap_hue()`
+
 ## Compiler Specific Notes
 
 ### GCC

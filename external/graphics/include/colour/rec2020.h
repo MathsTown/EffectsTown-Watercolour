@@ -54,6 +54,7 @@ API:
 #include <concepts>
 #include "simd-concepts.h"
 #include "common_colour.h"
+#include "generic_rgb.h"
 
 namespace mt {
 
@@ -107,6 +108,9 @@ template <ColourComponent F> struct Rec2020 {
 	// Construct with Rec.2020 RGBA values.
 	Rec2020(F red, F green, F blue, F alpha) noexcept : red(red), green(green), blue(blue), alpha(alpha) { }
 
+	// Explicitly construct from generic RGB channel values.
+	explicit Rec2020(const GenericRgb<F>& colour) noexcept : red(colour.red), green(colour.green), blue(colour.blue), alpha(colour.alpha) { }
+
 	// Premultiply alpha into the red, green, and blue components.
 	[[nodiscard]]
 	Rec2020 premultiply_alpha() const noexcept;
@@ -138,6 +142,10 @@ template <ColourComponent F> struct Rec2020 {
 	// Replace NaN, infinities, and negative zero with finite canonical values.
 	[[nodiscard]]
 	Rec2020 sanitise_floats() const noexcept;
+
+	// Convert to generic RGB channel values.
+	[[nodiscard]]
+	GenericRgb<F> to_generic_rgb() const noexcept;
 
 	// Convert to linear Rec.2020 RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
@@ -228,6 +236,15 @@ template <ColourComponent F>
 [[nodiscard]]
 inline Rec2020<F> Rec2020<F>::sanitise_floats() const noexcept {
 	return Rec2020(detail::sanitise_component(red), detail::sanitise_component(green), detail::sanitise_component(blue), detail::sanitise_component(alpha));
+}
+
+/**************************************************************************************************
+ * Return this colour as generic RGB channel values.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline GenericRgb<F> Rec2020<F>::to_generic_rgb() const noexcept {
+	return GenericRgb<F>(red, green, blue, alpha);
 }
 
 } // namespace mt
