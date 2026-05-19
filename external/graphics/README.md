@@ -1,132 +1,346 @@
-# Maths Town Graphics Support Library
+# Maths Town SIMD Library
 
-A small header-only library made for use with Maths Town projects.  I've made it public in case it useful to anyone. (Permissive MIT license)
+A small header-only SIMD library made for use with Maths Town projects.  I've made it public in case it useful to anyone. (Permissive MIT license)
 
 ## Adding to your Project
 This repo is designed to be added to your project using the git subtree command.
 
 To add the 1st time (to the external folder):
 ```
-git remote add graphics https://github.com/MathsTown/graphics.git
-git fetch graphics
-git subtree add --prefix=external/graphics graphics main --squash
+git remote add simd https://github.com/MathsTown/simd.git
+git fetch simd
+git subtree add --prefix=external/simd simd main --squash
 ```
 
 To update:
 ```
-git fetch graphics
-git subtree pull --prefix=external/graphics graphics main --squash
+git fetch simd
+git subtree pull --prefix=external/simd simd main --squash
 ```
 
 Add this path to your list of includes:
 ```
-external/graphics/include
-external/graphics/external/simd/include (or the simd code directly if you have subtreed it in.)
+external/simd/include
 ```
 
-## Linear Algebra
 
-The `linalg` headers provide small, header-only vector and matrix types for scalar floating point code and Maths Town SIMD component types. Include everything with:
+## Overview.
+This library abstracts SIMD types into more useful types.  It has two goals.
+- Allow generic code to be written that is optimised for different SIMD CPUs. 
+- Allow generic code to run at different precision levels (same code for f32 or f64).  This is common need for my fractal code.
 
-```cpp
-#include "linalg.h"
+c++20 is required.
+
+This repository is being prepared as a standalone open source library that can be used via git subtree.
+
+Note: Not all compilers support simd math functions (sin, cos, pow) etc.  Safe, but slower fallbacks to the standard library are used in this case.
+
+### CPU Levels.
+The code targets 4 different CPU levels:
+ - Fallback - A fallback for non simd or non x86_64/wasm.
+ - x86_64 level 1 (SSE2 +) - Covers practically all x86_64 CPUs.  128 bit insructions.
+ - x86_64 level 3 (AVX2 +) - CPUs that fully implement 256bit instructions.
+ - x86_64 level 4 (AVX-512 +) - CPUs that fully implement 512bit instructions.
+ - Extra instructions (such as SSE4.1, AVX) are used if detected at compile time.
+
+Now has WebAssembly (wasm) targets via emscripten.
+ - Fallback
+ - Simd128 (with native wasm intrisics).
+
+
+Generally, CPUs are restricted to the lower support level if they only have partial implmentation of an instruction size.  For example, there are some older CPUs that support AVX but not AVX2, these will need to use 128bit instrucitons.
+
+### SIMD Dispatch..
+
+For Windows, the best option is one build per x86-64 level.  Dispatch at download or install time. It is also possible to dispatch to different dynamic library files (.dll) at runtime.  Functions for runtime detection are included. Runtime dispatch is supported on MSVC only, but is much slower than compile time dispatch (using 512bit instructions when the compiler is not optimising 512 bit registers is sub-optimal).  
+
+For Linux, dispatch at compile time.
+
+For WebAssembly, compile simd and non-simd versions, detect support in Javasctipt then load.
+
+
+### Types
+- Fallback - For any host:
+  - FallbackUInt32
+  - FallbackInt32
+  - FallbackUInt64
+  - FallbackInt64
+  - FallbackFloat32
+  - FallbackFloat64
+
+- 128 bit (level 1) - For x86_64 and wasm:
+  - Simd128Uint32
+  - Simd128Int32
+  - Simd128Uint64
+  - Simd128Int64
+  - Simd128Float32
+  - Simd128Float64
+
+- 256 bit (level 3) - For x86_64:
+  - Simd256Uint32
+  - Simd256Int32
+  - Simd256Uint64
+  - Simd256Int64
+  - Simd256Float32
+  - Simd256Float64
+
+- 512 bit (level 4)- For x86_64:
+  - Simd512Uint32
+  - Simd512Int32
+  - Simd512Uint64
+  - Simd512Int64
+  - Simd512Float32
+  - Simd512Float64
+
+- Native (Alias to widest available type at compile time.  Typedef of above types.)
+  - SimdNativeUint32
+  - SimdNativeInt32
+  - SimdNativeUint64
+  - SimdNativeInt64
+  - SimdNativeFloat32
+  - SimdNativeFloat64
+
+All public API symbols are in the `mt` namespace (for example `mt::Simd128Float32`, `mt::SimdNativeFloat64`, and `mt::SimdFloat`).
+
+### Generic Functions
+You can write generic code for any floating point type (f32 or f64) like so:
 ```
-
-Available types are `mt::Vec2`, `mt::Vec3`, `mt::Vec4`, `mt::Mat2`, `mt::Mat3`, and `mt::Mat4`, with GLSL-style aliases `vec2`, `vec3`, `vec4`, `mat2`, `mat3`, and `mat4`.
-
-The vector API includes component-wise arithmetic, scalar arithmetic, swizzles, length/magnitude/normalize, dot/cross, distance, reflect/refract, mix/lerp, clamp/min/max, wrap/remap/rescale, smoothstep/step, degrees/radians, trig, exp/log/pow, and fused multiply-add helpers. The matrix API includes column-major `Mat2`, `Mat3`, and `Mat4` storage, row/column access, matrix and scalar arithmetic, matrix multiplication, vector-matrix multiplication in both orders, determinant, transpose, and inverse.
-
-## Colour
-
-The `colour` headers provide small, header-only colour types, colour-space conversions, gamut helpers, blend operations, and matte operations for scalar floating point code and Maths Town SIMD component types. Include everything with:
-
-```cpp
-#include "colour.h"
+template <mt::SimdFloat S>
+void my_function(S x, Sy); 
 ```
+`mt::SimdFloat` is a concept that will accept any of the floating point types above, or any user type that implements the concept.
 
-Supported colour families include:
+### Concepts
+Concepts allow you to specify the minimum level of functionality required by your generic function.
 
-- Generic RGB carriers: `mt::GenericRgb`, `mt::Colour8`
-- sRGB: `mt::Srgb`, `mt::SrgbLinear`, `mt::SrgbHsv`, `mt::SrgbHsl`, `mt::SrgbLinearHsv`, `mt::SrgbLinearHsl`
-- Display P3: `mt::DisplayP3`, `mt::DisplayP3Linear`, `mt::DisplayP3Hsv`, `mt::DisplayP3Hsl`
-- Adobe RGB (1998): `mt::AdobeRgb`, `mt::AdobeRgbLinear`, `mt::AdobeRgbHsv`, `mt::AdobeRgbHsl`, `mt::AdobeRgbLinearHsv`, `mt::AdobeRgbLinearHsl`
-- ProPhoto RGB: `mt::ProPhotoRgb`, `mt::ProPhotoRgbLinear`, `mt::ProPhotoRgbHsv`, `mt::ProPhotoRgbHsl`, `mt::ProPhotoRgbLinearHsv`, `mt::ProPhotoRgbLinearHsl`
-- Rec.709: `mt::Rec709`, `mt::Rec709Linear`, `mt::Rec709Hsv`, `mt::Rec709Hsl`, `mt::Rec709LinearHsv`, `mt::Rec709LinearHsl`
-- Rec.2020: `mt::Rec2020`, `mt::Rec2020Linear`, `mt::Rec2020Hsv`, `mt::Rec2020Hsl`, `mt::Rec2020LinearHsv`, `mt::Rec2020LinearHsl`
-- ACES2065-1 / AP0: `mt::Aces2065_1`, `mt::Aces2065_1Hsv`, `mt::Aces2065_1Hsl`
-- ACEScg / AP1: `mt::Acescg`, `mt::AcescgHsv`, `mt::AcescgHsl`
-- XYZ: `mt::Xyz`, `mt::XyzD50`, `mt::XyzAces`
-- CIE Lab/LCh: `mt::Cielab`, `mt::Cielch`
-- Oklab/Oklch: `mt::Oklab`, `mt::Oklch`
+Simd - Base SIMD-like value type
+ - storage/layout checks (`v`, `sizeof(v)`, `number_of_elements()`)
+ - copy/move/default construction
+ - support checks (`cpu_supported()`, `compiler_supported()`)
+ - lane metadata (`size_of_element()`, `number_of_elements()`)
+ - lane access (`element(i)`, `set_element(i, value)`)
+ - arithmetic with same type (`+`, `-`, `*`, `/` and compound assignments)
+ - construction helper (`make_sequential(...)`)
 
-Shared colour concepts describe the generic API surface:
+SimdSigned - Signed numeric SIMD type
+ - everything in `Simd`
+ - unary negation (`-x`)
+ - absolute value (`abs(x)`)
 
-- `mt::ColourComponent`: scalar floating point and Maths Town SIMD floating point component types
-- `mt::RgbaColour`: RGB/RGBA colour types with gamut and clipping operations
-- `mt::XyzaColour`: XYZ-style colour types
-- `mt::HsvaColour`: HSV-style colour types
-- `mt::HslaColour`: HSL-style colour types
-- `mt::LabaColour`: Lab-style colour types
-- `mt::LchaColour`: LCh-style colour types
+SimdReal - Real-valued SIMD type (floating point or fixed-point style)
+ - everything in `SimdSigned`
+ - rounding family (`floor`, `ceil`, `trunc`, `round`, `fract`)
+ - bounds helpers (`min`, `max`, `clamp`)
 
-RGB types support operations such as:
+SimdFloat - Floating-point SIMD type
+ - everything in `SimdReal`
+ - reciprocal approximation (`reciprocal_approx`)
+ - fused operations (`fma`, `fms`, `fnma`, `fnms`)
 
-- construction from grey, RGB, and RGBA component values
-- explicit construction from `mt::GenericRgb` channel values
-- conversion to colour-space-neutral render/API values with `to_generic_rgb()`
-- alpha handling with `premultiply_alpha()` and `un_premultiply_alpha()`
-- range handling with `clamp()`, `clip()`, `clip_rgb()`, `no_negatives()`, and `sanitise_floats()`
-- gamut mapping with `fit_gamut()`
-- transfer conversion between encoded and linear forms, for example `to_linear()` and `to_transfer()`
-- conversion to XYZ with `to_xyz()`
-- conversion to HSV and HSL companion types with `to_hsv()` and `to_hsl()`
-- arithmetic operators for linear-light RGB types and ACES RGB types
-- SIMD component support through the same API shape where the component type is a Maths Town SIMD float
+SimdFloat32 / SimdFloat64 - Precision constrained floating SIMD types
+ - everything in `SimdFloat`
+ - lane element type is exactly `float` / `double`
 
-`mt::GenericRgb` is a colour-space-neutral RGB/RGBA carrier for renderer and host boundaries. Colour-space RGB types convert to it implicitly by copying channel values, while conversion from `GenericRgb` back to a colour-space RGB type is explicit because it interprets generic channel values in that target space. `mt::Colour8` is a scalar 8-bit RGBA carrier with conversions to and from `GenericRgb<float>`.
+SimdMath - Real SIMD type with extended math support
+ - everything in `SimdReal`
+ - roots and powers (`sqrt`, `cbrt`, `pow`, `hypot`)
+ - trig/inverse trig (`sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`)
+ - hyperbolic/inverse hyperbolic (`sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh`)
+ - exponential/log family (`exp`, `exp2`, `exp10`, `expm1`, `log`, `log1p`, `log2`, `log10`)
 
-Shared RGB blend and matte operations include:
+SimdCompareOps - SIMD type with compare/blend operations
+ - everything in `Simd`
+ - compare functions (`compare_equal`, `compare_less`, `compare_less_equal`, `compare_greater`, `compare_greater_equal`)
+ - branchless select helpers (`if_equal`, `if_less`, `if_less_equal`, `if_greater`, `if_greater_equal`)
+ - masked blend (`blend(a, b, mask)`)
 
-- normal/source-over compositing with `blend_normal()`
-- separable blend modes: `blend_multiply()`, `blend_screen()`, `blend_overlay()`, `blend_darken()`, `blend_lighten()`, `blend_color_dodge()`, `blend_color_burn()`, `blend_hard_light()`, `blend_soft_light()`, `blend_difference()`, `blend_exclusion()`
-- arithmetic blend modes: `blend_linear_burn()`, `blend_linear_dodge()`, `blend_add()`, `blend_subtract()`, `blend_divide()`, `blend_linear_light()`, `blend_vivid_light()`, `blend_pin_light()`, `blend_hard_mix()`
-- non-separable blend modes: `blend_hue()`, `blend_saturation()`, `blend_color()`, `blend_luminosity()`
-- matte helpers: `matte_stencil_alpha()`, `matte_stencil_luma()`, `matte_silhouette_alpha()`, `matte_silhouette_luma()`, `matte_alpha_add()`
+Shared compare helpers:
+ - `simd-common.h` provides shared `compare_*`, `blend`, `if_*`, and floating-point `if_nan`
+ - raw `float` and `double` can use the same branchless helper API as SIMD/fallback types
 
-XYZ, Lab, and LCh-style types support operations such as:
+SimdInteger - Integer SIMD type (signed or unsigned)
+ - everything in `Simd`
+ - scalar arithmetic overloads (`simd op scalar`, `scalar op simd`, compound scalar assignments)
+ - bitwise operations (`&`, `|`, `^`, `~` and compound assignments)
+ - shifts (`<<`, `>>`)
+ - integer bounds helpers (`min`, `max`)
 
-- range handling with `clamp()`, `no_negatives()`, and `sanitise_floats()`
-- conversion between native white points, including D65, D50, and ACES white where appropriate
-- conversion between Cartesian and polar perceptual forms, such as `to_cielch()`, `to_cielab()`, `to_oklch()`, and `to_oklab()`
-- hue wrapping for LCh-style types with `wrap_hue()`
+SimdUInt - Unsigned integer SIMD type
+ - everything in `SimdInteger`
+ - bit rotates (`rotl`, `rotr`)
 
-## Compiler Specific Notes
+SimdInt - Signed integer SIMD type
+ - everything in `SimdInteger`
+ - signed helpers inherited via `SimdSigned` (`-x`, `abs(x)`)
+
+SimdUInt32 / SimdUInt64 - Width constrained unsigned integer SIMD types
+ - everything in `SimdUInt`
+ - lane element type is exactly `uint32_t` / `uint64_t`
+
+SimdInt32 / SimdInt64 - Width constrained signed integer SIMD types
+ - everything in `SimdInt`
+ - lane element type is exactly `int32_t` / `int64_t`
+
+SimdFloatToInt - Float SIMD type that supports bit reinterpret cast to matching unsigned int lanes
+ - everything in `SimdFloat`
+ - requires `T::U` (matching unsigned SIMD type)
+ - requires `bitcast_to_uint()`
+
+### Concepts Implemented by Types
+32-bit Floating Point: Simd512Float32, Simd256Float32, Simd128Float32 & FallbackFloat32 implement:
+- Simd
+- SimdSigned
+- SimdReal
+- SimdFloat
+- SimdFloat32
+- SimdMath (Full Simd for MSVC via SVML, but currently only slower fallback options for GCC and Clang)
+- SimdCompareOps
+- SimdFloatToInt
+
+64-bit Floating Point: Simd512Float64, Simd256Float64, Simd128Float64 & FallbackFloat64 implement:
+- Simd
+- SimdSigned
+- SimdReal
+- SimdFloat
+- SimdFloat64
+- SimdMath (Full Simd for MSVC via SVML, but currently only slower fallback options for GCC and Clang)
+- SimdCompareOps
+- SimdFloatToInt
+
+32-bit Integer: Simd512Int32, Simd256Int32, Simd128Int32 & FallbackInt32 implement:
+- Simd
+- SimdSigned
+- SimdInteger
+- SimdInt
+- SimdInt32
+- SimdCompareOps
+
+64-bit Integer: Simd512Int64, Simd256Int64, Simd128Int64 & FallbackInt64 implement:
+- Simd
+- SimdSigned
+- SimdInteger
+- SimdInt
+- SimdInt64
+- SimdCompareOps
+
+32-bit Unsigned Integer: Simd512Uint32, Simd256Uint32, Simd128Uint32 & FallbackUInt32 implement:
+- Simd
+- SimdInteger
+- SimdUInt
+- SimdUInt32
+- SimdCompareOps
+
+64-bit Unsigned Integer: Simd512Uint64, Simd256Uint64, Simd128Uint64 & FallbackUInt64 implement:
+- Simd
+- SimdInteger
+- SimdUInt
+- SimdUInt64
+- SimdCompareOps
+
+
+## Compilers Specific Notes
+Transcendental math operations fully implemented on MSVC by using the SVML library.  However other compilers use a simple fallback mechanism where lanes are unpacked and the std library is used.  I will try to implement these operations one day.
+
+### Microsoft C++ Compiler
+  Transcendental math operations such as `sin()`, `cos()`, `tan()`, `log()`, and `exp()` use the SVML library so are fully simd.
+
+### Clang
+  SVML is not available.  Transcendental math operations such as `sin()`, `cos()`, `tan()`, `log()`, and `exp()` use my code, which are currently just slow fallbacks. 
 
 ### GCC
-On Windows, with GCC use options: "-Wa,-muse-unaligned-vector-move" when using simd types as GCC can emit aligned loads on unaligned data. See [GCC bug 54412](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54412).
+  SVML is not available.  Transcendental math operations such as `sin()`, `cos()`, `tan()`, `log()`, and `exp()` use my code, which are currently just slow fallbacks. 
 
-## Running Tests
+  GCC disables intrinsics if they are not supported, so types that are not supported will not be exposed when compiling with GCC.
 
-The tests in this repository are mainly AI generated. 
+  On Windows with GCC use options: "-Wa,-muse-unaligned-vector-move" as GCC can emit aligned loads on unaligned data. See [GCC bug 54412](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54412).
 
-From the repository root, run the full local compiler test script:
+### Emscripten
+  SVML is not available.  Transcendental math operations such as `sin()`, `cos()`, `tan()`, `log()`, and `exp()` use my code, which are currently just slow javascipt fallbacks. 
 
-```powershell
-.\test.ps1
-```
+## Testing Suite
+If you wish to run tests, these are currently setup to run under PowerShell for Windows.  There are tests for 3 windows compilers: MSVC, gcc and clang (as clang-cl).
 
-This configures, builds, and runs the tests with AVX2 enabled for:
-
-- MSVC
-- ClangCL
-- MinGW GCC
-
-The script creates separate build folders under `build/` for each compiler and runs each executable through CTest.
-
-To run a single default test build manually:
+Windows (PowerShell), from the repository root (default generator/compiler on your machine):
 
 ```powershell
 cmake -S tests -B build
-cmake --build build
-ctest --test-dir build --output-on-failure
+cmake --build build --config Release
 ```
+
+Run the executable from the location your generator uses:
+
+```powershell
+# Visual Studio generators
+.\build\Release\simd_test.exe
+
+# Single-config generators such as Ninja or MinGW Makefiles
+.\build\simd_test.exe
+```
+
+### Test Microsoft C++ Compiler
+
+Windows (PowerShell), explicitly with MSVC (`cl`):
+
+```powershell
+cmake -S tests -B build\msvc -G "Visual Studio 17 2022" -A x64
+cmake --build build\msvc --config Release
+.\build\msvc\Release\simd_test.exe
+```
+
+This path is configured as a runtime-dispatch build. The binary is compiled with `/arch:AVX2`, and the test harness uses runtime CPU detection to decide whether the `Simd128`, `Simd256`, and `Simd512` suites should execute.
+
+### Test Clang (clang-cl) C++ Compiler
+
+Windows (PowerShell), explicitly with Clang (`clang-cl`):
+
+```powershell
+cmake -S tests -B build\clang -G "Visual Studio 17 2022" -A x64 -T ClangCL
+cmake --build build\clang --config Release
+.\build\clang\Release\simd_test.exe
+```
+
+This path is compile-time gated. Only the SIMD widths enabled by the compiler flags/macros for that build are expected to execute.
+
+### Test GCC C++ Compiler 
+GCC really does not like to see intrinsics from higher levels in the code, even if they are unreachable. There is a separate compilation mode to test each level of support, to make sure I don't rely on runtime checks for this in GCC.  (Whereas other compilers we just check at runtime)
+
+Windows (PowerShell), GCC level 1 mode (128 bit types, `SSE2` minimum):
+
+```powershell
+cmake -S tests -B build\gcc-sse2 -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER=g++ -DSIMD_TEST_MODE=SSE2
+cmake --build build\gcc-sse2
+.\build\gcc-sse2\simd_test.exe
+```
+
+Windows (PowerShell), GCC level 3 mode (256 bit types, `AVX2` minimum):
+
+```powershell
+cmake -S tests -B build\gcc-avx2 -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER=g++ -DSIMD_TEST_MODE=AVX2
+cmake --build build\gcc-avx2
+.\build\gcc-avx2\simd_test.exe
+```
+
+Windows (PowerShell), GCC level 4 mode (512 bit types, `AVX-512f and AVX-512dq` minimum):
+
+```powershell
+cmake -S tests -B build\gcc-avx512 -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER=g++ -DSIMD_TEST_MODE=AVX512
+cmake --build build\gcc-avx512
+.\build\gcc-avx512\simd_test.exe
+```
+
+The `gcc-avx512` executable is a true AVX-512 target. It must be run on a machine that supports the AVX-512 feature set compiled into that binary.
+
+### Test Emscripten / WebAssembly
+
+The browser build writes the generated site bundle into `build/public_html`. The Emscripten compile and link steps both use `-msimd128`, so the Wasm SIMD128 `Simd128*` tests run when the browser supports Wasm SIMD.
+
+```powershell
+emcmake cmake -S tests -B build\emscripten -G Ninja
+cmake --build build\emscripten
+```
+
+Run 
+```
+python -m http.server 8081 --directory build/public_html  
+```
+to start a small testing server on port 8081
