@@ -72,6 +72,7 @@ I've included FallbackUInt64 for use with Emscripen, but use SimdNativeUInt64 as
 
 #include "simd-cpuid.h"
 #include "simd-concepts.h"
+#include "simd-common.h"
 #include "simd-mask.h"
 #include "simd-wasm-helpers.h"
 
@@ -1014,40 +1015,6 @@ inline static Simd128UInt64 blend(const Simd128UInt64 if_false, const Simd128UIn
 }
 
 #endif //x86_64 / wasm
-
-
-/**************************************************************************************************
- * Templated Functions for all types
- * ************************************************************************************************/
-template <SimdUInt64 T>
-[[nodiscard("Value Calculated and not used (if_equal)")]]
-inline static T if_equal(const T value_a, const T value_b, const T if_true, const T if_false) noexcept {
-	return blend(if_false, if_true, compare_equal(value_a, value_b));
-}
-
-template <SimdUInt64 T>
-[[nodiscard("Value Calculated and not used (if_less)")]]
-inline static T if_less(const T value_a, const T value_b, const T if_true, const T if_false) noexcept {
-	return blend(if_false, if_true, compare_less(value_a, value_b));
-}
-
-template <SimdUInt64 T>
-[[nodiscard("Value Calculated and not used (if_less_equal)")]]
-inline static T if_less_equal(const T value_a, const T value_b, const T if_true, const T if_false) noexcept {
-	return blend(if_false, if_true, compare_less_equal(value_a, value_b));
-}
-
-template <SimdUInt64 T>
-[[nodiscard("Value Calculated and not used (if_greater)")]]
-inline static T if_greater(const T value_a, const T value_b, const T if_true, const T if_false) noexcept {
-	return blend(if_false, if_true, compare_greater(value_a, value_b));
-}
-
-template <SimdUInt64 T>
-[[nodiscard("Value Calculated and not used (if_greater_equal)")]]
-inline static T if_greater_equal(const T value_a, const T value_b, const T if_true, const T if_false) noexcept {
-	return blend(if_false, if_true, compare_greater_equal(value_a, value_b));
-}
 
 
 /**************************************************************************************************

@@ -154,6 +154,10 @@ SimdCompareOps - SIMD type with compare/blend operations
  - branchless select helpers (`if_equal`, `if_less`, `if_less_equal`, `if_greater`, `if_greater_equal`)
  - masked blend (`blend(a, b, mask)`)
 
+Shared compare helpers:
+ - `simd-common.h` provides shared `compare_*`, `blend`, `if_*`, and floating-point `if_nan`
+ - raw `float` and `double` can use the same branchless helper API as SIMD/fallback types
+
 SimdInteger - Integer SIMD type (signed or unsigned)
  - everything in `Simd`
  - scalar arithmetic overloads (`simd op scalar`, `scalar op simd`, compound scalar assignments)
@@ -247,6 +251,8 @@ Transcendental math operations fully implemented on MSVC by using the SVML libra
   SVML is not available.  Transcendental math operations such as `sin()`, `cos()`, `tan()`, `log()`, and `exp()` use my code, which are currently just slow fallbacks. 
 
   GCC disables intrinsics if they are not supported, so types that are not supported will not be exposed when compiling with GCC.
+
+  On Windows with GCC use options: "-Wa,-muse-unaligned-vector-move" as GCC can emit aligned loads on unaligned data. See [GCC bug 54412](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54412).
 
 ### Emscripten
   SVML is not available.  Transcendental math operations such as `sin()`, `cos()`, `tan()`, `log()`, and `exp()` use my code, which are currently just slow javascipt fallbacks. 
