@@ -1,0 +1,14 @@
+BasedOnStyle: WebKit
+Language: Cpp
+LineEnding: LF
+IndentWidth: 4
+TabWidth: 4
+ColumnLimit: 9000
+UseTab: ForIndentation
+BreakBeforeBraces: Attach
+BreakConstructorInitializers: BeforeColon
+SpaceBeforeCpp11BracedList: false
+SortIncludes: false
+AllowShortFunctionsOnASingleLine: Empty
+SeparateDefinitionBlocks: Always
+BreakAfterAttributes: Always
