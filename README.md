@@ -2,8 +2,15 @@
 
 A small header-only library made for use with Maths Town projects.  I've made it public in case it useful to anyone. (Permissive MIT license)
 
+These libraries are designed to work with my simd library. All ops can be be used on simd vectors.  (You need the simd library also)
+
+It contains:
+- A glsl style linear algebra (linalg.h)
+- A floating point colour management and conversion library (colour.h)
+
+
 ## Adding to your Project
-This repo is designed to be added to your project using the git subtree command.
+This repo is designed to be added to your project using the git subtree command.  You will also need to subtree the simd my repo.
 
 To add the 1st time (to the external folder):
 ```
@@ -21,7 +28,7 @@ git subtree pull --prefix=external/graphics graphics main --squash
 Add this path to your list of includes:
 ```
 external/graphics/include
-external/graphics/external/simd/include (or the simd code directly if you have subtreed it in.)
+external/simd/include
 ```
 
 ## Linear Algebra
@@ -107,7 +114,9 @@ On Windows, with GCC use options: "-Wa,-muse-unaligned-vector-move" when using s
 
 ## Running Tests
 
-The tests in this repository are mainly AI generated. 
+The tests in this repository are mainly AI generated, so they may not be perfect, but they seem reasonable comprehensive.  Colour conversion data to test against is generated in Python.
+
+Note: The test script pulls the main branch of the simd project automatically.
 
 From the repository root, run the full local compiler test script:
 

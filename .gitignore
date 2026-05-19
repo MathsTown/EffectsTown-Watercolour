@@ -3,3 +3,4 @@ temp/
 .obj
 .exe
 __pycache__/
+external/
