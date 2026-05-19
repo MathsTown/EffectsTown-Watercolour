@@ -33,9 +33,11 @@ Types:
 *******************************************************************************************************/
 #include "parameters.h"
 #include "simd-concepts.h"
-#include "linear-algebra.h"
+#include <linalg.h>
 
 #include <numbers>
+
+using namespace mt;
 
 /**************************************************************************************************
  *
@@ -79,9 +81,6 @@ inline void build_input_transforms_parameter_list(ParameterList& params) {
 template <mt::SimdFloat S>
 vec2<S> perform_input_transform(const std::string& transform_name, vec2<S> p, const ParameterList& params) {
 	constexpr typename S::F pi = 3.1415926535897932384626433832795;
-	
-	using namespace std::numbers;
-
 
 
 	//Pre-Transform (don't compute null-ops as they can affect image quality)

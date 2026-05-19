@@ -39,7 +39,8 @@ TODO: 8-BIT Support
 #include "config.h"
 
 
-#include "..\..\common\linear-algebra.h"
+#include <colour.h>
+#include <linalg.h>
 #include "simd-cpuid.h"
 #include "simd-f32.h"
 #include "simd-uint32.h"
@@ -97,7 +98,7 @@ OfxStatus openfx_render(const OfxImageEffectHandle instance, OfxPropertySetHandl
     check_openfx(global_PropertySuite->propGetDouble(in_args, kOfxPropTime, 0, &time));
 
     //Get the render window rectangle.
-    OfxRectI renderWindow;
+    OfxRectI renderWindow{};
     check_openfx(global_PropertySuite->propGetIntN(in_args, kOfxImageEffectPropRenderWindow, 4, &renderWindow.x1));
 
     //Get the output clip handle 
@@ -214,7 +215,7 @@ static ParameterList read_parameters(ParameterHelper& parameter_helper, OfxTime 
 
 *******************************************************************************************************/
 template <mt::SimdFloat S>
-inline static void copy_pixel_to_output_buffer(ClipHolder& output, int x, int y, int max_x, ColourRGBA<S> c) {
+inline static void copy_pixel_to_output_buffer(ClipHolder& output, int x, int y, int max_x, mt::GenericRgb<S> c) {
     const bool hasAlpha = output.componentsPerPixel == 4;
 
     if constexpr (!project_is_solid_render) {
@@ -226,15 +227,15 @@ inline static void copy_pixel_to_output_buffer(ClipHolder& output, int x, int y,
     case 8:
          {
             //TODO: Code not tested.
-            constexpr auto w8 = static_cast<Precision>(white8);
+            constexpr auto w8 = static_cast<Precision>(0xff);
             
             for (int i = 0; i < S::number_of_elements(); i++) {
                 if (x + i >= max_x) break;
                 const auto ptrDest = output.pixelAddress8(x+i, y);
-                ptrDest[0] = static_cast<uint8_t>(clamp(c.red.element(i) * w8,0.0f,w8));
-                ptrDest[1] = static_cast<uint8_t>(clamp(c.green.element(i) * w8, 0.0f, w8));
-                ptrDest[2] = static_cast<uint8_t>(clamp(c.blue.element(i) * w8, 0.0f, w8));
-                if (hasAlpha) ptrDest[3] = static_cast<uint8_t>(clamp(c.alpha.element(i) * w8, 0.0f, w8));
+                ptrDest[0] = static_cast<uint8_t>(mt::clamp(c.red.element(i) * w8,0.0f,w8));
+                ptrDest[1] = static_cast<uint8_t>(mt::clamp(c.green.element(i) * w8, 0.0f, w8));
+                ptrDest[2] = static_cast<uint8_t>(mt::clamp(c.blue.element(i) * w8, 0.0f, w8));
+                if (hasAlpha) ptrDest[3] = static_cast<uint8_t>(mt::clamp(c.alpha.element(i) * w8, 0.0f, w8));
             }
             break;
          }
@@ -384,12 +385,12 @@ Passes of to actual project renderer
 *******************************************************************************************************/
 template <mt::SimdFloat S>
 static inline void render_pixel32(RenderThreadData<S>* rd, int x, int y) {
-    ColourRGBA<S> c;
+    mt::GenericRgb<S> c;
     if constexpr (project_uses_input) {
         
         //Loads pixels from input buffer. 
         auto ptr = rd->input->pixelAddressFloat(x, y);
-        ColourRGBA<S> input_colour;
+        mt::GenericRgb<S> input_colour;
         if (ptr) {
             for (int i = 0; i < S::number_of_elements(); i++) {
                 input_colour.red.set_element(i, *(ptr++));

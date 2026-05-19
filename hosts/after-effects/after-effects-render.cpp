@@ -37,6 +37,8 @@ Description:
 #include "after-effects-parameter-helper.h"
 #include "..\..\common\util.h"
 
+#include <colour.h>
+#include <linalg.h>
 #include "simd-cpuid.h"
 #include "simd-f32.h"
 #include "simd-uint32.h"
@@ -60,7 +62,7 @@ Copies a value to the output buffer. (32-bit components)
 Note: If we are using SIMD the value may contain multiple pixels.
 *******************************************************************************************************/
 template <mt::SimdFloat S>
-void copy_to_output_32(PF_EffectWorld* output, int x, int y, int max_x, const ColourRGBA<S>& c) {
+void copy_to_output_32(PF_EffectWorld* output, int x, int y, int max_x, const mt::GenericRgb<S>& c) {
 	//Advance pointer to correct line (y).  (We must multiply by rowbytes in case the lines are padded.)  
 	auto ptrY = (uint8_t*)output->data;
 	ptrY += y * output->rowbytes;
@@ -84,16 +86,16 @@ Note: Adobe uses ARGB colour order, with unmultiplied alpha.
 Note: Adobe 16-bit is not full 16-bit.  White is 0x8000
 *******************************************************************************************************/
 template <mt::SimdFloat S>
-void copy_to_output_16(PF_EffectWorld* output, int x, int y, int max_x, ColourRGBA<S> c) {
+void copy_to_output_16(PF_EffectWorld* output, int x, int y, int max_x, mt::GenericRgb<S> c) {
 
 	
 	auto black = S(0.0);
 	auto white = S(adobe_white16);
 
-	c.red = clamp(c.red * white, black, white);
-	c.green = clamp(c.green * white, black, white);
-	c.blue = clamp(c.blue * white, black, white);
-	c.alpha = clamp(c.alpha * white, black, white);
+	c.red = mt::clamp(c.red * white, black, white);
+	c.green = mt::clamp(c.green * white, black, white);
+	c.blue = mt::clamp(c.blue * white, black, white);
+	c.alpha = mt::clamp(c.alpha * white, black, white);
 
 	//Advance pointer to correct line (y).  (We must multiply by rowbytes in case the lines are padded.)  
 	auto ptrY = (uint8_t*)output->data;
@@ -119,15 +121,15 @@ Note: If we are using SIMD the value may contain multiple pixels.
 Note: Adobe uses ARGB colour order, with unmultiplied alpha.
 *******************************************************************************************************/
 template <mt::SimdFloat S>
-void copy_to_output_8(PF_EffectWorld* output, int x, int y, int max_x, ColourRGBA<S> c) {
+void copy_to_output_8(PF_EffectWorld* output, int x, int y, int max_x, mt::GenericRgb<S> c) {
 	constexpr unsigned short adobe_white8 = 0xff;
 	
 	auto black = S(0.0);
 	auto white = S(adobe_white8);
-	c.red = clamp(c.red * white, black, white);
-	c.green = clamp(c.green * white, black, white);
-	c.blue = clamp(c.blue * white, black, white);
-	c.alpha = clamp(c.alpha * white, black, white);
+	c.red = mt::clamp(c.red * white, black, white);
+	c.green = mt::clamp(c.green * white, black, white);
+	c.blue = mt::clamp(c.blue * white, black, white);
+	c.alpha = mt::clamp(c.alpha * white, black, white);
 
 
 	//Advance pointer to correct line (y).  (We must multiply by rowbytes in case the lines are padded.)
@@ -146,10 +148,10 @@ void copy_to_output_8(PF_EffectWorld* output, int x, int y, int max_x, ColourRGB
 }
 
 /*******************************************************************************************************
-Gathers 32-bit ARGB data into SIMD vectors, returning a ColourRGBA struct.
+Gathers 32-bit ARGB data into SIMD vectors, returning a GenericRgb struct.
 SSE 128 bit registers
 *******************************************************************************************************/
-static inline ColourRGBA<mt::Simd128Float32> gather_image_data_sse(float* in) {
+static inline mt::GenericRgb<mt::Simd128Float32> gather_image_data_sse(float* in) {
 	const auto in1 = _mm_loadu_ps(in);
 	const auto in2 = _mm_loadu_ps(in + 4);
 	const auto in3 = _mm_loadu_ps(in + 8);
@@ -165,33 +167,33 @@ static inline ColourRGBA<mt::Simd128Float32> gather_image_data_sse(float* in) {
 	auto green = _mm_movelh_ps(r2, r4);
 	auto blue =  _mm_movehl_ps(r4, r2);
 
-	return ColourRGBA<mt::Simd128Float32>(red, green, blue, alpha);
+	return mt::GenericRgb<mt::Simd128Float32>(red, green, blue, alpha);
 }
 
 /*******************************************************************************************************
-Gathers 32-bit ARGB data into SIMD vectors, returning a ColourRGBA struct.
+Gathers 32-bit ARGB data into SIMD vectors, returning a GenericRgb struct.
 AVX 256 bit registers
 AVX2 Required.
 *******************************************************************************************************/
-static inline ColourRGBA<mt::Simd256Float32> gather_image_data_avx(float* in) {	
+static inline mt::GenericRgb<mt::Simd256Float32> gather_image_data_avx(float* in) {
 	const auto alpha = _mm256_i32gather_ps(in, _mm256_set_epi32(28, 24, 20, 16, 12, 8, 4, 0), 4);
 	const auto red =   _mm256_i32gather_ps(in, _mm256_set_epi32(29, 25, 21, 17, 13, 9, 5, 1), 4);
 	const auto green = _mm256_i32gather_ps(in, _mm256_set_epi32(30, 26, 22, 18, 14, 10, 6, 2), 4);
 	const auto blue =  _mm256_i32gather_ps(in, _mm256_set_epi32(31, 27, 23, 19, 15, 11, 7, 3), 4);	 
-	return ColourRGBA<mt::Simd256Float32>(red, green, blue, alpha);
+	return mt::GenericRgb<mt::Simd256Float32>(red, green, blue, alpha);
 }
 
 /*******************************************************************************************************
-Gathers 32-bit ARGB data into SIMD vectors, returning a ColourRGBA struct.
+Gathers 32-bit ARGB data into SIMD vectors, returning a GenericRgb struct.
 AVX 512 bit registers
 AVX-512F Required.
 *******************************************************************************************************/
-static inline ColourRGBA<mt::Simd512Float32> gather_image_data_avx512(float* in) {
+static inline mt::GenericRgb<mt::Simd512Float32> gather_image_data_avx512(float* in) {
 	const auto alpha = _mm512_i32gather_ps(_mm512_set_epi32(60, 56, 52, 48, 44, 40, 36, 32, 28, 24, 20, 16, 12, 8, 4, 0), in, 4);
 	const auto red =   _mm512_i32gather_ps(_mm512_set_epi32(61, 57, 53, 49, 45, 41, 37, 33, 29, 25, 21, 17, 13, 9, 5, 1), in, 4);
 	const auto green = _mm512_i32gather_ps(_mm512_set_epi32(62, 58, 54, 50, 46, 42, 38, 34, 30, 26, 22, 18, 14, 10, 6, 2), in, 4);
 	const auto blue =  _mm512_i32gather_ps(_mm512_set_epi32(63, 59, 55, 51, 47, 43, 39, 35, 31, 27, 23, 19, 15, 11, 7, 3), in, 4);
-	return ColourRGBA<mt::Simd512Float32>(red, green, blue, alpha);
+	return mt::GenericRgb<mt::Simd512Float32>(red, green, blue, alpha);
 }
 
 
@@ -202,14 +204,14 @@ static inline ColourRGBA<mt::Simd512Float32> gather_image_data_avx512(float* in)
 8-bit
 *******************************************************************************************************/
 template <mt::SimdFloat S>
-static inline ColourRGBA<S> read_input_pixel8(const RenderData<S>* rd, int x, int y) {	
+static inline mt::GenericRgb<S> read_input_pixel8(const RenderData<S>* rd, int x, int y) {
 	const int sourceOffset = ((rd->inputLayer->rowbytes * y) + (x * 4 * sizeof(uint8_t)));
 	uint8_t* ptr = reinterpret_cast<uint8_t*>(sourceOffset + reinterpret_cast<uint8_t*>(rd->inputLayer->data));
 
 	//Convert to float data  (probably better to use simd)
 	alignas(sizeof(S)) std::array<float, S::number_of_elements() * 4> float_data;
 	for (int i = 0; i < S::number_of_elements() * 4; i++) {
-		float_data[i] = static_cast<float>(*ptr++) / static_cast<float>(white8);
+		float_data[i] = static_cast<float>(*ptr++) / 255.0f;
 	}
 
 	//Gather colour data into SIMD vectors
@@ -218,7 +220,7 @@ static inline ColourRGBA<S> read_input_pixel8(const RenderData<S>* rd, int x, in
 	if constexpr (sizeof(S) == 64) 	return gather_image_data_avx512(&float_data[0]);
 	
 
-	return ColourRGBA<S>{};
+	return mt::GenericRgb<S>{};
 	
 }
 
@@ -226,7 +228,7 @@ static inline ColourRGBA<S> read_input_pixel8(const RenderData<S>* rd, int x, in
 16-bit
 *******************************************************************************************************/
 template <mt::SimdFloat S>
-static inline ColourRGBA<S> read_input_pixel16(const RenderData<S>* rd, int x, int y) {
+static inline mt::GenericRgb<S> read_input_pixel16(const RenderData<S>* rd, int x, int y) {
 	const int sourceOffset = ((rd->inputLayer->rowbytes * y) + (x * 4 * sizeof(uint16_t)));
 	uint16_t* ptr = reinterpret_cast<uint16_t*>(sourceOffset + reinterpret_cast<uint8_t*>(rd->inputLayer->data));
 	
@@ -242,14 +244,14 @@ static inline ColourRGBA<S> read_input_pixel16(const RenderData<S>* rd, int x, i
 	if constexpr (sizeof(S) == 64) return gather_image_data_avx512(&float_data[0]);
 	
 
-	return ColourRGBA<S>{};
+	return mt::GenericRgb<S>{};
 }
 
 /*******************************************************************************************************
 32-bit
 *******************************************************************************************************/
 template <mt::SimdFloat S>
-static inline ColourRGBA<S> read_input_pixel32(const RenderData<S>* rd, int x, int y) {
+static inline mt::GenericRgb<S> read_input_pixel32(const RenderData<S>* rd, int x, int y) {
 	const int sourceOffset = ((rd->inputLayer->rowbytes * y) + (x * 4 * sizeof(float))) ;
 	float* ptr = reinterpret_cast<float*>(sourceOffset + reinterpret_cast<uint8_t*>(rd->inputLayer->data));
 	
@@ -264,7 +266,7 @@ static inline ColourRGBA<S> read_input_pixel32(const RenderData<S>* rd, int x, i
 		//TODO
 	}
 	
-	return ColourRGBA<S>{};
+	return mt::GenericRgb<S>{};
 }
 
 
@@ -277,7 +279,7 @@ Passes of to actual project renderer
 template <mt::SimdFloat S>
 static inline void render_pixel8(const RenderData<S> * rd, int x, int y) {
 	if constexpr (project_uses_input) {
-		ColourRGBA<S> input_colour = read_input_pixel8(rd,x,y);
+		mt::GenericRgb<S> input_colour = read_input_pixel8(rd,x,y);
 		auto c =  rd->renderer.render_pixel_with_input(S::make_sequential(static_cast<S::F>(x)), S(static_cast<S::F>(y)), input_colour);
 		copy_to_output_8(rd->output, x, y, rd->area.right, c);
 	}
@@ -295,7 +297,7 @@ Passes of to actual project renderer
 template <mt::SimdFloat S>
 static inline void render_pixel16(const RenderData<S>* rd, int x, int y) {
 	if constexpr (project_uses_input) {
-		ColourRGBA<S> input_colour = read_input_pixel16(rd,x,y);
+		mt::GenericRgb<S> input_colour = read_input_pixel16(rd,x,y);
 		auto c = rd->renderer.render_pixel_with_input(S::make_sequential(static_cast<S::F>(x)), S(static_cast<S::F>(y)), input_colour);
 		copy_to_output_16(rd->output, x, y, rd->area.right, c);
 	}
@@ -313,7 +315,7 @@ Passes of to actual project renderer
 template <mt::SimdFloat S>
 static inline void render_pixel32(const RenderData<S>* rd, int x, int y) {
 	if constexpr (project_uses_input) {
-		ColourRGBA<S> input_colour = read_input_pixel32(rd,x,y);
+		mt::GenericRgb<S> input_colour = read_input_pixel32(rd,x,y);
 		auto c = rd->renderer.render_pixel_with_input(S::make_sequential(static_cast<S::F>(x)), S(static_cast<S::F>(y)), input_colour);
 		copy_to_output_32(rd->output, x, y, rd->area.right, c);
 	}
@@ -441,11 +443,13 @@ ParameterList read_parameters() {
 			p.value_string = ParameterHelper::ReadListAsString(p.id, p.list);
 			break;
 		case ParameterType::colour:
+		{
 			auto pixel = ParameterHelper::ReadColour(p.id);
 			p.red = pixel.red / 255.0f;
 			p.green = pixel.green / 255.0f;
 			p.blue = pixel.blue / 255.0f;
 			break;
+		}
 
 		default:
 			break;

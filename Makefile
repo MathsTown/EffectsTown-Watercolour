@@ -27,7 +27,7 @@ htmldir := .\public_html
 
 
 #headers used by renderer
-common_depend = common\colour.h common\linear-algebra.h common\noise.h common\parameter-list.h common\input-transforms.h external\graphics\include\linalg.h external\graphics\include\linalg\common.h external\graphics\include\linalg\vec2.h external\graphics\include\linalg\vec3.h external\graphics\include\linalg\vec4.h external\graphics\include\linalg\mat2.h external\graphics\include\linalg\mat3.h external\graphics\include\linalg\mat4.h external\simd\include\simd-f32.h external\simd\include\simd-f64.h external\simd\include\simd-concepts.h external\simd\include\simd-uint32.h external\simd\include\simd-uint64.h
+common_depend = common\noise.h common\parameter-list.h common\input-transforms.h external\graphics\include\colour.h external\graphics\include\colour\common_colour.h external\graphics\include\colour\generic_rgb.h external\graphics\include\colour\colour8.h external\graphics\include\linalg.h external\graphics\include\linalg\common.h external\graphics\include\linalg\vec2.h external\graphics\include\linalg\vec3.h external\graphics\include\linalg\vec4.h external\graphics\include\linalg\mat2.h external\graphics\include\linalg\mat3.h external\graphics\include\linalg\mat4.h external\simd\include\simd-common.h external\simd\include\simd-f32.h external\simd\include\simd-f64.h external\simd\include\simd-concepts.h external\simd\include\simd-uint32.h external\simd\include\simd-uint64.h
 
 #===========================
 #Watercolour texture project

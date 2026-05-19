@@ -30,7 +30,7 @@ Description:
 
 #pragma once
 
-#include "linear-algebra.h"
+#include <linalg.h>
 #include "simd-f32.h"
 #include "simd-f64.h"
 #include "simd-uint32.h"
@@ -42,12 +42,28 @@ Description:
 #include <limits>
 #include <bit>
 #include <immintrin.h>
-#include <concepts>
+#include <string>
+
+using namespace mt;
 
 /**************************************************************************************************
  * Constants
  * ************************************************************************************************/
 inline constexpr uint64_t bits_52 = 0b0000000000001111111111111111111111111111111111111111111111111111; //52 bits
+
+template <mt::SimdFloat64 S>
+inline S make_float64_from_uints_52bits(typename S::U64 value) {
+    if constexpr (requires { S::make_from_uints_52bits(value); }) {
+        return S::make_from_uints_52bits(value);
+    }
+    else {
+        S result{};
+        for (int lane = 0; lane < S::number_of_elements(); ++lane) {
+            result.set_element(lane, static_cast<typename S::F>(value.element(lane) & bits_52));
+        }
+        return result;
+    }
+}
 
 
 /**************************************************************************************************
@@ -178,7 +194,7 @@ inline S hash(const S& coordinate, uint64_t seed = 1) {
     auto seed64 = S::U64(seed);
     seed64 ^= coordinate.x.bitcast_to_uint64();
     auto r = split_mix_64(seed64);
-    auto f = S::make_from_uints_52bits(r);
+    auto f = make_float64_from_uints_52bits<S>(r);
     return f / S(static_cast<double>(bits_52));
 }
 
@@ -189,7 +205,7 @@ inline S hash(const vec2<S>& coordinate, uint64_t seed = 1) {
     seed64 ^= coordinate.x.bitcast_to_uint();
     seed64 ^= rotr(coordinate.y.bitcast_to_uint(), 32);
     auto r = split_mix_64(seed64);
-    auto f = S::make_from_uints_52bits(r);
+    auto f = make_float64_from_uints_52bits<S>(r);
     return f / S(static_cast<double>(bits_52));
 }
 
@@ -201,7 +217,7 @@ inline S hash(const vec3<S>& coordinate, uint64_t seed = 1) {
     seed64 ^= rotr(coordinate.y.bitcast_to_uint64(), 21);
     seed64 ^= rotr(coordinate.z.bitcast_to_uint64(), 42);
     auto r = split_mix_64(seed64);
-    auto f = S::make_from_uints_52bits(r);
+    auto f = make_float64_from_uints_52bits<S>(r);
     return f / S(static_cast<double>(bits_52));
 }
 
@@ -214,7 +230,7 @@ inline S hash(const vec4<S> & coordinate, uint64_t seed = 1){
     seed64 ^= rotr(coordinate.z.bitcast_to_uint(), 32);
     seed64 ^= rotr(coordinate.w.bitcast_to_uint(), 48);        
     auto r = split_mix_64(seed64);
-    auto f = S::make_from_uints_52bits(r); 
+    auto f = make_float64_from_uints_52bits<S>(r);
     return f / S(static_cast<double>(bits_52));
 }
 

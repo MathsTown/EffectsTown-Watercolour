@@ -34,8 +34,8 @@ Description:
 #include <numbers>
 #include <typeinfo>
 
-#include "../common/colour.h"
-#include "../common/linear-algebra.h"
+#include <colour.h>
+#include <linalg.h>
 #include "../common/noise.h"
 #include "../common/parameter-list.h"
 #include "..\common\input-transforms.h"
@@ -45,6 +45,8 @@ Description:
 #include "simd-uint32.h"
 #include "simd-concepts.h"
 
+
+using namespace mt;
 
 
 /**************************************************************************************************
@@ -93,8 +95,8 @@ class Renderer{
         }
 
         //Render
-        ColourRGBA<S> render_pixel(S x, S y) const;
-        ColourRGBA<S> render_pixel_with_input(S x, S y, ColourRGBA<S>) const;
+        mt::GenericRgb<S> render_pixel(S x, S y) const;
+        mt::GenericRgb<S> render_pixel_with_input(S x, S y, mt::GenericRgb<S>) const;
 
     private:
 
@@ -124,8 +126,8 @@ void Renderer<S>::set_size(int w, int h) noexcept {
  * 
  * ************************************************************************************************/
 template <mt::SimdFloat S>
-ColourRGBA<S> Renderer<S>::render_pixel(S x, S y) const {
-    if (width <=0 || height <=0) return ColourRGBA<S>{};
+mt::GenericRgb<S> Renderer<S>::render_pixel(S x, S y) const {
+    if (width <=0 || height <=0) return mt::GenericRgb<S>{};
     next_random<typename S::F>(seed); //Reset random seed so it is the same for each pixel
     
     auto parameter_scale = static_cast<typename S::F>(params.get_value(ParameterID::scale));
@@ -159,7 +161,7 @@ ColourRGBA<S> Renderer<S>::render_pixel(S x, S y) const {
     
 
 
-    auto nVec2 = p + (vec2<S>(fbm(p3*0.05, 8, seed), fbm(p3*0.05 + 10.0f, 8, seed)) - 0.5f)*5.0f;
+    auto nVec2 = p + (vec2<S>(fbm(p3*0.05f, 8, seed), fbm(p3*0.05f + 10.0f, 8, seed)) - 0.5f)*5.0f;
     
 
 
@@ -181,7 +183,7 @@ ColourRGBA<S> Renderer<S>::render_pixel(S x, S y) const {
     
 
     
-    return ColourRGBA{r,g,b}; 
+    return mt::GenericRgb<S>{r,g,b};
 
 
 
@@ -196,8 +198,8 @@ ColourRGBA<S> Renderer<S>::render_pixel(S x, S y) const {
  * an input pixel is given
  * ************************************************************************************************/
 template <mt::SimdFloat S>
-ColourRGBA<S> Renderer<S>::render_pixel_with_input(S x, S y, ColourRGBA<S>) const {
-    render_pixel(x, y);
+mt::GenericRgb<S> Renderer<S>::render_pixel_with_input(S x, S y, mt::GenericRgb<S>) const {
+    return render_pixel(x, y);
 }
 
 

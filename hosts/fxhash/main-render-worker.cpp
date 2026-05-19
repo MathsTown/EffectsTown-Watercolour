@@ -36,7 +36,7 @@ Description:
 #include "simd-f32.h"
 
 #include "../../watercolour-texture/renderer.h"
-#include "../../common/colour.h"
+#include <colour.h>
 #include "jsutil.h"
 #include <algorithm>
 #include <sstream>
@@ -49,13 +49,13 @@ thread_local bool params_initialized = false;
 thread_local std::vector<uint32_t> line_buffer {};
 
 template <mt::SimdFloat S>
-static uint32_t pack_colour_lane(const ColourRGBA<S>& c, int lane) noexcept {
-    return Colour8(
-        float_to_8bit(c.red.element(lane)),
-        float_to_8bit(c.green.element(lane)),
-        float_to_8bit(c.blue.element(lane)),
-        float_to_8bit(c.alpha.element(lane))
-    ).to_uint32_keep_memory_layout();
+static uint32_t pack_colour_lane(const mt::GenericRgb<S>& c, int lane) noexcept {
+    return mt::Colour8(mt::GenericRgb<float>(
+        c.red.element(lane),
+        c.green.element(lane),
+        c.blue.element(lane),
+        c.alpha.element(lane)
+    )).to_uint32_keep_memory_layout();
 }
 
 /**************************************************************************************************

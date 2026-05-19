@@ -30,7 +30,7 @@ Description:
 
 //Project Specific Includes
 #include "parameter-id.h"
-#include "../common/colour.h"
+#include <colour.h>
 
 #include <string>
 #include <vector>
@@ -214,9 +214,9 @@ struct ParameterList {
 		throw(std::runtime_error("Parameter not found."));
 	}
 
-	ColourRGBA<float> get_colour(ParameterID id) const {
+	mt::GenericRgb<float> get_colour(ParameterID id) const {
 		for (auto& e : entries) {
-			if (id == e.id) return ColourRGBA<float>(e.red,e.green,e.blue);
+			if (id == e.id) return mt::GenericRgb<float>(e.red,e.green,e.blue);
 		}
 		throw(std::runtime_error("Parameter not found."));
 	}

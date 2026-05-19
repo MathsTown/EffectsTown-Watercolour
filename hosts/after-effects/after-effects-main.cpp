@@ -38,7 +38,7 @@ Description:
 #include "after-effects-render.h"
 
 #include "simd-cpuid.h"
-#include "..\..\common\linear-algebra.h"
+#include <linalg.h>
 
 #include <windows.h>
 #include <string>
@@ -256,7 +256,7 @@ static void after_effects_parameter_setup(PF_OutData* out_data) {
 		}
 		
 		case ParameterType::colour:
-			ParameterHelper::AddColour(p.id, p.name, static_cast<unsigned char>(clamp_01(p.red) * 255.0), static_cast<unsigned char>(clamp_01(p.green) * 255.0), static_cast<unsigned char>(clamp_01(p.blue) * 255.0));
+			ParameterHelper::AddColour(p.id, p.name, static_cast<unsigned char>(mt::clamp(p.red) * 255.0), static_cast<unsigned char>(mt::clamp(p.green) * 255.0), static_cast<unsigned char>(mt::clamp(p.blue) * 255.0));
 			break;
 
 		default:
