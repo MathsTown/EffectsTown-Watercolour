@@ -29,7 +29,8 @@ Description:    Umbrella include for the Maths Town colour library. Includes sha
 Includes:
                 Common:               common_colour
                 Operations:           colour_conversions gamut
-                Types:                Srgb SrgbLinear Xyz XyzD50 XyzAces Cielab Cielch Oklab Oklch SrgbHsv SrgbHsl SrgbLinearHsv SrgbLinearHsl
+                Types:                GenericRgb Colour8
+                                      Srgb SrgbLinear Xyz XyzD50 XyzAces Cielab Cielch Oklab Oklch SrgbHsv SrgbHsl SrgbLinearHsv SrgbLinearHsl
                                       DisplayP3 DisplayP3Linear DisplayP3Hsv DisplayP3Hsl
                                       AdobeRgb AdobeRgbLinear AdobeRgbHsv AdobeRgbHsl
                                       AdobeRgbLinearHsv AdobeRgbLinearHsl
@@ -44,6 +45,8 @@ Includes:
 #pragma once
 
 #include "colour/common_colour.h"
+#include "colour/generic_rgb.h"
+#include "colour/colour8.h"
 #include "colour/srgb.h"
 #include "colour/srgb_linear.h"
 #include "colour/xyz.h"

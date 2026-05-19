@@ -53,6 +53,7 @@ API:
 #include <concepts>
 #include "simd-concepts.h"
 #include "common_colour.h"
+#include "generic_rgb.h"
 
 namespace mt {
 
@@ -105,6 +106,9 @@ template <ColourComponent F> struct Rec709Linear {
 
 	// Construct with linear Rec.709 RGBA values.
 	Rec709Linear(F red, F green, F blue, F alpha) noexcept : red(red), green(green), blue(blue), alpha(alpha) { }
+
+	// Explicitly construct from generic RGB channel values.
+	explicit Rec709Linear(const GenericRgb<F>& colour) noexcept : red(colour.red), green(colour.green), blue(colour.blue), alpha(colour.alpha) { }
 
 	// Add another linear Rec.709 colour to this colour, preserving this alpha.
 	Rec709Linear& operator+=(const Rec709Linear& rhs) noexcept;
@@ -165,6 +169,10 @@ template <ColourComponent F> struct Rec709Linear {
 	// Replace NaN, infinities, and negative zero with finite canonical values.
 	[[nodiscard]]
 	Rec709Linear sanitise_floats() const noexcept;
+
+	// Convert to generic RGB channel values.
+	[[nodiscard]]
+	GenericRgb<F> to_generic_rgb() const noexcept;
 
 	// Convert to transfer-encoded Rec.709 RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
@@ -363,6 +371,15 @@ template <ColourComponent F>
 [[nodiscard]]
 inline Rec709Linear<F> Rec709Linear<F>::sanitise_floats() const noexcept {
 	return Rec709Linear(detail::sanitise_component(red), detail::sanitise_component(green), detail::sanitise_component(blue), detail::sanitise_component(alpha));
+}
+
+/**************************************************************************************************
+ * Return this colour as generic RGB channel values.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline GenericRgb<F> Rec709Linear<F>::to_generic_rgb() const noexcept {
+	return GenericRgb<F>(red, green, blue, alpha);
 }
 
 } // namespace mt

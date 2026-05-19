@@ -55,6 +55,7 @@ API:
 #include <concepts>
 #include "simd-concepts.h"
 #include "common_colour.h"
+#include "generic_rgb.h"
 
 namespace mt {
 
@@ -110,6 +111,9 @@ template <ColourComponent F> struct ProPhotoRgbLinear {
 
 	// Construct with linear ProPhoto RGB RGBA values.
 	ProPhotoRgbLinear(F red, F green, F blue, F alpha) noexcept : red(red), green(green), blue(blue), alpha(alpha) { }
+
+	// Explicitly construct from generic RGB channel values.
+	explicit ProPhotoRgbLinear(const GenericRgb<F>& colour) noexcept : red(colour.red), green(colour.green), blue(colour.blue), alpha(colour.alpha) { }
 
 	// Add another linear ProPhoto RGB colour to this colour, preserving this alpha.
 	ProPhotoRgbLinear& operator+=(const ProPhotoRgbLinear& rhs) noexcept;
@@ -170,6 +174,10 @@ template <ColourComponent F> struct ProPhotoRgbLinear {
 	// Replace NaN, infinities, and negative zero with finite canonical values.
 	[[nodiscard]]
 	ProPhotoRgbLinear sanitise_floats() const noexcept;
+
+	// Convert to generic RGB channel values.
+	[[nodiscard]]
+	GenericRgb<F> to_generic_rgb() const noexcept;
 
 	// Convert to transfer-encoded ProPhoto RGB RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
@@ -376,6 +384,15 @@ template <ColourComponent F>
 [[nodiscard]]
 inline ProPhotoRgbLinear<F> ProPhotoRgbLinear<F>::sanitise_floats() const noexcept {
 	return ProPhotoRgbLinear(detail::sanitise_component(red), detail::sanitise_component(green), detail::sanitise_component(blue), detail::sanitise_component(alpha));
+}
+
+/**************************************************************************************************
+ * Return this colour as generic RGB channel values.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline GenericRgb<F> ProPhotoRgbLinear<F>::to_generic_rgb() const noexcept {
+	return GenericRgb<F>(red, green, blue, alpha);
 }
 
 } // namespace mt

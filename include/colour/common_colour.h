@@ -92,6 +92,9 @@ namespace mt {
 template <typename F>
 concept ColourComponent = std::floating_point<F> || SimdFloat<F>;
 
+// Forward declaration of the colour-space-neutral RGB carrier.
+template <ColourComponent F> struct GenericRgb;
+
 /**************************************************************************************************
  * Concept for RGBA colour types.
  * ************************************************************************************************/
@@ -109,6 +112,7 @@ concept RgbaColour = requires(C colour) {
 	{ colour.clip() } -> std::same_as<C>;
 	{ colour.clip_rgb() } -> std::same_as<C>;
 	{ colour.fit_gamut() } -> std::same_as<C>;
+	{ colour.to_generic_rgb() } -> std::same_as<GenericRgb<typename C::ComponentType>>;
 };
 
 /**************************************************************************************************

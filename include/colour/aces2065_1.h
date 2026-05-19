@@ -55,6 +55,7 @@ API:
 #include <concepts>
 #include "simd-concepts.h"
 #include "common_colour.h"
+#include "generic_rgb.h"
 
 namespace mt {
 
@@ -110,6 +111,9 @@ template <ColourComponent F> struct Aces2065_1 {
 
 	// Construct with linear ACES2065-1 RGBA values.
 	Aces2065_1(F red, F green, F blue, F alpha) noexcept : red(red), green(green), blue(blue), alpha(alpha) { }
+
+	// Explicitly construct from generic RGB channel values.
+	explicit Aces2065_1(const GenericRgb<F>& colour) noexcept : red(colour.red), green(colour.green), blue(colour.blue), alpha(colour.alpha) { }
 
 	// Add another ACES2065-1 colour to this colour, preserving this alpha.
 	Aces2065_1& operator+=(const Aces2065_1& rhs) noexcept;
@@ -170,6 +174,10 @@ template <ColourComponent F> struct Aces2065_1 {
 	// Replace NaN, infinities, and negative zero with finite canonical values.
 	[[nodiscard]]
 	Aces2065_1 sanitise_floats() const noexcept;
+
+	// Convert to generic RGB channel values.
+	[[nodiscard]]
+	GenericRgb<F> to_generic_rgb() const noexcept;
 
 	// Convert to linear ACES2065-1 HSV (implemented in colour_conversions.h).
 	[[nodiscard]]
@@ -372,6 +380,15 @@ template <ColourComponent F>
 [[nodiscard]]
 inline Aces2065_1<F> Aces2065_1<F>::sanitise_floats() const noexcept {
 	return Aces2065_1(detail::sanitise_component(red), detail::sanitise_component(green), detail::sanitise_component(blue), detail::sanitise_component(alpha));
+}
+
+/**************************************************************************************************
+ * Return this colour as generic RGB channel values.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline GenericRgb<F> Aces2065_1<F>::to_generic_rgb() const noexcept {
+	return GenericRgb<F>(red, green, blue, alpha);
 }
 
 } // namespace mt

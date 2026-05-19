@@ -55,6 +55,7 @@ API:
 #include <concepts>
 #include "simd-concepts.h"
 #include "common_colour.h"
+#include "generic_rgb.h"
 
 namespace mt {
 
@@ -110,6 +111,9 @@ template <ColourComponent F> struct Acescg {
 
 	// Construct with linear ACEScg RGBA values.
 	Acescg(F red, F green, F blue, F alpha) noexcept : red(red), green(green), blue(blue), alpha(alpha) { }
+
+	// Explicitly construct from generic RGB channel values.
+	explicit Acescg(const GenericRgb<F>& colour) noexcept : red(colour.red), green(colour.green), blue(colour.blue), alpha(colour.alpha) { }
 
 	// Add another ACEScg colour to this colour, preserving this alpha.
 	Acescg& operator+=(const Acescg& rhs) noexcept;
@@ -170,6 +174,10 @@ template <ColourComponent F> struct Acescg {
 	// Replace NaN, infinities, and negative zero with finite canonical values.
 	[[nodiscard]]
 	Acescg sanitise_floats() const noexcept;
+
+	// Convert to generic RGB channel values.
+	[[nodiscard]]
+	GenericRgb<F> to_generic_rgb() const noexcept;
 
 	// Convert to linear ACEScg HSV (implemented in colour_conversions.h).
 	[[nodiscard]]
@@ -372,6 +380,15 @@ template <ColourComponent F>
 [[nodiscard]]
 inline Acescg<F> Acescg<F>::sanitise_floats() const noexcept {
 	return Acescg(detail::sanitise_component(red), detail::sanitise_component(green), detail::sanitise_component(blue), detail::sanitise_component(alpha));
+}
+
+/**************************************************************************************************
+ * Return this colour as generic RGB channel values.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline GenericRgb<F> Acescg<F>::to_generic_rgb() const noexcept {
+	return GenericRgb<F>(red, green, blue, alpha);
 }
 
 } // namespace mt
