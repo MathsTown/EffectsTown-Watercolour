@@ -2,3 +2,4 @@ build/
 temp/
 .obj
 .exe
+__pycache__/

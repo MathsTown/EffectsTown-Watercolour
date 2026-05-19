@@ -1,0 +1,14 @@
+# Keep project text files in LF so Git and clang-format agree on line endings.
+*.c text eol=lf
+*.cc text eol=lf
+*.cpp text eol=lf
+*.cxx text eol=lf
+*.h text eol=lf
+*.hpp text eol=lf
+*.hxx text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+*.md text eol=lf
+*.ps1 text eol=lf
+.clang-format text eol=lf
+.gitattributes text eol=lf
