@@ -75,6 +75,7 @@ I've included FallbackFloat32 for use with Emscripen, but use SimdNativeFloat32 
 #include "environment.h"
 #include "simd-cpuid.h"
 #include "simd-concepts.h"
+#include "simd-common.h"
 #include "simd-mask.h"
 #include "simd-uint32.h"
 #include "simd-uint64.h"
@@ -138,7 +139,7 @@ struct FallbackFloat32 {
 	//*****Make Functions****
 	static FallbackFloat32 make_sequential(F first) { return FallbackFloat32(first); }
 	static FallbackFloat32 make_set1(F v) { return FallbackFloat32(v); }
-	static FallbackFloat32 make_from_int32(FallbackUInt32 i) { return FallbackFloat32(static_cast<float>(i.v)); }
+	static FallbackFloat32 make_from_int32(FallbackUInt32 i) { return FallbackFloat32(static_cast<float>(static_cast<int32_t>(i.v))); }
 
 	//*****Cast Functions****
 	FallbackUInt32 bitcast_to_uint() const noexcept { return FallbackUInt32(std::bit_cast<uint32_t>(this->v)); }
@@ -204,7 +205,8 @@ inline static FallbackFloat32 fnms(const FallbackFloat32  a, const FallbackFloat
 inline static FallbackFloat32 floor(FallbackFloat32 a) { return  FallbackFloat32(std::floor(a.v)); }
 inline static FallbackFloat32 ceil(FallbackFloat32 a) { return  FallbackFloat32(std::ceil(a.v)); }
 inline static FallbackFloat32 trunc(FallbackFloat32 a) { return  FallbackFloat32(std::trunc(a.v)); }
-inline static FallbackFloat32 round(FallbackFloat32 a) { return  FallbackFloat32(std::round(a.v)); }
+// Project default: round() uses nearest-even (banker's rounding).
+inline static FallbackFloat32 round(FallbackFloat32 a) { return  FallbackFloat32(std::nearbyint(a.v)); }
 inline static FallbackFloat32 fract(FallbackFloat32 a) { return a - floor(a); }
 
 
@@ -421,7 +423,8 @@ namespace simd_detail_f32 {
 		inline __m512 name##_ps(__m512 a, __m512 b) { return map_binary(a, b, [](float x, float y) { return (expr); }); }
 
 	MT_F32_UNARY(trunc, std::trunc(x))
-	MT_F32_UNARY(round, std::round(x))
+	// Project default: round() uses nearest-even (banker's rounding).
+	MT_F32_UNARY(round, std::nearbyint(x))
 	MT_F32_UNARY(floor, std::floor(x))
 	MT_F32_UNARY(ceil, std::ceil(x))
 	MT_F32_UNARY(exp, std::exp(x))
@@ -605,7 +608,7 @@ struct Simd512Float32 {
 	static Simd512Float32 make_set1(F v) { return Simd512Float32(_mm512_set1_ps(v)); }
 	
 
-	static Simd512Float32 make_from_int32(Simd512UInt32 i) { return Simd512Float32(_mm512_cvtepu32_ps(i.v)); }
+	static Simd512Float32 make_from_int32(Simd512UInt32 i) { return Simd512Float32(_mm512_cvtepi32_ps(i.v)); }
 
 	//*****Cast Functions****
 
@@ -673,6 +676,7 @@ inline static Simd512Float32 ceil(Simd512Float32 a)  noexcept { return  Simd512F
 [[nodiscard("Value calculated and not used (trunc)")]]
 inline static Simd512Float32 trunc(Simd512Float32 a) noexcept { return  Simd512Float32(_mm512_trunc_ps(a.v)); }
 [[nodiscard("Value calculated and not used (round)")]]
+// Project default: round() uses nearest-even (banker's rounding).
 inline static Simd512Float32 round(Simd512Float32 a) noexcept { return  Simd512Float32(_mm512_roundscale_ps(a.v, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC)); }
 [[nodiscard("Value calculated and not used (fract)")]]
 inline static Simd512Float32 fract(Simd512Float32 a) noexcept { return a - floor(a); }
@@ -983,6 +987,7 @@ inline static Simd256Float32 ceil(Simd256Float32 a) noexcept { return Simd256Flo
 inline static Simd256Float32 trunc(Simd256Float32 a) noexcept {return Simd256Float32(_mm256_trunc_ps(a.v));}
 
 [[nodiscard("Value calculated and not used (round)")]]
+// Project default: round() uses nearest-even (banker's rounding).
 inline static Simd256Float32 round(Simd256Float32 a) noexcept {return Simd256Float32(_mm256_round_ps(a.v, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC)); }
 
 [[nodiscard("Value calculated and not used (fract)")]]
@@ -1282,10 +1287,11 @@ inline static Simd128Float32 trunc(Simd128Float32 a) noexcept {
 [[nodiscard("Value calculated and not used (round)")]]
 inline static Simd128Float32 round(Simd128Float32 a) noexcept {
 	if constexpr (mt::environment::compiler_has_sse4_1) {
+		// Project default: round() uses nearest-even (banker's rounding).
 		return Simd128Float32(_mm_round_ps(a.v, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC)); //SSE4.1
 	}
 	else {
-		return Simd128Float32(_mm_set_ps(std::round(a.element(3)), std::round(a.element(2)), std::round(a.element(1)), std::round(a.element(0))));
+		return Simd128Float32(_mm_set_ps(std::nearbyint(a.element(3)), std::nearbyint(a.element(2)), std::nearbyint(a.element(1)), std::nearbyint(a.element(0))));
 	}
 }
 
@@ -1696,51 +1702,6 @@ inline static Simd128Float32 blend(const Simd128Float32 if_false, const Simd128F
 }
 
 #endif
-
-/**************************************************************************************************
- * Templated Functions for all types
- * ************************************************************************************************/
-
-//If values a and b are equal return if_true, otherwise return if_false.
-template <SimdFloat32 T> 
-[[nodiscard("Value Calculated and not used (if_equal)")]]
-inline static T if_equal(const T value_a, const T value_b, const T if_true, const T if_false) noexcept {
-	return blend(if_false, if_true, compare_equal(value_a, value_b));
-}
-
-template <SimdFloat32 T>
-[[nodiscard("Value Calculated and not used (if_less)")]]
-inline static T if_less(const T value_a, const T value_b, const T if_true, const T if_false) noexcept {
-	return blend(if_false, if_true, compare_less(value_a, value_b));
-}
-
-template <SimdFloat32 T>
-[[nodiscard("Value Calculated and not used (if_less_equal)")]]
-inline static T if_less_equal(const T value_a, const T value_b, const T if_true, const T if_false) noexcept {
-	return blend(if_false, if_true, compare_less_equal(value_a, value_b));
-}
-
-template <SimdFloat32 T>
-[[nodiscard("Value Calculated and not used (if_greater)")]]
-inline static T if_greater(const T value_a, const T value_b, const T if_true, const T if_false) noexcept {
-	return blend(if_false, if_true, compare_greater(value_a, value_b));
-}
-
-
-template <SimdFloat32 T>
-[[nodiscard("Value Calculated and not used (if_greater_equal)")]]
-inline static T if_greater_equal(const T value_a, const T value_b, const T if_true, const T if_false) noexcept {
-	return blend(if_false, if_true, compare_greater_equal(value_a, value_b));
-}
-
-
-template <SimdFloat32 T>
-[[nodiscard("Value Calculated and not used (if_nan)")]]
-inline static T if_nan(const T value_a, const T if_true, const T if_false) noexcept {
-	return blend(if_false, if_true, isnan(value_a));
-}
-
-
 
 /**************************************************************************************************
  * MASK OPS

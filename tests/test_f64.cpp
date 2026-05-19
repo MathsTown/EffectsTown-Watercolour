@@ -294,12 +294,17 @@ std::string_view fma_name(FmaOp op) {
     return "unknown";
 }
 
+double round_nearest_even_default(double value) {
+    // Project default: round() uses nearest-even (banker's rounding).
+    return std::nearbyint(value);
+}
+
 double apply_scalar_unary(double value, UnaryMathOp op) {
     switch (op) {
     case UnaryMathOp::floor_op: return std::floor(value);
     case UnaryMathOp::ceil_op: return std::ceil(value);
     case UnaryMathOp::trunc_op: return std::trunc(value);
-    case UnaryMathOp::round_op: return std::round(value);
+    case UnaryMathOp::round_op: return round_nearest_even_default(value);
     case UnaryMathOp::fract_op: return value - std::floor(value);
     case UnaryMathOp::sqrt_op: return std::sqrt(value);
     case UnaryMathOp::abs_op: return std::abs(value);
@@ -773,6 +778,25 @@ bool run_float64_math_test_for_type(const std::string& type_name, CpuInformation
                 }
             }
         }
+        if (op == UnaryMathOp::round_op) {
+            constexpr double tie_inputs[] = {
+                -4.5, -3.5, -2.5, -1.5, -0.5,
+                 0.5,  1.5,  2.5,  3.5,  4.5
+            };
+            constexpr int tie_input_count = static_cast<int>(sizeof(tie_inputs) / sizeof(tie_inputs[0]));
+            alignas(SimdType) SimdType tie_values{};
+            for (int lane = 0; lane < lanes; ++lane) {
+                tie_values.set_element(lane, tie_inputs[lane % tie_input_count]);
+            }
+            const SimdType tie_result = apply_simd_unary_math(tie_values, op);
+            for (int lane = 0; lane < lanes; ++lane) {
+                const double expected = round_nearest_even_default(tie_values.element(lane));
+                if (!double_matches_fallback(tie_result.element(lane), expected)) {
+                    harness.add_result(test_name, false, "nearest-even tie mismatch, lane " + std::to_string(lane));
+                    return false;
+                }
+            }
+        }
         harness.add_result(test_name, true, "matched scalar reference");
     }
 
@@ -1148,6 +1172,58 @@ bool run_float64_suite_for_type(const char* type_name, CpuInformation cpu, TestH
            run_float64_math_test_for_type<SimdType>(type_name, cpu, harness);
 }
 
+bool run_float64_scalar_common_ops_test(TestHarness& harness) {
+    constexpr const char* test_name = "double scalar common compare/blend";
+
+    const double samples[] = {
+        -4.0,
+        -0.0,
+        0.0,
+        1.5,
+        42.0,
+        std::numeric_limits<double>::infinity(),
+        std::numeric_limits<double>::quiet_NaN()
+    };
+
+    for (double a : samples) {
+        for (double b : samples) {
+            const double if_true = a + 7.0;
+            const double if_false = b - 3.0;
+
+            const bool eq = (a == b);
+            const bool lt = (a < b);
+            const bool le = (a <= b);
+            const bool gt = (a > b);
+            const bool ge = (a >= b);
+            const bool a_is_nan = std::isnan(a);
+
+            if (compare_equal(a, b) != eq ||
+                compare_less(a, b) != lt ||
+                compare_less_equal(a, b) != le ||
+                compare_greater(a, b) != gt ||
+                compare_greater_equal(a, b) != ge ||
+                isnan(a) != a_is_nan) {
+                harness.add_result(test_name, false, "compare/isnan mismatch");
+                return false;
+            }
+
+            if (!double_matches_exact(blend(if_false, if_true, eq), eq ? if_true : if_false) ||
+                !double_matches_exact(if_equal(a, b, if_true, if_false), eq ? if_true : if_false) ||
+                !double_matches_exact(if_less(a, b, if_true, if_false), lt ? if_true : if_false) ||
+                !double_matches_exact(if_less_equal(a, b, if_true, if_false), le ? if_true : if_false) ||
+                !double_matches_exact(if_greater(a, b, if_true, if_false), gt ? if_true : if_false) ||
+                !double_matches_exact(if_greater_equal(a, b, if_true, if_false), ge ? if_true : if_false) ||
+                !double_matches_exact(if_nan(a, if_true, if_false), a_is_nan ? if_true : if_false)) {
+                harness.add_result(test_name, false, "blend/if_* mismatch");
+                return false;
+            }
+        }
+    }
+
+    harness.add_result(test_name, true, "raw double uses shared compare/blend/if_* helpers");
+    return true;
+}
+
 } // namespace
 
 void run_float64_arithmetic_tests(TestHarness& harness) {
@@ -1157,6 +1233,7 @@ void run_float64_arithmetic_tests(TestHarness& harness) {
     }
     CpuInformation cpu{};
 #define MT_RUN_OR_HALT(expr) do { if (!(expr)) { return; } } while (false)
+    MT_RUN_OR_HALT(run_float64_scalar_common_ops_test(harness));
     MT_RUN_OR_HALT(run_float64_suite_for_type<FallbackFloat64>("Fallback", cpu, harness));
 #if MT_SIMD_ARCH_X64 || (MT_SIMD_ARCH_WASM && defined(__wasm_simd128__))
     MT_RUN_OR_HALT(run_float64_suite_for_type<Simd128Float64>("Simd128", cpu, harness));
