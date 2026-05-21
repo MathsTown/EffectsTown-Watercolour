@@ -24,7 +24,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Type: ProPhotoRgbHsl
 
 Specification:
-- Conventional HSL coordinates over transfer-encoded ProPhoto RGB components.
+- Conventional HSL coordinates over gamma-2.4 encoded ProPhoto RGB components.
 - Underlying RGB specification: CSS Color 4 predefined prophoto-rgb
   https://www.w3.org/TR/css-color-4/#predefined-prophoto-rgb
 
@@ -34,7 +34,7 @@ Reference white:
 - Inherits the ProPhoto RGB D50 reference white from ProPhotoRgb.
 
 Conversions:
-- ProPhotoRgb::to_hsl() applies the common RGB to HSL transform to transfer-encoded ProPhoto RGB values.
+- ProPhotoRgb::to_hsl() applies the common RGB to HSL transform to gamma-2.4 encoded ProPhoto RGB values.
 - to_prophoto_rgb() applies the inverse HSL to RGB transform.
 - No linearisation, RGB-to-XYZ matrix conversion, or chromatic adaptation is performed by this type.
 - wrap_hue() wraps hue to a 0..1 turn.
@@ -60,11 +60,11 @@ API:
 
 namespace mt {
 
-// Forward declaration of the transfer-encoded ProPhoto RGB type.
+// Forward declaration of the gamma-2.4 encoded ProPhoto RGB type.
 template <ColourComponent F> struct ProPhotoRgb;
 
 /**************************************************************************************************
- * HSL coordinates for transfer-encoded ProPhoto RGB.
+ * HSL coordinates for gamma-2.4 encoded ProPhoto RGB.
  * Colourspace : ProPhoto RGB HSL
  * RGB Source  : https://www.w3.org/TR/css-color-4/#predefined-prophoto-rgb
  * HSL Model   : HSL transform applied to ProPhoto RGB components.
@@ -115,7 +115,7 @@ template <ColourComponent F> struct ProPhotoRgbHsl {
 	[[nodiscard]]
 	ProPhotoRgbHsl wrap_hue() const noexcept;
 
-	// Convert to transfer-encoded ProPhoto RGB RGBA (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded ProPhoto RGB RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
 	ProPhotoRgb<F> to_prophoto_rgb() const noexcept;
 };

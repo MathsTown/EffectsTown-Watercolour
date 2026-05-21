@@ -89,17 +89,17 @@ void test_display_p3_linear_double(TestContext& test) {
 	test.check_equal(sanitised.blue, std::numeric_limits<double>::max(), "DisplayP3Linear<double> sanitise infinity");
 	test.check_equal(sanitised.alpha, std::numeric_limits<double>::lowest(), "DisplayP3Linear<double> sanitise negative infinity");
 
-	// Reference data checks linear Display P3 to transfer-encoded Display P3.
+	// Reference data checks linear Display P3 to gamma-2.4 encoded Display P3.
 	for (const auto& colour_case : colour_reference::display_p3_display_p3_linear_cases) {
 		mt::DisplayP3Linear<double> colour(static_cast<double>(colour_case.expected[0]), static_cast<double>(colour_case.expected[1]), static_cast<double>(colour_case.expected[2]), static_cast<double>(colour_case.expected[3]));
 		mt::DisplayP3<double> actual = colour.to_display_p3();
-		mt::DisplayP3<double> transfer = colour.to_transfer();
+		mt::DisplayP3<double> transfer = colour.to_display_p3();
 		std::string message = std::string("DisplayP3Linear<double> to_display_p3 ") + colour_case.name;
 		test.check_close(actual.red, colour_case.source[0], 2.0e-11, message + " r");
 		test.check_close(actual.green, colour_case.source[1], 2.0e-11, message + " g");
 		test.check_close(actual.blue, colour_case.source[2], 2.0e-11, message + " b");
 		test.check_close(actual.alpha, colour_case.source[3], 2.0e-11, message + " a");
-		message = std::string("DisplayP3Linear<double> to_transfer ") + colour_case.name;
+		message = std::string("DisplayP3Linear<double> to_display_p3 ") + colour_case.name;
 		test.check_close(transfer.red, colour_case.source[0], 2.0e-11, message + " r");
 		test.check_close(transfer.green, colour_case.source[1], 2.0e-11, message + " g");
 		test.check_close(transfer.blue, colour_case.source[2], 2.0e-11, message + " b");

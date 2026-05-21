@@ -371,7 +371,7 @@ namespace detail {
  * amount = 0 returns a, amount = 1 returns b.
  *
  * No colour-space conversion, transfer decoding, clamping, or alpha compositing is performed.
- * For transfer-encoded RGB types this mixes encoded channel values; for linear RGB types this mixes
+ * For gamma-2.4 encoded RGB types this mixes encoded channel values; for linear RGB types this mixes
  * linear-light values. Choose the colour type deliberately before calling mix().
  * ************************************************************************************************/
 template <RgbaColour C>

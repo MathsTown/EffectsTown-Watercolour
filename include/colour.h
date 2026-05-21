@@ -36,8 +36,10 @@ Includes:
                                       AdobeRgbLinearHsv AdobeRgbLinearHsl
                                       ProPhotoRgb ProPhotoRgbLinear ProPhotoRgbHsv ProPhotoRgbHsl
                                       ProPhotoRgbLinearHsv ProPhotoRgbLinearHsl
-                                      Rec709 Rec709Linear Rec709Hsv Rec709Hsl Rec709LinearHsv Rec709LinearHsl
-                                      Rec2020 Rec2020Linear Rec2020Hsv Rec2020Hsl Rec2020LinearHsv Rec2020LinearHsl
+                                      Rec709Oetf Rec709Gamma24 Rec709Linear Rec709OetfHsv Rec709OetfHsl
+                                      Rec709Gamma24Hsv Rec709Gamma24Hsl Rec709LinearHsv Rec709LinearHsl
+                                      Rec2020Oetf Rec2020Gamma24 Rec2020Linear Rec2020OetfHsv Rec2020OetfHsl
+                                      Rec2020Gamma24Hsv Rec2020Gamma24Hsl Rec2020LinearHsv Rec2020LinearHsl
                                       Aces2065_1 Aces2065_1Hsv Aces2065_1Hsl
                                       Acescg AcescgHsv AcescgHsl
 
@@ -72,16 +74,22 @@ Includes:
 #include "colour/prophoto_rgb_hsl.h"
 #include "colour/prophoto_rgb_linear_hsv.h"
 #include "colour/prophoto_rgb_linear_hsl.h"
-#include "colour/rec709.h"
+#include "colour/rec709_oetf.h"
 #include "colour/rec709_linear.h"
-#include "colour/rec709_hsv.h"
-#include "colour/rec709_hsl.h"
+#include "colour/rec709_oetf_hsv.h"
+#include "colour/rec709_oetf_hsl.h"
+#include "colour/rec709_gamma24.h"
+#include "colour/rec709_gamma24_hsv.h"
+#include "colour/rec709_gamma24_hsl.h"
 #include "colour/rec709_linear_hsv.h"
 #include "colour/rec709_linear_hsl.h"
-#include "colour/rec2020.h"
+#include "colour/rec2020_oetf.h"
 #include "colour/rec2020_linear.h"
-#include "colour/rec2020_hsv.h"
-#include "colour/rec2020_hsl.h"
+#include "colour/rec2020_oetf_hsv.h"
+#include "colour/rec2020_oetf_hsl.h"
+#include "colour/rec2020_gamma24.h"
+#include "colour/rec2020_gamma24_hsv.h"
+#include "colour/rec2020_gamma24_hsl.h"
 #include "colour/rec2020_linear_hsv.h"
 #include "colour/rec2020_linear_hsl.h"
 #include "colour/aces2065_1.h"

@@ -26,19 +26,12 @@ struct RgbCase {
 	const char* name;
 };
 
-template <typename C>
-bool rgb_in_unit_gamut(const C& colour, double tolerance = 1.0e-10) {
-	return std::isfinite(colour.red) && std::isfinite(colour.green) && std::isfinite(colour.blue) &&
-	       colour.red >= -tolerance && colour.red <= 1.0 + tolerance &&
-	       colour.green >= -tolerance && colour.green <= 1.0 + tolerance &&
-	       colour.blue >= -tolerance && colour.blue <= 1.0 + tolerance;
+template <typename C> bool rgb_in_unit_gamut(const C& colour, double tolerance = 1.0e-10) {
+	return std::isfinite(colour.red) && std::isfinite(colour.green) && std::isfinite(colour.blue) && colour.red >= -tolerance && colour.red <= 1.0 + tolerance && colour.green >= -tolerance && colour.green <= 1.0 + tolerance && colour.blue >= -tolerance && colour.blue <= 1.0 + tolerance;
 }
 
-template <typename C>
-bool rgb_close(const C& a, const C& b, double tolerance = 1.0e-8) {
-	return std::fabs(a.red - b.red) <= tolerance &&
-	       std::fabs(a.green - b.green) <= tolerance &&
-	       std::fabs(a.blue - b.blue) <= tolerance;
+template <typename C> bool rgb_close(const C& a, const C& b, double tolerance = 1.0e-8) {
+	return std::fabs(a.red - b.red) <= tolerance && std::fabs(a.green - b.green) <= tolerance && std::fabs(a.blue - b.blue) <= tolerance;
 }
 
 double hue_distance(double a, double b) {
@@ -48,8 +41,7 @@ double hue_distance(double a, double b) {
 	return std::min(direct, 1.0 - direct);
 }
 
-template <typename C>
-void check_fit_gamut_type(TestContext& test, const std::string& type_name) {
+template <typename C> void check_fit_gamut_type(TestContext& test, const std::string& type_name) {
 	constexpr RgbCase cases[] = {
 		{ 1.35, -0.20, 0.45, "red high green negative" },
 		{ -0.25, 1.20, 0.30, "red negative green high" },
@@ -75,8 +67,13 @@ void check_fit_gamut_type(TestContext& test, const std::string& type_name) {
 		test.check_equal(fitted.alpha, colour.alpha, case_name + " alpha preserved");
 		test.check(!rgb_close(fitted, clipped), case_name + " is not a direct clip");
 		test.check(std::isfinite(source_oklch.lightness) && std::isfinite(source_oklch.chroma) && std::isfinite(source_oklch.hue), case_name + " source OkLCh finite");
-		test.check_close(fitted_oklch.lightness, source_oklch.lightness, 5.0e-5, case_name + " OkLCh lightness preserved");
-		test.check(hue_distance(fitted_oklch.hue, source_oklch.hue) <= 5.0e-4, case_name + " OkLCh hue preserved");
+		if (source_oklch.lightness >= 0.0 && source_oklch.lightness <= 1.0) {
+			test.check_close(fitted_oklch.lightness, source_oklch.lightness, 5.0e-5, case_name + " OkLCh lightness preserved");
+			test.check(hue_distance(fitted_oklch.hue, source_oklch.hue) <= 5.0e-4, case_name + " OkLCh hue preserved");
+		} else {
+			test.check(fitted_oklch.lightness >= -5.0e-5 && fitted_oklch.lightness <= 1.0 + 5.0e-5, case_name + " OkLCh lightness clipped to display range");
+			test.check(fitted_oklch.lightness <= source_oklch.lightness + 5.0e-5, case_name + " OkLCh lightness not increased");
+		}
 		test.check(fitted_oklch.chroma < source_oklch.chroma, case_name + " OkLCh chroma reduced");
 	}
 }
@@ -92,9 +89,11 @@ void test_gamut_float(TestContext& test) {
 	check_fit_gamut_type<mt::AdobeRgbLinear<double>>(test, "AdobeRgbLinear<double>");
 	check_fit_gamut_type<mt::ProPhotoRgb<double>>(test, "ProPhotoRgb<double>");
 	check_fit_gamut_type<mt::ProPhotoRgbLinear<double>>(test, "ProPhotoRgbLinear<double>");
-	check_fit_gamut_type<mt::Rec709<double>>(test, "Rec709<double>");
+	check_fit_gamut_type<mt::Rec709Oetf<double>>(test, "Rec709Oetf<double>");
+	check_fit_gamut_type<mt::Rec709Gamma24<double>>(test, "Rec709Gamma24<double>");
 	check_fit_gamut_type<mt::Rec709Linear<double>>(test, "Rec709Linear<double>");
-	check_fit_gamut_type<mt::Rec2020<double>>(test, "Rec2020<double>");
+	check_fit_gamut_type<mt::Rec2020Oetf<double>>(test, "Rec2020Oetf<double>");
+	check_fit_gamut_type<mt::Rec2020Gamma24<double>>(test, "Rec2020Gamma24<double>");
 	check_fit_gamut_type<mt::Rec2020Linear<double>>(test, "Rec2020Linear<double>");
 	check_fit_gamut_type<mt::Aces2065_1<double>>(test, "Aces2065_1<double>");
 	check_fit_gamut_type<mt::Acescg<double>>(test, "Acescg<double>");

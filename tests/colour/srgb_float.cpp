@@ -21,8 +21,7 @@ Scalar Srgb<float> tests.
 
 namespace {
 
-template <typename C>
-void check_rgb_gamut_api(TestContext& test, const std::string& name) {
+template <typename C> void check_rgb_gamut_api(TestContext& test, const std::string& name) {
 	C clipped = C(-0.25f, 0.5f, 1.25f, 2.0f).clip();
 	test.check_equal(clipped.red, 0.0f, name + " clip red");
 	test.check_equal(clipped.green, 0.5f, name + " clip green");
@@ -112,9 +111,11 @@ void test_srgb_float(TestContext& test) {
 	check_rgb_gamut_api<mt::AdobeRgbLinear<float>>(test, "AdobeRgbLinear<float>");
 	check_rgb_gamut_api<mt::ProPhotoRgb<float>>(test, "ProPhotoRgb<float>");
 	check_rgb_gamut_api<mt::ProPhotoRgbLinear<float>>(test, "ProPhotoRgbLinear<float>");
-	check_rgb_gamut_api<mt::Rec709<float>>(test, "Rec709<float>");
+	check_rgb_gamut_api<mt::Rec709Oetf<float>>(test, "Rec709Oetf<float>");
+	check_rgb_gamut_api<mt::Rec709Gamma24<float>>(test, "Rec709Gamma24<float>");
 	check_rgb_gamut_api<mt::Rec709Linear<float>>(test, "Rec709Linear<float>");
-	check_rgb_gamut_api<mt::Rec2020<float>>(test, "Rec2020<float>");
+	check_rgb_gamut_api<mt::Rec2020Oetf<float>>(test, "Rec2020Oetf<float>");
+	check_rgb_gamut_api<mt::Rec2020Gamma24<float>>(test, "Rec2020Gamma24<float>");
 	check_rgb_gamut_api<mt::Rec2020Linear<float>>(test, "Rec2020Linear<float>");
 	check_rgb_gamut_api<mt::Aces2065_1<float>>(test, "Aces2065_1<float>");
 	check_rgb_gamut_api<mt::Acescg<float>>(test, "Acescg<float>");
@@ -290,7 +291,7 @@ void test_srgb_float(TestContext& test) {
 	mt::Srgb<float> alpha_add = mt::matte_alpha_add(matte_bottom, mt::Srgb<float>(0.8f, 0.2f, 0.6f, 0.75f), 0.5f);
 	test.check_close(alpha_add.alpha, 0.875f, "Srgb<float> matte_alpha_add alpha");
 
-	// Reference data checks transfer-encoded sRGB to linear sRGB.
+	// Reference data checks gamma-2.4 encoded sRGB to linear sRGB.
 	for (const auto& colour_case : colour_reference::srgb_srgb_linear_cases) {
 		mt::Srgb<float> colour(static_cast<float>(colour_case.source[0]), static_cast<float>(colour_case.source[1]), static_cast<float>(colour_case.source[2]), static_cast<float>(colour_case.source[3]));
 		mt::SrgbLinear<float> actual = colour.to_linear();
@@ -301,7 +302,7 @@ void test_srgb_float(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 5.0e-6f, message + " alpha");
 	}
 
-	// Reference data checks transfer-encoded sRGB to HSV.
+	// Reference data checks gamma-2.4 encoded sRGB to HSV.
 	for (const auto& colour_case : colour_reference::srgb_hsv_cases) {
 		mt::Srgb<float> colour(static_cast<float>(colour_case.source[0]), static_cast<float>(colour_case.source[1]), static_cast<float>(colour_case.source[2]), static_cast<float>(colour_case.source[3]));
 		mt::SrgbHsv<float> actual = colour.to_hsv();
@@ -312,7 +313,7 @@ void test_srgb_float(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 5.0e-6f, message + " alpha");
 	}
 
-	// Reference data checks transfer-encoded sRGB to HSL.
+	// Reference data checks gamma-2.4 encoded sRGB to HSL.
 	for (const auto& colour_case : colour_reference::srgb_hsl_cases) {
 		mt::Srgb<float> colour(static_cast<float>(colour_case.source[0]), static_cast<float>(colour_case.source[1]), static_cast<float>(colour_case.source[2]), static_cast<float>(colour_case.source[3]));
 		mt::SrgbHsl<float> actual = colour.to_hsl();
@@ -323,7 +324,7 @@ void test_srgb_float(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 5.0e-6f, message + " alpha");
 	}
 
-	// Reference data checks transfer-encoded sRGB to CIE XYZ D65.
+	// Reference data checks gamma-2.4 encoded sRGB to CIE XYZ D65.
 	for (const auto& colour_case : colour_reference::srgb_xyz_d65_cases) {
 		mt::Srgb<float> colour(static_cast<float>(colour_case.source[0]), static_cast<float>(colour_case.source[1]), static_cast<float>(colour_case.source[2]), static_cast<float>(colour_case.source[3]));
 		mt::Xyz<float> actual = colour.to_xyz();

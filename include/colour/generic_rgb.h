@@ -84,7 +84,9 @@ template <ColourComponent F = float> struct GenericRgb {
 
 	// Return this colour as a generic RGB carrier.
 	[[nodiscard]]
-	GenericRgb to_generic_rgb() const noexcept { return *this; }
+	GenericRgb to_generic_rgb() const noexcept {
+		return *this;
+	}
 
 	// Premultiply alpha into the red, green, and blue components.
 	[[nodiscard]]

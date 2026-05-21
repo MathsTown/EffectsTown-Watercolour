@@ -79,13 +79,13 @@ void test_rec709_linear_simd256_float(TestContext& test) {
 		test.check_equal(sanitised.alpha.element(lane), std::numeric_limits<float>::lowest(), "Rec709Linear<Simd256Float32> sanitise negative infinity lane " + std::to_string(lane));
 	}
 
-	// Reference data checks linear Rec.709 to transfer-encoded Rec.709.
-	const int transfer_case_count = int(sizeof(colour_reference::rec709_rec709_linear_cases) / sizeof(colour_reference::rec709_rec709_linear_cases[0]));
+	// Reference data checks linear Rec.709 to gamma-2.4 encoded Rec.709.
+	const int transfer_case_count = int(sizeof(colour_reference::rec709_oetf_rec709_linear_cases) / sizeof(colour_reference::rec709_oetf_rec709_linear_cases[0]));
 	for (int first_case = 0; first_case < transfer_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
-		mt::Rec709<mt::Simd256Float32> actual = rec709_linear_batch(colour_reference::rec709_rec709_linear_cases, first_case, transfer_case_count, true).to_transfer();
+		mt::Rec709Oetf<mt::Simd256Float32> actual = rec709_linear_batch(colour_reference::rec709_oetf_rec709_linear_cases, first_case, transfer_case_count, true).to_rec709_oetf();
 		for (int lane = 0; lane < mt::Simd256Float32::number_of_elements() && first_case + lane < transfer_case_count; ++lane) {
-			const auto& colour_case = colour_reference::rec709_rec709_linear_cases[first_case + lane];
-			std::string message = std::string("Rec709Linear<Simd256Float32> to_transfer ") + colour_case.name + " lane " + std::to_string(lane);
+			const auto& colour_case = colour_reference::rec709_oetf_rec709_linear_cases[first_case + lane];
+			std::string message = std::string("Rec709Linear<Simd256Float32> to_rec709_oetf ") + colour_case.name + " lane " + std::to_string(lane);
 			test.check_close(actual.red.element(lane), colour_case.source[0], 2.0e-5f, message + " r");
 			test.check_close(actual.green.element(lane), colour_case.source[1], 2.0e-5f, message + " g");
 			test.check_close(actual.blue.element(lane), colour_case.source[2], 2.0e-5f, message + " b");

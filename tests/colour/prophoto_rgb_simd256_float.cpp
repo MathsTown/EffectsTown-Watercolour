@@ -105,7 +105,7 @@ void test_prophoto_rgb_simd256_float(TestContext& test) {
 		test.check_equal(sanitised.alpha.element(lane), std::numeric_limits<float>::lowest(), "ProPhotoRgb<Simd256Float32> sanitise negative infinity lane " + std::to_string(lane));
 	}
 
-	// Reference data checks transfer-encoded ProPhoto RGB to linear ProPhoto RGB.
+	// Reference data checks gamma-2.4 encoded ProPhoto RGB to linear ProPhoto RGB.
 	const int linear_case_count = int(sizeof(colour_reference::prophoto_rgb_prophoto_rgb_linear_cases) / sizeof(colour_reference::prophoto_rgb_prophoto_rgb_linear_cases[0]));
 	for (int first_case = 0; first_case < linear_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::ProPhotoRgbLinear<mt::Simd256Float32> actual = prophoto_rgb_batch(colour_reference::prophoto_rgb_prophoto_rgb_linear_cases, first_case, linear_case_count).to_linear();
@@ -119,7 +119,7 @@ void test_prophoto_rgb_simd256_float(TestContext& test) {
 		}
 	}
 
-	// Reference data checks transfer-encoded ProPhoto RGB to HSV.
+	// Reference data checks gamma-2.4 encoded ProPhoto RGB to HSV.
 	const int hsv_case_count = int(sizeof(colour_reference::prophoto_rgb_hsv_cases) / sizeof(colour_reference::prophoto_rgb_hsv_cases[0]));
 	for (int first_case = 0; first_case < hsv_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::ProPhotoRgbHsv<mt::Simd256Float32> actual = prophoto_rgb_batch(colour_reference::prophoto_rgb_hsv_cases, first_case, hsv_case_count).to_hsv();
@@ -133,7 +133,7 @@ void test_prophoto_rgb_simd256_float(TestContext& test) {
 		}
 	}
 
-	// Reference data checks transfer-encoded ProPhoto RGB to HSL.
+	// Reference data checks gamma-2.4 encoded ProPhoto RGB to HSL.
 	const int hsl_case_count = int(sizeof(colour_reference::prophoto_rgb_hsl_cases) / sizeof(colour_reference::prophoto_rgb_hsl_cases[0]));
 	for (int first_case = 0; first_case < hsl_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::ProPhotoRgbHsl<mt::Simd256Float32> actual = prophoto_rgb_batch(colour_reference::prophoto_rgb_hsl_cases, first_case, hsl_case_count).to_hsl();
@@ -147,7 +147,7 @@ void test_prophoto_rgb_simd256_float(TestContext& test) {
 		}
 	}
 
-	// Reference data checks transfer-encoded ProPhoto RGB to CIE XYZ D65.
+	// Reference data checks gamma-2.4 encoded ProPhoto RGB to CIE XYZ D65.
 	const int xyz_case_count = int(sizeof(colour_reference::prophoto_rgb_xyz_d65_cases) / sizeof(colour_reference::prophoto_rgb_xyz_d65_cases[0]));
 	for (int first_case = 0; first_case < xyz_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::Xyz<mt::Simd256Float32> actual = prophoto_rgb_batch(colour_reference::prophoto_rgb_xyz_d65_cases, first_case, xyz_case_count).to_xyz();
@@ -161,7 +161,7 @@ void test_prophoto_rgb_simd256_float(TestContext& test) {
 		}
 	}
 
-	// Reference data checks transfer-encoded ProPhoto RGB to CIE XYZ D50.
+	// Reference data checks gamma-2.4 encoded ProPhoto RGB to CIE XYZ D50.
 	const int xyz_d50_case_count = int(sizeof(colour_reference::prophoto_rgb_xyz_d50_cases) / sizeof(colour_reference::prophoto_rgb_xyz_d50_cases[0]));
 	for (int first_case = 0; first_case < xyz_d50_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::XyzD50<mt::Simd256Float32> actual = prophoto_rgb_batch(colour_reference::prophoto_rgb_xyz_d50_cases, first_case, xyz_d50_case_count).to_xyz_d50();
@@ -175,7 +175,7 @@ void test_prophoto_rgb_simd256_float(TestContext& test) {
 		}
 	}
 
-	// Reference data checks transfer-encoded ProPhoto RGB to CIE XYZ D65 using CAT02.
+	// Reference data checks gamma-2.4 encoded ProPhoto RGB to CIE XYZ D65 using CAT02.
 	const int xyz_cat02_case_count = int(sizeof(colour_reference::prophoto_rgb_xyz_d65_cat02_cases) / sizeof(colour_reference::prophoto_rgb_xyz_d65_cat02_cases[0]));
 	for (int first_case = 0; first_case < xyz_cat02_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::Xyz<mt::Simd256Float32> actual = prophoto_rgb_batch(colour_reference::prophoto_rgb_xyz_d65_cat02_cases, first_case, xyz_cat02_case_count).to_xyz_with_cat02();

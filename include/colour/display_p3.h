@@ -24,7 +24,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Type: DisplayP3
 
 Specification:
-- Transfer-encoded Display P3 RGB.
+- gamma-2.4 encoded Display P3 RGB.
 - Specification: CSS Color 4 predefined display-p3
   https://www.w3.org/TR/css-color-4/#predefined-display-p3
 
@@ -34,12 +34,12 @@ Reference white:
 - XYZ values are relative tristimulus values with Y = 1.0 for diffuse white.
 
 Conversions:
-- to_linear() applies the sRGB piecewise transfer function used by Display P3.
+- to_linear() applies the sRGB piecewise gamma 2.4 transfer function used by Display P3.
 - to_xyz() converts through DisplayP3Linear and the Display P3 D65 RGB-to-XYZ matrix.
-- to_hsv() and to_hsl() are conventional component-space transforms over transfer-encoded Display P3 values.
+- to_hsv() and to_hsl() are conventional component-space transforms over gamma-2.4 encoded Display P3 values.
 
 Components:
-- red, green, blue: nominal 0..1 transfer-encoded colour channels; out-of-range values are preserved unless clamped.
+- red, green, blue: nominal 0..1 gamma-2.4 encoded colour channels; out-of-range values are preserved unless clamped.
 - alpha: non-colour opacity channel, normally 0..1 and passed through unchanged.
 
 API:
@@ -60,10 +60,10 @@ namespace mt {
 // Forward declaration of the linear Display P3 type.
 template <ColourComponent F> struct DisplayP3Linear;
 
-// Forward declaration of the transfer-encoded Display P3 HSV type.
+// Forward declaration of the gamma-2.4 encoded Display P3 HSV type.
 template <ColourComponent F> struct DisplayP3Hsv;
 
-// Forward declaration of the transfer-encoded Display P3 HSL type.
+// Forward declaration of the gamma-2.4 encoded Display P3 HSL type.
 template <ColourComponent F> struct DisplayP3Hsl;
 
 // Forward declaration of the CIE XYZ D65 type.
@@ -71,7 +71,7 @@ template <ColourComponent F> struct Xyz;
 
 /**************************************************************************************************
  * DisplayP3 floating point or Simd floating point colour type.
- * Colourspace : Display P3 (sRGB transfer-encoded)
+ * Colourspace : Display P3 (sRGB gamma-2.4 encoded)
  * Definition  : https://www.w3.org/TR/css-color-4/#predefined-display-p3
  * PixelOrder  : RGBA
  * Alpha       : Assumed not-premultiplied for all operations except unpremultiply_alpha().

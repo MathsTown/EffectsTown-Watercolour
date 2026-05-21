@@ -35,7 +35,7 @@ Reference white:
 
 Conversions:
 - to_xyz() uses the Display P3 D65 RGB-to-XYZ matrix.
-- to_display_p3() and to_transfer() apply the sRGB piecewise transfer function used by Display P3.
+- to_display_p3() applies the sRGB piecewise gamma 2.4 transfer function used by Display P3.
 
 Components:
 - red, green, blue: linear-light colour channels, normally 0..1 for display-referred values; out-of-range values are preserved unless clamped.
@@ -44,7 +44,7 @@ Components:
 API:
 - Construction: default, grey, RGB, RGBA.
 - Operations: arithmetic operators, premultiply_alpha(), un_premultiply_alpha(), clamp(), clip(), clip_rgb(), fit_gamut(), no_negatives(), sanitise_floats().
-- Conversion: to_display_p3(), to_transfer(), to_xyz().
+- Conversion: to_display_p3(), to_xyz().
 
 *********************************************************************************************************/
 #pragma once
@@ -56,7 +56,7 @@ API:
 
 namespace mt {
 
-// Forward declaration of the transfer-encoded Display P3 type.
+// Forward declaration of the gamma-2.4 encoded Display P3 type.
 template <ColourComponent F> struct DisplayP3;
 
 // Forward declaration of the CIE XYZ D65 type.
@@ -167,13 +167,9 @@ template <ColourComponent F> struct DisplayP3Linear {
 	[[nodiscard]]
 	GenericRgb<F> to_generic_rgb() const noexcept;
 
-	// Convert to transfer-encoded Display P3 RGBA (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded Display P3 RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
 	DisplayP3<F> to_display_p3() const noexcept;
-
-	// Convert to the matching transfer-encoded RGB type (implemented in colour_conversions.h).
-	[[nodiscard]]
-	DisplayP3<F> to_transfer() const noexcept;
 
 	// Convert to CIE XYZ D65 (implemented in colour_conversions.h).
 	[[nodiscard]]

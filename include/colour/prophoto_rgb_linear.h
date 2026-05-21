@@ -37,7 +37,7 @@ Conversions:
 - to_xyz_d50() uses the ProPhoto RGB D50 RGB-to-XYZ matrix.
 - to_xyz() uses Bradford chromatic adaptation from D50 to D65.
 - to_xyz_with_cat02() provides the explicit CAT02 adaptation path.
-- to_prophoto_rgb() and to_transfer() apply the ProPhoto RGB 1.8 gamma transfer function with its linear toe.
+- to_prophoto_rgb() applies the ProPhoto RGB 1.8 gamma gamma 2.4 transfer function with its linear toe.
 - to_hsv() and to_hsl() are conventional component-space transforms over linear-light ProPhoto RGB values.
 
 Components:
@@ -47,7 +47,7 @@ Components:
 API:
 - Construction: default, grey, RGB, RGBA.
 - Operations: arithmetic operators, premultiply_alpha(), un_premultiply_alpha(), clamp(), clip(), clip_rgb(), fit_gamut(), no_negatives(), sanitise_floats().
-- Conversion: to_prophoto_rgb(), to_transfer(), to_hsv(), to_hsl(), to_xyz_d50(), to_xyz(), to_xyz_with_cat02().
+- Conversion: to_prophoto_rgb(), to_hsv(), to_hsl(), to_xyz_d50(), to_xyz(), to_xyz_with_cat02().
 
 *********************************************************************************************************/
 #pragma once
@@ -59,7 +59,7 @@ API:
 
 namespace mt {
 
-// Forward declaration of the transfer-encoded ProPhoto RGB type.
+// Forward declaration of the gamma-2.4 encoded ProPhoto RGB type.
 template <ColourComponent F> struct ProPhotoRgb;
 
 // Forward declaration of the linear ProPhoto RGB HSV type.
@@ -179,13 +179,9 @@ template <ColourComponent F> struct ProPhotoRgbLinear {
 	[[nodiscard]]
 	GenericRgb<F> to_generic_rgb() const noexcept;
 
-	// Convert to transfer-encoded ProPhoto RGB RGBA (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded ProPhoto RGB RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
 	ProPhotoRgb<F> to_prophoto_rgb() const noexcept;
-
-	// Convert to the matching transfer-encoded RGB type (implemented in colour_conversions.h).
-	[[nodiscard]]
-	ProPhotoRgb<F> to_transfer() const noexcept;
 
 	// Convert to linear ProPhoto RGB HSV (implemented in colour_conversions.h).
 	[[nodiscard]]

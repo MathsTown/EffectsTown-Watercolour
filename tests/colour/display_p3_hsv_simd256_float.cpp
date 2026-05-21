@@ -86,7 +86,7 @@ void test_display_p3_hsv_simd256_float(TestContext& test) {
 		test.check_equal(sanitised.alpha.element(lane), std::numeric_limits<float>::lowest(), "DisplayP3Hsv<Simd256Float32> sanitise negative infinity lane " + std::to_string(lane));
 	}
 
-	// Reference data checks transfer-encoded Display P3 HSV to transfer-encoded Display P3.
+	// Reference data checks gamma-2.4 encoded Display P3 HSV to gamma-2.4 encoded Display P3.
 	const int case_count = int(sizeof(colour_reference::display_p3_hsv_cases) / sizeof(colour_reference::display_p3_hsv_cases[0]));
 	for (int first_case = 0; first_case < case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::DisplayP3<mt::Simd256Float32> actual = display_p3_hsv_batch(colour_reference::display_p3_hsv_cases, first_case, case_count).to_display_p3();

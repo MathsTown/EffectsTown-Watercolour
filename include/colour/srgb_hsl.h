@@ -24,7 +24,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Type: SrgbHsl
 
 Specification:
-- Conventional HSL coordinates over transfer-encoded sRGB RGB components.
+- Conventional HSL coordinates over gamma-2.4 encoded sRGB RGB components.
 - CSS Color 4 defines HSL conversion in terms of sRGB.
 - Underlying RGB specification: CSS Color 4 predefined sRGB
   https://www.w3.org/TR/css-color-4/#predefined-sRGB
@@ -35,7 +35,7 @@ Reference white:
 - Inherits the sRGB D65 reference white from Srgb.
 
 Conversions:
-- Srgb::to_hsl() applies the common RGB to HSL transform to transfer-encoded sRGB values.
+- Srgb::to_hsl() applies the common RGB to HSL transform to gamma-2.4 encoded sRGB values.
 - to_srgb() applies the inverse HSL to RGB transform.
 - No linearisation, RGB-to-XYZ matrix conversion, or chromatic adaptation is performed by this type.
 - wrap_hue() wraps hue to a 0..1 turn.
@@ -61,11 +61,11 @@ API:
 
 namespace mt {
 
-// Forward declaration of the transfer-encoded sRGBA type.
+// Forward declaration of the gamma-2.4 encoded sRGBA type.
 template <ColourComponent F> struct Srgb;
 
 /**************************************************************************************************
- * HSL coordinates for transfer-encoded sRGB.
+ * HSL coordinates for gamma-2.4 encoded sRGB.
  * Colourspace : sRGB HSL
  * RGB Source  : https://www.w3.org/TR/css-color-4/#predefined-sRGB
  * HSL Model   : https://www.w3.org/TR/css-color-4/#the-hsl-notation
@@ -116,7 +116,7 @@ template <ColourComponent F> struct SrgbHsl {
 	[[nodiscard]]
 	SrgbHsl wrap_hue() const noexcept;
 
-	// Convert to transfer-encoded sRGBA (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded sRGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
 	Srgb<F> to_srgb() const noexcept;
 };

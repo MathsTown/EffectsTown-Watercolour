@@ -54,16 +54,22 @@ Type:           colour_conversions
 #include "prophoto_rgb_hsl.h"
 #include "prophoto_rgb_linear_hsv.h"
 #include "prophoto_rgb_linear_hsl.h"
-#include "rec709.h"
+#include "rec709_oetf.h"
 #include "rec709_linear.h"
-#include "rec709_hsv.h"
-#include "rec709_hsl.h"
+#include "rec709_oetf_hsv.h"
+#include "rec709_oetf_hsl.h"
+#include "rec709_gamma24.h"
+#include "rec709_gamma24_hsv.h"
+#include "rec709_gamma24_hsl.h"
 #include "rec709_linear_hsv.h"
 #include "rec709_linear_hsl.h"
-#include "rec2020.h"
+#include "rec2020_oetf.h"
 #include "rec2020_linear.h"
-#include "rec2020_hsv.h"
-#include "rec2020_hsl.h"
+#include "rec2020_oetf_hsv.h"
+#include "rec2020_oetf_hsl.h"
+#include "rec2020_gamma24.h"
+#include "rec2020_gamma24_hsv.h"
+#include "rec2020_gamma24_hsl.h"
 #include "rec2020_linear_hsv.h"
 #include "rec2020_linear_hsl.h"
 #include "aces2065_1.h"
@@ -95,8 +101,8 @@ namespace detail {
 	}
 
 	/**************************************************************************************************
-	 * Convert one sRGB transfer-encoded component to linear light.
-	 * Uses the extended sRGB transfer function from CSS Color 4 for negative values.
+	 * Convert one sRGB gamma-2.4 encoded component to linear light.
+	 * Uses the extended sRGB gamma 2.4 transfer function from CSS Color 4 for negative values.
 	 * ************************************************************************************************/
 	template <ColourComponent F>
 	[[nodiscard]]
@@ -120,8 +126,8 @@ namespace detail {
 	}
 
 	/**************************************************************************************************
-	 * Convert one linear-light component to sRGB transfer-encoded form.
-	 * Uses the extended sRGB transfer function from CSS Color 4 for negative values.
+	 * Convert one linear-light component to sRGB gamma-2.4 encoded form.
+	 * Uses the extended sRGB gamma 2.4 transfer function from CSS Color 4 for negative values.
 	 * ************************************************************************************************/
 	template <ColourComponent F>
 	[[nodiscard]]
@@ -145,8 +151,8 @@ namespace detail {
 	}
 
 	/**************************************************************************************************
-	 * Convert one Adobe RGB (1998) transfer-encoded component to linear light.
-	 * Adobe RGB (1998) defines a pure power transfer function, extended by reflection for negatives.
+	 * Convert one Adobe RGB (1998) gamma-2.4 encoded component to linear light.
+	 * Adobe RGB (1998) defines a pure power gamma 2.4 transfer function, extended by reflection for negatives.
 	 * ************************************************************************************************/
 	template <ColourComponent F>
 	[[nodiscard]]
@@ -161,8 +167,8 @@ namespace detail {
 	}
 
 	/**************************************************************************************************
-	 * Convert one linear-light component to Adobe RGB (1998) transfer-encoded form.
-	 * Adobe RGB (1998) defines a pure power transfer function, extended by reflection for negatives.
+	 * Convert one linear-light component to Adobe RGB (1998) gamma-2.4 encoded form.
+	 * Adobe RGB (1998) defines a pure power gamma 2.4 transfer function, extended by reflection for negatives.
 	 * ************************************************************************************************/
 	template <ColourComponent F>
 	[[nodiscard]]
@@ -177,8 +183,8 @@ namespace detail {
 	}
 
 	/**************************************************************************************************
-	 * Convert one ProPhoto RGB transfer-encoded component to linear light.
-	 * Uses the extended CSS Color 4 transfer function for negative values.
+	 * Convert one ProPhoto RGB gamma-2.4 encoded component to linear light.
+	 * Uses the extended CSS Color 4 gamma 2.4 transfer function for negative values.
 	 * ************************************************************************************************/
 	template <ColourComponent F>
 	[[nodiscard]]
@@ -200,8 +206,8 @@ namespace detail {
 	}
 
 	/**************************************************************************************************
-	 * Convert one linear-light component to ProPhoto RGB transfer-encoded form.
-	 * Uses the extended CSS Color 4 transfer function for negative values.
+	 * Convert one linear-light component to ProPhoto RGB gamma-2.4 encoded form.
+	 * Uses the extended CSS Color 4 gamma 2.4 transfer function for negative values.
 	 * ************************************************************************************************/
 	template <ColourComponent F>
 	[[nodiscard]]
@@ -223,12 +229,12 @@ namespace detail {
 	}
 
 	/**************************************************************************************************
-	 * Convert one Rec.709 transfer-encoded component to linear light.
+	 * Convert one Rec.709 OETF-encoded component to linear light.
 	 * Rec.709 defines a linear toe followed by a 0.45 power law over the valid 0..1 range.
 	 * ************************************************************************************************/
 	template <ColourComponent F>
 	[[nodiscard]]
-	inline F rec709_transfer_to_linear(F value) noexcept {
+	inline F rec709_oetf_to_linear(F value) noexcept {
 		using std::max; // For correct overload resolution
 		using std::pow; // For correct overload resolution
 
@@ -246,12 +252,12 @@ namespace detail {
 	}
 
 	/**************************************************************************************************
-	 * Convert one linear-light component to Rec.709 transfer-encoded form.
+	 * Convert one linear-light component to Rec.709 OETF-encoded form.
 	 * Rec.709 defines a linear toe followed by a 0.45 power law over the valid 0..1 range.
 	 * ************************************************************************************************/
 	template <ColourComponent F>
 	[[nodiscard]]
-	inline F linear_to_rec709_transfer(F value) noexcept {
+	inline F linear_to_rec709_oetf(F value) noexcept {
 		using std::max; // For correct overload resolution
 		using std::pow; // For correct overload resolution
 
@@ -268,12 +274,44 @@ namespace detail {
 	}
 
 	/**************************************************************************************************
-	 * Convert one Rec.2020 transfer-encoded component to linear light.
+	 * Convert one Rec.709 gamma-2.4 encoded component to linear light.
+	 * This is a pure display-gamma transfer, extended by reflection for negative values.
+	 * ************************************************************************************************/
+	template <ColourComponent F>
+	[[nodiscard]]
+	inline F rec709_gamma24_to_linear(F value) noexcept {
+		using std::abs; // For correct overload resolution
+		using std::pow; // For correct overload resolution
+
+		const F zero = component_constant<F>(0.0);
+		const F one = component_constant<F>(1.0);
+		const F sign = if_less(value, zero, component_constant<F>(-1.0), one);
+		return sign * pow(abs(value), component_constant<F>(2.4));
+	}
+
+	/**************************************************************************************************
+	 * Convert one linear-light component to Rec.709 gamma-2.4 encoded form.
+	 * This is a pure display-gamma transfer, extended by reflection for negative values.
+	 * ************************************************************************************************/
+	template <ColourComponent F>
+	[[nodiscard]]
+	inline F linear_to_rec709_gamma24(F value) noexcept {
+		using std::abs; // For correct overload resolution
+		using std::pow; // For correct overload resolution
+
+		const F zero = component_constant<F>(0.0);
+		const F one = component_constant<F>(1.0);
+		const F sign = if_less(value, zero, component_constant<F>(-1.0), one);
+		return sign * pow(abs(value), component_constant<F>(1.0) / component_constant<F>(2.4));
+	}
+
+	/**************************************************************************************************
+	 * Convert one Rec.2020 OETF-encoded component to linear light.
 	 * This uses BT.2020's non-12-bit constants: alpha = 1.099 and beta = 0.018.
 	 * ************************************************************************************************/
 	template <ColourComponent F>
 	[[nodiscard]]
-	inline F rec2020_transfer_to_linear(F value) noexcept {
+	inline F rec2020_oetf_to_linear(F value) noexcept {
 		using std::max; // For correct overload resolution
 		using std::pow; // For correct overload resolution
 
@@ -292,12 +330,12 @@ namespace detail {
 	}
 
 	/**************************************************************************************************
-	 * Convert one linear-light component to Rec.2020 transfer-encoded form.
+	 * Convert one linear-light component to Rec.2020 OETF-encoded form.
 	 * This uses BT.2020's non-12-bit constants: alpha = 1.099 and beta = 0.018.
 	 * ************************************************************************************************/
 	template <ColourComponent F>
 	[[nodiscard]]
-	inline F linear_to_rec2020_transfer(F value) noexcept {
+	inline F linear_to_rec2020_oetf(F value) noexcept {
 		using std::max; // For correct overload resolution
 		using std::pow; // For correct overload resolution
 
@@ -311,6 +349,38 @@ namespace detail {
 		const F low = value * linear_scale;
 		const F high = transfer_scale * pow(max(zero, value), gamma) - transfer_offset;
 		return if_less(value, linear_edge, low, high);
+	}
+
+	/**************************************************************************************************
+	 * Convert one Rec.2020 gamma-2.4 encoded component to linear light.
+	 * This is a pure display-gamma transfer, extended by reflection for negative values.
+	 * ************************************************************************************************/
+	template <ColourComponent F>
+	[[nodiscard]]
+	inline F rec2020_gamma24_to_linear(F value) noexcept {
+		using std::abs; // For correct overload resolution
+		using std::pow; // For correct overload resolution
+
+		const F zero = component_constant<F>(0.0);
+		const F one = component_constant<F>(1.0);
+		const F sign = if_less(value, zero, component_constant<F>(-1.0), one);
+		return sign * pow(abs(value), component_constant<F>(2.4));
+	}
+
+	/**************************************************************************************************
+	 * Convert one linear-light component to Rec.2020 gamma-2.4 encoded form.
+	 * This is a pure display-gamma transfer, extended by reflection for negative values.
+	 * ************************************************************************************************/
+	template <ColourComponent F>
+	[[nodiscard]]
+	inline F linear_to_rec2020_gamma24(F value) noexcept {
+		using std::abs; // For correct overload resolution
+		using std::pow; // For correct overload resolution
+
+		const F zero = component_constant<F>(0.0);
+		const F one = component_constant<F>(1.0);
+		const F sign = if_less(value, zero, component_constant<F>(-1.0), one);
+		return sign * pow(abs(value), component_constant<F>(1.0) / component_constant<F>(2.4));
 	}
 
 	/**************************************************************************************************
@@ -447,7 +517,7 @@ namespace detail {
 } // namespace detail
 
 /**************************************************************************************************
- * Convert transfer-encoded sRGBA to linear sRGBA.
+ * Convert gamma-2.4 encoded sRGBA to linear sRGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -457,7 +527,7 @@ inline SrgbLinear<F> Srgb<F>::to_linear() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert linear sRGBA to transfer-encoded sRGBA.
+ * Convert linear sRGBA to gamma-2.4 encoded sRGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -467,17 +537,7 @@ inline Srgb<F> SrgbLinear<F>::to_srgb() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert linear sRGBA to its matching transfer-encoded RGB type.
- * Alpha is passed through unchanged.
- * ************************************************************************************************/
-template <ColourComponent F>
-[[nodiscard]]
-inline Srgb<F> SrgbLinear<F>::to_transfer() const noexcept {
-	return to_srgb();
-}
-
-/**************************************************************************************************
- * Convert transfer-encoded sRGBA to CIE XYZ D65.
+ * Convert gamma-2.4 encoded sRGBA to CIE XYZ D65.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -513,7 +573,7 @@ inline SrgbLinear<F> Xyz<F>::to_srgb_linear() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert CIE XYZ D65 to transfer-encoded sRGBA.
+ * Convert CIE XYZ D65 to gamma-2.4 encoded sRGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -523,7 +583,7 @@ inline Srgb<F> Xyz<F>::to_srgb() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded Display P3 RGBA to linear Display P3 RGBA.
+ * Convert gamma-2.4 encoded Display P3 RGBA to linear Display P3 RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -533,7 +593,7 @@ inline DisplayP3Linear<F> DisplayP3<F>::to_linear() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert linear Display P3 RGBA to transfer-encoded Display P3 RGBA.
+ * Convert linear Display P3 RGBA to gamma-2.4 encoded Display P3 RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -543,17 +603,7 @@ inline DisplayP3<F> DisplayP3Linear<F>::to_display_p3() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert linear Display P3 RGBA to its matching transfer-encoded RGB type.
- * Alpha is passed through unchanged.
- * ************************************************************************************************/
-template <ColourComponent F>
-[[nodiscard]]
-inline DisplayP3<F> DisplayP3Linear<F>::to_transfer() const noexcept {
-	return to_display_p3();
-}
-
-/**************************************************************************************************
- * Convert transfer-encoded Display P3 RGBA to CIE XYZ D65.
+ * Convert gamma-2.4 encoded Display P3 RGBA to CIE XYZ D65.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -589,7 +639,7 @@ inline DisplayP3Linear<F> Xyz<F>::to_display_p3_linear() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert CIE XYZ D65 to transfer-encoded Display P3 RGBA.
+ * Convert CIE XYZ D65 to gamma-2.4 encoded Display P3 RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -934,7 +984,7 @@ inline Xyz<F> Oklch<F>::to_xyz() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded Adobe RGB (1998) RGBA to linear Adobe RGB (1998) RGBA.
+ * Convert gamma-2.4 encoded Adobe RGB (1998) RGBA to linear Adobe RGB (1998) RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -944,7 +994,7 @@ inline AdobeRgbLinear<F> AdobeRgb<F>::to_linear() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert linear Adobe RGB (1998) RGBA to transfer-encoded Adobe RGB (1998) RGBA.
+ * Convert linear Adobe RGB (1998) RGBA to gamma-2.4 encoded Adobe RGB (1998) RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -954,17 +1004,7 @@ inline AdobeRgb<F> AdobeRgbLinear<F>::to_adobe_rgb() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert linear Adobe RGB (1998) RGBA to its matching transfer-encoded RGB type.
- * Alpha is passed through unchanged.
- * ************************************************************************************************/
-template <ColourComponent F>
-[[nodiscard]]
-inline AdobeRgb<F> AdobeRgbLinear<F>::to_transfer() const noexcept {
-	return to_adobe_rgb();
-}
-
-/**************************************************************************************************
- * Convert transfer-encoded Adobe RGB (1998) RGBA to CIE XYZ D65.
+ * Convert gamma-2.4 encoded Adobe RGB (1998) RGBA to CIE XYZ D65.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1000,7 +1040,7 @@ inline AdobeRgbLinear<F> Xyz<F>::to_adobe_rgb_linear() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert CIE XYZ D65 to transfer-encoded Adobe RGB (1998) RGBA.
+ * Convert CIE XYZ D65 to gamma-2.4 encoded Adobe RGB (1998) RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1010,7 +1050,7 @@ inline AdobeRgb<F> Xyz<F>::to_adobe_rgb() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded Adobe RGB (1998) RGBA to Adobe RGB (1998) HSV.
+ * Convert gamma-2.4 encoded Adobe RGB (1998) RGBA to Adobe RGB (1998) HSV.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1020,7 +1060,7 @@ inline AdobeRgbHsv<F> AdobeRgb<F>::to_hsv() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert Adobe RGB (1998) HSV to transfer-encoded Adobe RGB (1998) RGBA.
+ * Convert Adobe RGB (1998) HSV to gamma-2.4 encoded Adobe RGB (1998) RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1030,7 +1070,7 @@ inline AdobeRgb<F> AdobeRgbHsv<F>::to_adobe_rgb() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded Adobe RGB (1998) RGBA to Adobe RGB (1998) HSL.
+ * Convert gamma-2.4 encoded Adobe RGB (1998) RGBA to Adobe RGB (1998) HSL.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1040,7 +1080,7 @@ inline AdobeRgbHsl<F> AdobeRgb<F>::to_hsl() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert Adobe RGB (1998) HSL to transfer-encoded Adobe RGB (1998) RGBA.
+ * Convert Adobe RGB (1998) HSL to gamma-2.4 encoded Adobe RGB (1998) RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1090,7 +1130,7 @@ inline AdobeRgbLinear<F> AdobeRgbLinearHsl<F>::to_adobe_rgb_linear() const noexc
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded ProPhoto RGB RGBA to linear ProPhoto RGB RGBA.
+ * Convert gamma-2.4 encoded ProPhoto RGB RGBA to linear ProPhoto RGB RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1100,7 +1140,7 @@ inline ProPhotoRgbLinear<F> ProPhotoRgb<F>::to_linear() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert linear ProPhoto RGB RGBA to transfer-encoded ProPhoto RGB RGBA.
+ * Convert linear ProPhoto RGB RGBA to gamma-2.4 encoded ProPhoto RGB RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1110,17 +1150,7 @@ inline ProPhotoRgb<F> ProPhotoRgbLinear<F>::to_prophoto_rgb() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert linear ProPhoto RGB RGBA to its matching transfer-encoded RGB type.
- * Alpha is passed through unchanged.
- * ************************************************************************************************/
-template <ColourComponent F>
-[[nodiscard]]
-inline ProPhotoRgb<F> ProPhotoRgbLinear<F>::to_transfer() const noexcept {
-	return to_prophoto_rgb();
-}
-
-/**************************************************************************************************
- * Convert transfer-encoded ProPhoto RGB RGBA to CIE XYZ D50.
+ * Convert gamma-2.4 encoded ProPhoto RGB RGBA to CIE XYZ D50.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1143,7 +1173,7 @@ inline XyzD50<F> ProPhotoRgbLinear<F>::to_xyz_d50() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded ProPhoto RGB RGBA to CIE XYZ D65.
+ * Convert gamma-2.4 encoded ProPhoto RGB RGBA to CIE XYZ D65.
  * Uses Bradford chromatic adaptation. Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1163,7 +1193,7 @@ inline Xyz<F> ProPhotoRgbLinear<F>::to_xyz() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded ProPhoto RGB RGBA to CIE XYZ D65.
+ * Convert gamma-2.4 encoded ProPhoto RGB RGBA to CIE XYZ D65.
  * Uses CAT02 chromatic adaptation. Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1196,7 +1226,7 @@ inline ProPhotoRgbLinear<F> XyzD50<F>::to_prophoto_rgb_linear() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert CIE XYZ D50 to transfer-encoded ProPhoto RGB RGBA.
+ * Convert CIE XYZ D50 to gamma-2.4 encoded ProPhoto RGB RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1216,7 +1246,7 @@ inline ProPhotoRgbLinear<F> Xyz<F>::to_prophoto_rgb_linear() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert CIE XYZ D65 to transfer-encoded ProPhoto RGB RGBA.
+ * Convert CIE XYZ D65 to gamma-2.4 encoded ProPhoto RGB RGBA.
  * Uses Bradford chromatic adaptation. Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1236,7 +1266,7 @@ inline ProPhotoRgbLinear<F> Xyz<F>::to_prophoto_rgb_linear_with_cat02() const no
 }
 
 /**************************************************************************************************
- * Convert CIE XYZ D65 to transfer-encoded ProPhoto RGB RGBA.
+ * Convert CIE XYZ D65 to gamma-2.4 encoded ProPhoto RGB RGBA.
  * Uses CAT02 chromatic adaptation. Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1246,7 +1276,7 @@ inline ProPhotoRgb<F> Xyz<F>::to_prophoto_rgb_with_cat02() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded ProPhoto RGB RGBA to ProPhoto RGB HSV.
+ * Convert gamma-2.4 encoded ProPhoto RGB RGBA to ProPhoto RGB HSV.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1256,7 +1286,7 @@ inline ProPhotoRgbHsv<F> ProPhotoRgb<F>::to_hsv() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert ProPhoto RGB HSV to transfer-encoded ProPhoto RGB RGBA.
+ * Convert ProPhoto RGB HSV to gamma-2.4 encoded ProPhoto RGB RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1266,7 +1296,7 @@ inline ProPhotoRgb<F> ProPhotoRgbHsv<F>::to_prophoto_rgb() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded ProPhoto RGB RGBA to ProPhoto RGB HSL.
+ * Convert gamma-2.4 encoded ProPhoto RGB RGBA to ProPhoto RGB HSL.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1276,7 +1306,7 @@ inline ProPhotoRgbHsl<F> ProPhotoRgb<F>::to_hsl() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert ProPhoto RGB HSL to transfer-encoded ProPhoto RGB RGBA.
+ * Convert ProPhoto RGB HSL to gamma-2.4 encoded ProPhoto RGB RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1326,42 +1356,32 @@ inline ProPhotoRgbLinear<F> ProPhotoRgbLinearHsl<F>::to_prophoto_rgb_linear() co
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded Rec.709 RGBA to linear Rec.709 RGBA.
+ * Convert gamma-2.4 encoded Rec.709 RGBA to linear Rec.709 RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec709Linear<F> Rec709<F>::to_linear() const noexcept {
-	return Rec709Linear<F>(detail::rec709_transfer_to_linear(red), detail::rec709_transfer_to_linear(green), detail::rec709_transfer_to_linear(blue), alpha);
+inline Rec709Linear<F> Rec709Oetf<F>::to_linear() const noexcept {
+	return Rec709Linear<F>(detail::rec709_oetf_to_linear(red), detail::rec709_oetf_to_linear(green), detail::rec709_oetf_to_linear(blue), alpha);
 }
 
 /**************************************************************************************************
- * Convert linear Rec.709 RGBA to transfer-encoded Rec.709 RGBA.
+ * Convert linear Rec.709 RGBA to gamma-2.4 encoded Rec.709 RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec709<F> Rec709Linear<F>::to_rec709() const noexcept {
-	return Rec709<F>(detail::linear_to_rec709_transfer(red), detail::linear_to_rec709_transfer(green), detail::linear_to_rec709_transfer(blue), alpha);
+inline Rec709Oetf<F> Rec709Linear<F>::to_rec709_oetf() const noexcept {
+	return Rec709Oetf<F>(detail::linear_to_rec709_oetf(red), detail::linear_to_rec709_oetf(green), detail::linear_to_rec709_oetf(blue), alpha);
 }
 
 /**************************************************************************************************
- * Convert linear Rec.709 RGBA to its matching transfer-encoded RGB type.
+ * Convert gamma-2.4 encoded Rec.709 RGBA to CIE XYZ D65.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec709<F> Rec709Linear<F>::to_transfer() const noexcept {
-	return to_rec709();
-}
-
-/**************************************************************************************************
- * Convert transfer-encoded Rec.709 RGBA to CIE XYZ D65.
- * Alpha is passed through unchanged.
- * ************************************************************************************************/
-template <ColourComponent F>
-[[nodiscard]]
-inline Xyz<F> Rec709<F>::to_xyz() const noexcept {
+inline Xyz<F> Rec709Oetf<F>::to_xyz() const noexcept {
 	return to_linear().to_xyz();
 }
 
@@ -1392,53 +1412,133 @@ inline Rec709Linear<F> Xyz<F>::to_rec709_linear() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert CIE XYZ D65 to transfer-encoded Rec.709 RGBA.
+ * Convert CIE XYZ D65 to gamma-2.4 encoded Rec.709 RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec709<F> Xyz<F>::to_rec709() const noexcept {
-	return to_rec709_linear().to_rec709();
+inline Rec709Oetf<F> Xyz<F>::to_rec709_oetf() const noexcept {
+	return to_rec709_linear().to_rec709_oetf();
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded Rec.709 RGBA to Rec.709 HSV.
+ * Convert gamma-2.4 encoded Rec.709 RGBA to Rec.709 HSV.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec709Hsv<F> Rec709<F>::to_hsv() const noexcept {
-	return detail::rgb_to_hsv<Rec709Hsv<F>>(*this);
+inline Rec709OetfHsv<F> Rec709Oetf<F>::to_hsv() const noexcept {
+	return detail::rgb_to_hsv<Rec709OetfHsv<F>>(*this);
 }
 
 /**************************************************************************************************
- * Convert Rec.709 HSV to transfer-encoded Rec.709 RGBA.
+ * Convert Rec.709 HSV to gamma-2.4 encoded Rec.709 RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec709<F> Rec709Hsv<F>::to_rec709() const noexcept {
-	return detail::hsv_to_rgb<Rec709<F>>(*this);
+inline Rec709Oetf<F> Rec709OetfHsv<F>::to_rec709_oetf() const noexcept {
+	return detail::hsv_to_rgb<Rec709Oetf<F>>(*this);
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded Rec.709 RGBA to Rec.709 HSL.
+ * Convert gamma-2.4 encoded Rec.709 RGBA to Rec.709 HSL.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec709Hsl<F> Rec709<F>::to_hsl() const noexcept {
-	return detail::rgb_to_hsl<Rec709Hsl<F>>(*this);
+inline Rec709OetfHsl<F> Rec709Oetf<F>::to_hsl() const noexcept {
+	return detail::rgb_to_hsl<Rec709OetfHsl<F>>(*this);
 }
 
 /**************************************************************************************************
- * Convert Rec.709 HSL to transfer-encoded Rec.709 RGBA.
+ * Convert Rec.709 HSL to gamma-2.4 encoded Rec.709 RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec709<F> Rec709Hsl<F>::to_rec709() const noexcept {
-	return detail::hsl_to_rgb<Rec709<F>>(*this);
+inline Rec709Oetf<F> Rec709OetfHsl<F>::to_rec709_oetf() const noexcept {
+	return detail::hsl_to_rgb<Rec709Oetf<F>>(*this);
+}
+
+/**************************************************************************************************
+ * Convert gamma-2.4 encoded Rec.709 RGBA to linear Rec.709 RGBA.
+ * Alpha is passed through unchanged.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Rec709Linear<F> Rec709Gamma24<F>::to_linear() const noexcept {
+	return Rec709Linear<F>(detail::rec709_gamma24_to_linear(red), detail::rec709_gamma24_to_linear(green), detail::rec709_gamma24_to_linear(blue), alpha);
+}
+
+/**************************************************************************************************
+ * Convert linear Rec.709 RGBA to gamma-2.4 encoded Rec.709 RGBA.
+ * Alpha is passed through unchanged.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Rec709Gamma24<F> Rec709Linear<F>::to_rec709_gamma24() const noexcept {
+	return Rec709Gamma24<F>(detail::linear_to_rec709_gamma24(red), detail::linear_to_rec709_gamma24(green), detail::linear_to_rec709_gamma24(blue), alpha);
+}
+
+/**************************************************************************************************
+ * Convert gamma-2.4 encoded Rec.709 RGBA to CIE XYZ D65.
+ * Alpha is passed through unchanged.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Xyz<F> Rec709Gamma24<F>::to_xyz() const noexcept {
+	return to_linear().to_xyz();
+}
+
+/**************************************************************************************************
+ * Convert CIE XYZ D65 to gamma-2.4 encoded Rec.709 RGBA.
+ * Alpha is passed through unchanged.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Rec709Gamma24<F> Xyz<F>::to_rec709_gamma24() const noexcept {
+	return to_rec709_linear().to_rec709_gamma24();
+}
+
+/**************************************************************************************************
+ * Convert gamma-2.4 encoded Rec.709 RGBA to Rec.709 HSV.
+ * Alpha is passed through unchanged.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Rec709Gamma24Hsv<F> Rec709Gamma24<F>::to_hsv() const noexcept {
+	return detail::rgb_to_hsv<Rec709Gamma24Hsv<F>>(*this);
+}
+
+/**************************************************************************************************
+ * Convert Rec.709 gamma-2.4 HSV to gamma-2.4 encoded Rec.709 RGBA.
+ * Alpha is passed through unchanged.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Rec709Gamma24<F> Rec709Gamma24Hsv<F>::to_rec709_gamma24() const noexcept {
+	return detail::hsv_to_rgb<Rec709Gamma24<F>>(*this);
+}
+
+/**************************************************************************************************
+ * Convert gamma-2.4 encoded Rec.709 RGBA to Rec.709 HSL.
+ * Alpha is passed through unchanged.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Rec709Gamma24Hsl<F> Rec709Gamma24<F>::to_hsl() const noexcept {
+	return detail::rgb_to_hsl<Rec709Gamma24Hsl<F>>(*this);
+}
+
+/**************************************************************************************************
+ * Convert Rec.709 gamma-2.4 HSL to gamma-2.4 encoded Rec.709 RGBA.
+ * Alpha is passed through unchanged.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Rec709Gamma24<F> Rec709Gamma24Hsl<F>::to_rec709_gamma24() const noexcept {
+	return detail::hsl_to_rgb<Rec709Gamma24<F>>(*this);
 }
 
 /**************************************************************************************************
@@ -1482,42 +1582,62 @@ inline Rec709Linear<F> Rec709LinearHsl<F>::to_rec709_linear() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded Rec.2020 RGBA to linear Rec.2020 RGBA.
+ * Convert Rec.2020 OETF-encoded RGBA to linear Rec.2020 RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec2020Linear<F> Rec2020<F>::to_linear() const noexcept {
-	return Rec2020Linear<F>(detail::rec2020_transfer_to_linear(red), detail::rec2020_transfer_to_linear(green), detail::rec2020_transfer_to_linear(blue), alpha);
+inline Rec2020Linear<F> Rec2020Oetf<F>::to_linear() const noexcept {
+	return Rec2020Linear<F>(detail::rec2020_oetf_to_linear(red), detail::rec2020_oetf_to_linear(green), detail::rec2020_oetf_to_linear(blue), alpha);
 }
 
 /**************************************************************************************************
- * Convert linear Rec.2020 RGBA to transfer-encoded Rec.2020 RGBA.
+ * Convert linear Rec.2020 RGBA to Rec.2020 OETF-encoded RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec2020<F> Rec2020Linear<F>::to_rec2020() const noexcept {
-	return Rec2020<F>(detail::linear_to_rec2020_transfer(red), detail::linear_to_rec2020_transfer(green), detail::linear_to_rec2020_transfer(blue), alpha);
+inline Rec2020Oetf<F> Rec2020Linear<F>::to_rec2020_oetf() const noexcept {
+	return Rec2020Oetf<F>(detail::linear_to_rec2020_oetf(red), detail::linear_to_rec2020_oetf(green), detail::linear_to_rec2020_oetf(blue), alpha);
 }
 
 /**************************************************************************************************
- * Convert linear Rec.2020 RGBA to its matching transfer-encoded RGB type.
+ * Convert Rec.2020 OETF-encoded RGBA to CIE XYZ D65.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec2020<F> Rec2020Linear<F>::to_transfer() const noexcept {
-	return to_rec2020();
+inline Xyz<F> Rec2020Oetf<F>::to_xyz() const noexcept {
+	return to_linear().to_xyz();
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded Rec.2020 RGBA to CIE XYZ D65.
+ * Convert gamma-2.4 encoded Rec.2020 RGBA to linear Rec.2020 RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Xyz<F> Rec2020<F>::to_xyz() const noexcept {
+inline Rec2020Linear<F> Rec2020Gamma24<F>::to_linear() const noexcept {
+	return Rec2020Linear<F>(detail::rec2020_gamma24_to_linear(red), detail::rec2020_gamma24_to_linear(green), detail::rec2020_gamma24_to_linear(blue), alpha);
+}
+
+/**************************************************************************************************
+ * Convert linear Rec.2020 RGBA to gamma-2.4 encoded Rec.2020 RGBA.
+ * Alpha is passed through unchanged.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Rec2020Gamma24<F> Rec2020Linear<F>::to_rec2020_gamma24() const noexcept {
+	return Rec2020Gamma24<F>(detail::linear_to_rec2020_gamma24(red), detail::linear_to_rec2020_gamma24(green), detail::linear_to_rec2020_gamma24(blue), alpha);
+}
+
+/**************************************************************************************************
+ * Convert gamma-2.4 encoded Rec.2020 RGBA to CIE XYZ D65.
+ * Alpha is passed through unchanged.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Xyz<F> Rec2020Gamma24<F>::to_xyz() const noexcept {
 	return to_linear().to_xyz();
 }
 
@@ -1548,53 +1668,103 @@ inline Rec2020Linear<F> Xyz<F>::to_rec2020_linear() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert CIE XYZ D65 to transfer-encoded Rec.2020 RGBA.
+ * Convert CIE XYZ D65 to gamma-2.4 encoded Rec.2020 RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec2020<F> Xyz<F>::to_rec2020() const noexcept {
-	return to_rec2020_linear().to_rec2020();
+inline Rec2020Gamma24<F> Xyz<F>::to_rec2020_gamma24() const noexcept {
+	return to_rec2020_linear().to_rec2020_gamma24();
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded Rec.2020 RGBA to Rec.2020 HSV.
+ * Convert CIE XYZ D65 to Rec.2020 OETF-encoded RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec2020Hsv<F> Rec2020<F>::to_hsv() const noexcept {
-	return detail::rgb_to_hsv<Rec2020Hsv<F>>(*this);
+inline Rec2020Oetf<F> Xyz<F>::to_rec2020_oetf() const noexcept {
+	return to_rec2020_linear().to_rec2020_oetf();
 }
 
 /**************************************************************************************************
- * Convert Rec.2020 HSV to transfer-encoded Rec.2020 RGBA.
+ * Convert Rec.2020 OETF-encoded RGBA to Rec.2020 HSV.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec2020<F> Rec2020Hsv<F>::to_rec2020() const noexcept {
-	return detail::hsv_to_rgb<Rec2020<F>>(*this);
+inline Rec2020OetfHsv<F> Rec2020Oetf<F>::to_hsv() const noexcept {
+	return detail::rgb_to_hsv<Rec2020OetfHsv<F>>(*this);
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded Rec.2020 RGBA to Rec.2020 HSL.
+ * Convert Rec.2020 HSV to Rec.2020 OETF-encoded RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec2020Hsl<F> Rec2020<F>::to_hsl() const noexcept {
-	return detail::rgb_to_hsl<Rec2020Hsl<F>>(*this);
+inline Rec2020Oetf<F> Rec2020OetfHsv<F>::to_rec2020_oetf() const noexcept {
+	return detail::hsv_to_rgb<Rec2020Oetf<F>>(*this);
 }
 
 /**************************************************************************************************
- * Convert Rec.2020 HSL to transfer-encoded Rec.2020 RGBA.
+ * Convert Rec.2020 OETF-encoded RGBA to Rec.2020 HSL.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec2020<F> Rec2020Hsl<F>::to_rec2020() const noexcept {
-	return detail::hsl_to_rgb<Rec2020<F>>(*this);
+inline Rec2020OetfHsl<F> Rec2020Oetf<F>::to_hsl() const noexcept {
+	return detail::rgb_to_hsl<Rec2020OetfHsl<F>>(*this);
+}
+
+/**************************************************************************************************
+ * Convert Rec.2020 HSL to Rec.2020 OETF-encoded RGBA.
+ * Alpha is passed through unchanged.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Rec2020Oetf<F> Rec2020OetfHsl<F>::to_rec2020_oetf() const noexcept {
+	return detail::hsl_to_rgb<Rec2020Oetf<F>>(*this);
+}
+
+/**************************************************************************************************
+ * Convert gamma-2.4 encoded Rec.2020 RGBA to Rec.2020 HSV.
+ * Alpha is passed through unchanged.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Rec2020Gamma24Hsv<F> Rec2020Gamma24<F>::to_hsv() const noexcept {
+	return detail::rgb_to_hsv<Rec2020Gamma24Hsv<F>>(*this);
+}
+
+/**************************************************************************************************
+ * Convert Rec.2020 HSV to gamma-2.4 encoded Rec.2020 RGBA.
+ * Alpha is passed through unchanged.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Rec2020Gamma24<F> Rec2020Gamma24Hsv<F>::to_rec2020_gamma24() const noexcept {
+	return detail::hsv_to_rgb<Rec2020Gamma24<F>>(*this);
+}
+
+/**************************************************************************************************
+ * Convert gamma-2.4 encoded Rec.2020 RGBA to Rec.2020 HSL.
+ * Alpha is passed through unchanged.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Rec2020Gamma24Hsl<F> Rec2020Gamma24<F>::to_hsl() const noexcept {
+	return detail::rgb_to_hsl<Rec2020Gamma24Hsl<F>>(*this);
+}
+
+/**************************************************************************************************
+ * Convert Rec.2020 HSL to gamma-2.4 encoded Rec.2020 RGBA.
+ * Alpha is passed through unchanged.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Rec2020Gamma24<F> Rec2020Gamma24Hsl<F>::to_rec2020_gamma24() const noexcept {
+	return detail::hsl_to_rgb<Rec2020Gamma24<F>>(*this);
 }
 
 /**************************************************************************************************
@@ -1862,7 +2032,7 @@ inline Acescg<F> AcescgHsl<F>::to_acescg() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded Display P3 RGBA to Display P3 HSV.
+ * Convert gamma-2.4 encoded Display P3 RGBA to Display P3 HSV.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1872,7 +2042,7 @@ inline DisplayP3Hsv<F> DisplayP3<F>::to_hsv() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert Display P3 HSV to transfer-encoded Display P3 RGBA.
+ * Convert Display P3 HSV to gamma-2.4 encoded Display P3 RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1882,7 +2052,7 @@ inline DisplayP3<F> DisplayP3Hsv<F>::to_display_p3() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded Display P3 RGBA to Display P3 HSL.
+ * Convert gamma-2.4 encoded Display P3 RGBA to Display P3 HSL.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1892,7 +2062,7 @@ inline DisplayP3Hsl<F> DisplayP3<F>::to_hsl() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert Display P3 HSL to transfer-encoded Display P3 RGBA.
+ * Convert Display P3 HSL to gamma-2.4 encoded Display P3 RGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1902,7 +2072,7 @@ inline DisplayP3<F> DisplayP3Hsl<F>::to_display_p3() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded sRGBA to sRGB HSV.
+ * Convert gamma-2.4 encoded sRGBA to sRGB HSV.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1912,7 +2082,7 @@ inline SrgbHsv<F> Srgb<F>::to_hsv() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert sRGB HSV to transfer-encoded sRGBA.
+ * Convert sRGB HSV to gamma-2.4 encoded sRGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1922,7 +2092,7 @@ inline Srgb<F> SrgbHsv<F>::to_srgb() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert transfer-encoded sRGBA to sRGB HSL.
+ * Convert gamma-2.4 encoded sRGBA to sRGB HSL.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>
@@ -1932,7 +2102,7 @@ inline SrgbHsl<F> Srgb<F>::to_hsl() const noexcept {
 }
 
 /**************************************************************************************************
- * Convert sRGB HSL to transfer-encoded sRGBA.
+ * Convert sRGB HSL to gamma-2.4 encoded sRGBA.
  * Alpha is passed through unchanged.
  * ************************************************************************************************/
 template <ColourComponent F>

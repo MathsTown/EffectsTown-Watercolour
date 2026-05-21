@@ -74,7 +74,7 @@ void test_adobe_rgb_hsl_float(TestContext& test) {
 	test.check_equal(wrapped_over_one.lightness, 0.75f, "AdobeRgbHsl<float> wrap over-one l");
 	test.check_equal(wrapped_over_one.alpha, 1.0f, "AdobeRgbHsl<float> wrap over-one a");
 
-	// Reference data checks transfer-encoded Adobe RGB (1998) HSL to transfer-encoded Adobe RGB (1998).
+	// Reference data checks gamma-2.4 encoded Adobe RGB (1998) HSL to gamma-2.4 encoded Adobe RGB (1998).
 	for (const auto& colour_case : colour_reference::adobe_rgb_hsl_cases) {
 		mt::AdobeRgbHsl<float> colour(static_cast<float>(colour_case.expected[0]), static_cast<float>(colour_case.expected[1]), static_cast<float>(colour_case.expected[2]), static_cast<float>(colour_case.expected[3]));
 		mt::AdobeRgb<float> actual = colour.to_adobe_rgb();

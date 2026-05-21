@@ -74,7 +74,7 @@ void test_prophoto_rgb_hsv_double(TestContext& test) {
 	test.check_equal(wrapped_over_one.value, 0.75, "ProPhotoRgbHsv<double> wrap over-one v");
 	test.check_equal(wrapped_over_one.alpha, 1.0, "ProPhotoRgbHsv<double> wrap over-one a");
 
-	// Reference data checks transfer-encoded ProPhoto RGB HSV to transfer-encoded ProPhoto RGB.
+	// Reference data checks gamma-2.4 encoded ProPhoto RGB HSV to gamma-2.4 encoded ProPhoto RGB.
 	for (const auto& colour_case : colour_reference::prophoto_rgb_hsv_cases) {
 		mt::ProPhotoRgbHsv<double> colour(static_cast<double>(colour_case.expected[0]), static_cast<double>(colour_case.expected[1]), static_cast<double>(colour_case.expected[2]), static_cast<double>(colour_case.expected[3]));
 		mt::ProPhotoRgb<double> actual = colour.to_prophoto_rgb();

@@ -89,17 +89,17 @@ void test_srgb_linear_double(TestContext& test) {
 	test.check_equal(sanitised.blue, std::numeric_limits<double>::max(), "SrgbLinear<double> sanitise infinity");
 	test.check_equal(sanitised.alpha, std::numeric_limits<double>::lowest(), "SrgbLinear<double> sanitise negative infinity");
 
-	// Reference data checks linear sRGB to transfer-encoded sRGB.
+	// Reference data checks linear sRGB to gamma-2.4 encoded sRGB.
 	for (const auto& colour_case : colour_reference::srgb_srgb_linear_cases) {
 		mt::SrgbLinear<double> colour(static_cast<double>(colour_case.expected[0]), static_cast<double>(colour_case.expected[1]), static_cast<double>(colour_case.expected[2]), static_cast<double>(colour_case.expected[3]));
 		mt::Srgb<double> actual = colour.to_srgb();
-		mt::Srgb<double> transfer = colour.to_transfer();
+		mt::Srgb<double> transfer = colour.to_srgb();
 		std::string message = std::string("SrgbLinear<double> to_srgb ") + colour_case.name;
 		test.check_close(actual.red, colour_case.source[0], 2.0e-11, message + " red");
 		test.check_close(actual.green, colour_case.source[1], 2.0e-11, message + " green");
 		test.check_close(actual.blue, colour_case.source[2], 2.0e-11, message + " blue");
 		test.check_close(actual.alpha, colour_case.source[3], 2.0e-11, message + " alpha");
-		message = std::string("SrgbLinear<double> to_transfer ") + colour_case.name;
+		message = std::string("SrgbLinear<double> to_srgb ") + colour_case.name;
 		test.check_close(transfer.red, colour_case.source[0], 2.0e-11, message + " red");
 		test.check_close(transfer.green, colour_case.source[1], 2.0e-11, message + " green");
 		test.check_close(transfer.blue, colour_case.source[2], 2.0e-11, message + " blue");

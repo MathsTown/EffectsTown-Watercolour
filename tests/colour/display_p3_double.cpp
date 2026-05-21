@@ -89,7 +89,7 @@ void test_display_p3_double(TestContext& test) {
 	test.check_equal(sanitised.blue, std::numeric_limits<double>::max(), "DisplayP3<double> sanitise infinity");
 	test.check_equal(sanitised.alpha, std::numeric_limits<double>::lowest(), "DisplayP3<double> sanitise negative infinity");
 
-	// Reference data checks transfer-encoded Display P3 to linear Display P3.
+	// Reference data checks gamma-2.4 encoded Display P3 to linear Display P3.
 	for (const auto& colour_case : colour_reference::display_p3_display_p3_linear_cases) {
 		mt::DisplayP3<double> colour(colour_case.source[0], colour_case.source[1], colour_case.source[2], colour_case.source[3]);
 		mt::DisplayP3Linear<double> actual = colour.to_linear();
@@ -100,7 +100,7 @@ void test_display_p3_double(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 2.0e-11, message + " a");
 	}
 
-	// Reference data checks transfer-encoded Display P3 to HSV.
+	// Reference data checks gamma-2.4 encoded Display P3 to HSV.
 	for (const auto& colour_case : colour_reference::display_p3_hsv_cases) {
 		mt::DisplayP3<double> colour(colour_case.source[0], colour_case.source[1], colour_case.source[2], colour_case.source[3]);
 		mt::DisplayP3Hsv<double> actual = colour.to_hsv();
@@ -111,7 +111,7 @@ void test_display_p3_double(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 2.0e-11, message + " a");
 	}
 
-	// Reference data checks transfer-encoded Display P3 to HSL.
+	// Reference data checks gamma-2.4 encoded Display P3 to HSL.
 	for (const auto& colour_case : colour_reference::display_p3_hsl_cases) {
 		mt::DisplayP3<double> colour(colour_case.source[0], colour_case.source[1], colour_case.source[2], colour_case.source[3]);
 		mt::DisplayP3Hsl<double> actual = colour.to_hsl();
@@ -122,7 +122,7 @@ void test_display_p3_double(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 2.0e-11, message + " a");
 	}
 
-	// Reference data checks transfer-encoded Display P3 to CIE XYZ D65.
+	// Reference data checks gamma-2.4 encoded Display P3 to CIE XYZ D65.
 	for (const auto& colour_case : colour_reference::display_p3_xyz_d65_cases) {
 		mt::DisplayP3<double> colour(colour_case.source[0], colour_case.source[1], colour_case.source[2], colour_case.source[3]);
 		mt::Xyz<double> actual = colour.to_xyz();

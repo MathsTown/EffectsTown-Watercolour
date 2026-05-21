@@ -74,7 +74,7 @@ void test_display_p3_hsl_float(TestContext& test) {
 	test.check_equal(wrapped_over_one.lightness, 0.75f, "DisplayP3Hsl<float> wrap over-one l");
 	test.check_equal(wrapped_over_one.alpha, 1.0f, "DisplayP3Hsl<float> wrap over-one a");
 
-	// Reference data checks transfer-encoded Display P3 HSL to transfer-encoded Display P3.
+	// Reference data checks gamma-2.4 encoded Display P3 HSL to gamma-2.4 encoded Display P3.
 	for (const auto& colour_case : colour_reference::display_p3_hsl_cases) {
 		mt::DisplayP3Hsl<float> colour(static_cast<float>(colour_case.expected[0]), static_cast<float>(colour_case.expected[1]), static_cast<float>(colour_case.expected[2]), static_cast<float>(colour_case.expected[3]));
 		mt::DisplayP3<float> actual = colour.to_display_p3();

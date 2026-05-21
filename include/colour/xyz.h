@@ -34,7 +34,7 @@ Reference white:
 - XYZ values are relative tristimulus values with Y = 1.0 for diffuse white.
 
 Conversions:
-- RGB conversions use each RGB colour space's published primaries, transfer functions, and native white point handling.
+- RGB conversions use each RGB colour space's published primaries, gamma 2.4 transfer functions, and native white point handling.
 - to_xyz_d50() and to_xyz_aces() use Bradford chromatic adaptation by default.
 - to_xyz_d50_with_cat02() and to_xyz_aces_with_cat02() provide explicit CAT02 adaptation paths.
 - Oklab and Oklch conversions use the D65-referenced Oklab model.
@@ -57,13 +57,13 @@ API:
 
 namespace mt {
 
-// Forward declaration of the transfer-encoded sRGBA type.
+// Forward declaration of the gamma-2.4 encoded sRGBA type.
 template <ColourComponent F> struct Srgb;
 
 // Forward declaration of the linear sRGBA type.
 template <ColourComponent F> struct SrgbLinear;
 
-// Forward declaration of the transfer-encoded Display P3 type.
+// Forward declaration of the gamma-2.4 encoded Display P3 type.
 template <ColourComponent F> struct DisplayP3;
 
 // Forward declaration of the linear Display P3 type.
@@ -81,26 +81,32 @@ template <ColourComponent F> struct Oklab;
 // Forward declaration of the Oklch type.
 template <ColourComponent F> struct Oklch;
 
-// Forward declaration of the transfer-encoded Adobe RGB (1998) type.
+// Forward declaration of the gamma-2.4 encoded Adobe RGB (1998) type.
 template <ColourComponent F> struct AdobeRgb;
 
 // Forward declaration of the linear Adobe RGB (1998) type.
 template <ColourComponent F> struct AdobeRgbLinear;
 
-// Forward declaration of the transfer-encoded ProPhoto RGB type.
+// Forward declaration of the gamma-2.4 encoded ProPhoto RGB type.
 template <ColourComponent F> struct ProPhotoRgb;
 
 // Forward declaration of the linear ProPhoto RGB type.
 template <ColourComponent F> struct ProPhotoRgbLinear;
 
-// Forward declaration of the transfer-encoded Rec.709 type.
-template <ColourComponent F> struct Rec709;
+// Forward declaration of the Rec.709 OETF-encoded type.
+template <ColourComponent F> struct Rec709Oetf;
+
+// Forward declaration of the Rec.709 gamma-2.4 encoded type.
+template <ColourComponent F> struct Rec709Gamma24;
 
 // Forward declaration of the linear Rec.709 type.
 template <ColourComponent F> struct Rec709Linear;
 
-// Forward declaration of the transfer-encoded Rec.2020 type.
-template <ColourComponent F> struct Rec2020;
+// Forward declaration of the Rec.2020 OETF-encoded type.
+template <ColourComponent F> struct Rec2020Oetf;
+
+// Forward declaration of the gamma-2.4 encoded Rec.2020 type.
+template <ColourComponent F> struct Rec2020Gamma24;
 
 // Forward declaration of the linear Rec.2020 type.
 template <ColourComponent F> struct Rec2020Linear;
@@ -163,7 +169,7 @@ template <ColourComponent F> struct Xyz {
 	[[nodiscard]]
 	SrgbLinear<F> to_srgb_linear() const noexcept;
 
-	// Convert to transfer-encoded sRGBA (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded sRGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
 	Srgb<F> to_srgb() const noexcept;
 
@@ -171,7 +177,7 @@ template <ColourComponent F> struct Xyz {
 	[[nodiscard]]
 	DisplayP3Linear<F> to_display_p3_linear() const noexcept;
 
-	// Convert to transfer-encoded Display P3 RGBA (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded Display P3 RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
 	DisplayP3<F> to_display_p3() const noexcept;
 
@@ -203,7 +209,7 @@ template <ColourComponent F> struct Xyz {
 	[[nodiscard]]
 	AdobeRgbLinear<F> to_adobe_rgb_linear() const noexcept;
 
-	// Convert to transfer-encoded Adobe RGB (1998) RGBA (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded Adobe RGB (1998) RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
 	AdobeRgb<F> to_adobe_rgb() const noexcept;
 
@@ -211,7 +217,7 @@ template <ColourComponent F> struct Xyz {
 	[[nodiscard]]
 	ProPhotoRgbLinear<F> to_prophoto_rgb_linear() const noexcept;
 
-	// Convert to transfer-encoded ProPhoto RGB RGBA using Bradford chromatic adaptation (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded ProPhoto RGB RGBA using Bradford chromatic adaptation (implemented in colour_conversions.h).
 	[[nodiscard]]
 	ProPhotoRgb<F> to_prophoto_rgb() const noexcept;
 
@@ -219,7 +225,7 @@ template <ColourComponent F> struct Xyz {
 	[[nodiscard]]
 	ProPhotoRgbLinear<F> to_prophoto_rgb_linear_with_cat02() const noexcept;
 
-	// Convert to transfer-encoded ProPhoto RGB RGBA using CAT02 chromatic adaptation (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded ProPhoto RGB RGBA using CAT02 chromatic adaptation (implemented in colour_conversions.h).
 	[[nodiscard]]
 	ProPhotoRgb<F> to_prophoto_rgb_with_cat02() const noexcept;
 
@@ -227,17 +233,25 @@ template <ColourComponent F> struct Xyz {
 	[[nodiscard]]
 	Rec709Linear<F> to_rec709_linear() const noexcept;
 
-	// Convert to transfer-encoded Rec.709 RGBA (implemented in colour_conversions.h).
+	// Convert to Rec.709 OETF-encoded RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
-	Rec709<F> to_rec709() const noexcept;
+	Rec709Oetf<F> to_rec709_oetf() const noexcept;
+
+	// Convert to Rec.709 gamma-2.4 encoded RGBA (implemented in colour_conversions.h).
+	[[nodiscard]]
+	Rec709Gamma24<F> to_rec709_gamma24() const noexcept;
 
 	// Convert to linear Rec.2020 RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
 	Rec2020Linear<F> to_rec2020_linear() const noexcept;
 
-	// Convert to transfer-encoded Rec.2020 RGBA (implemented in colour_conversions.h).
+	// Convert to Rec.2020 OETF-encoded RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
-	Rec2020<F> to_rec2020() const noexcept;
+	Rec2020Oetf<F> to_rec2020_oetf() const noexcept;
+
+	// Convert to gamma-2.4 encoded Rec.2020 RGBA (implemented in colour_conversions.h).
+	[[nodiscard]]
+	Rec2020Gamma24<F> to_rec2020_gamma24() const noexcept;
 
 	// Convert to ACES2065-1 RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]

@@ -89,7 +89,7 @@ void test_prophoto_rgb_float(TestContext& test) {
 	test.check_equal(sanitised.blue, std::numeric_limits<float>::max(), "ProPhotoRgb<float> sanitise infinity");
 	test.check_equal(sanitised.alpha, std::numeric_limits<float>::lowest(), "ProPhotoRgb<float> sanitise negative infinity");
 
-	// Reference data checks transfer-encoded ProPhoto RGB to linear ProPhoto RGB.
+	// Reference data checks gamma-2.4 encoded ProPhoto RGB to linear ProPhoto RGB.
 	for (const auto& colour_case : colour_reference::prophoto_rgb_prophoto_rgb_linear_cases) {
 		mt::ProPhotoRgb<float> colour(static_cast<float>(colour_case.source[0]), static_cast<float>(colour_case.source[1]), static_cast<float>(colour_case.source[2]), static_cast<float>(colour_case.source[3]));
 		mt::ProPhotoRgbLinear<float> actual = colour.to_linear();
@@ -100,7 +100,7 @@ void test_prophoto_rgb_float(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 5.0e-6f, message + " a");
 	}
 
-	// Reference data checks transfer-encoded ProPhoto RGB to HSV.
+	// Reference data checks gamma-2.4 encoded ProPhoto RGB to HSV.
 	for (const auto& colour_case : colour_reference::prophoto_rgb_hsv_cases) {
 		mt::ProPhotoRgb<float> colour(static_cast<float>(colour_case.source[0]), static_cast<float>(colour_case.source[1]), static_cast<float>(colour_case.source[2]), static_cast<float>(colour_case.source[3]));
 		mt::ProPhotoRgbHsv<float> actual = colour.to_hsv();
@@ -111,7 +111,7 @@ void test_prophoto_rgb_float(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 5.0e-6f, message + " a");
 	}
 
-	// Reference data checks transfer-encoded ProPhoto RGB to HSL.
+	// Reference data checks gamma-2.4 encoded ProPhoto RGB to HSL.
 	for (const auto& colour_case : colour_reference::prophoto_rgb_hsl_cases) {
 		mt::ProPhotoRgb<float> colour(static_cast<float>(colour_case.source[0]), static_cast<float>(colour_case.source[1]), static_cast<float>(colour_case.source[2]), static_cast<float>(colour_case.source[3]));
 		mt::ProPhotoRgbHsl<float> actual = colour.to_hsl();
@@ -122,7 +122,7 @@ void test_prophoto_rgb_float(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 5.0e-6f, message + " a");
 	}
 
-	// Reference data checks transfer-encoded ProPhoto RGB to CIE XYZ D65.
+	// Reference data checks gamma-2.4 encoded ProPhoto RGB to CIE XYZ D65.
 	for (const auto& colour_case : colour_reference::prophoto_rgb_xyz_d65_cases) {
 		mt::ProPhotoRgb<float> colour(static_cast<float>(colour_case.source[0]), static_cast<float>(colour_case.source[1]), static_cast<float>(colour_case.source[2]), static_cast<float>(colour_case.source[3]));
 		mt::Xyz<float> actual = colour.to_xyz();
@@ -133,7 +133,7 @@ void test_prophoto_rgb_float(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 5.0e-6f, message + " a");
 	}
 
-	// Reference data checks transfer-encoded ProPhoto RGB to CIE XYZ D50.
+	// Reference data checks gamma-2.4 encoded ProPhoto RGB to CIE XYZ D50.
 	for (const auto& colour_case : colour_reference::prophoto_rgb_xyz_d50_cases) {
 		mt::ProPhotoRgb<float> colour(static_cast<float>(colour_case.source[0]), static_cast<float>(colour_case.source[1]), static_cast<float>(colour_case.source[2]), static_cast<float>(colour_case.source[3]));
 		mt::XyzD50<float> actual = colour.to_xyz_d50();
@@ -144,7 +144,7 @@ void test_prophoto_rgb_float(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 5.0e-6f, message + " a");
 	}
 
-	// Reference data checks transfer-encoded ProPhoto RGB to CIE XYZ D65 using CAT02.
+	// Reference data checks gamma-2.4 encoded ProPhoto RGB to CIE XYZ D65 using CAT02.
 	for (const auto& colour_case : colour_reference::prophoto_rgb_xyz_d65_cat02_cases) {
 		mt::ProPhotoRgb<float> colour(static_cast<float>(colour_case.source[0]), static_cast<float>(colour_case.source[1]), static_cast<float>(colour_case.source[2]), static_cast<float>(colour_case.source[3]));
 		mt::Xyz<float> actual = colour.to_xyz_with_cat02();
@@ -155,7 +155,7 @@ void test_prophoto_rgb_float(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 5.0e-6f, message + " a");
 	}
 
-	// Reference data checks CIE XYZ D50 to transfer-encoded ProPhoto RGB.
+	// Reference data checks CIE XYZ D50 to gamma-2.4 encoded ProPhoto RGB.
 	for (const auto& colour_case : colour_reference::prophoto_rgb_xyz_d50_cases) {
 		mt::XyzD50<float> colour(static_cast<float>(colour_case.expected[0]), static_cast<float>(colour_case.expected[1]), static_cast<float>(colour_case.expected[2]), static_cast<float>(colour_case.expected[3]));
 		mt::ProPhotoRgb<float> actual = colour.to_prophoto_rgb();
@@ -166,7 +166,7 @@ void test_prophoto_rgb_float(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.source[3], 5.0e-6f, message + " a");
 	}
 
-	// Reference data checks CIE XYZ D65 to transfer-encoded ProPhoto RGB using Bradford adaptation.
+	// Reference data checks CIE XYZ D65 to gamma-2.4 encoded ProPhoto RGB using Bradford adaptation.
 	for (const auto& colour_case : colour_reference::prophoto_rgb_xyz_d65_cases) {
 		mt::Xyz<float> colour(static_cast<float>(colour_case.expected[0]), static_cast<float>(colour_case.expected[1]), static_cast<float>(colour_case.expected[2]), static_cast<float>(colour_case.expected[3]));
 		mt::ProPhotoRgb<float> actual = colour.to_prophoto_rgb();
@@ -177,7 +177,7 @@ void test_prophoto_rgb_float(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.source[3], 5.0e-6f, message + " a");
 	}
 
-	// Reference data checks CIE XYZ D65 to transfer-encoded ProPhoto RGB using CAT02 adaptation.
+	// Reference data checks CIE XYZ D65 to gamma-2.4 encoded ProPhoto RGB using CAT02 adaptation.
 	for (const auto& colour_case : colour_reference::prophoto_rgb_xyz_d65_cat02_cases) {
 		mt::Xyz<float> colour(static_cast<float>(colour_case.expected[0]), static_cast<float>(colour_case.expected[1]), static_cast<float>(colour_case.expected[2]), static_cast<float>(colour_case.expected[3]));
 		mt::ProPhotoRgb<float> actual = colour.to_prophoto_rgb_with_cat02();

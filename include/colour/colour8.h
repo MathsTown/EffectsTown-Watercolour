@@ -80,11 +80,7 @@ struct Colour8 {
 	constexpr Colour8(std::uint8_t red, std::uint8_t green, std::uint8_t blue, std::uint8_t alpha = 0xff) noexcept : red(red), green(green), blue(blue), alpha(alpha) { }
 
 	// Explicitly construct from a generic scalar RGB colour.
-	explicit Colour8(const GenericRgb<float>& colour) noexcept
-	    : red(detail::float_to_colour8_component(colour.red)),
-	      green(detail::float_to_colour8_component(colour.green)),
-	      blue(detail::float_to_colour8_component(colour.blue)),
-	      alpha(detail::float_to_colour8_component(colour.alpha)) { }
+	explicit Colour8(const GenericRgb<float>& colour) noexcept : red(detail::float_to_colour8_component(colour.red)), green(detail::float_to_colour8_component(colour.green)), blue(detail::float_to_colour8_component(colour.blue)), alpha(detail::float_to_colour8_component(colour.alpha)) { }
 
 	// Convert to generic scalar RGB.
 	[[nodiscard]]

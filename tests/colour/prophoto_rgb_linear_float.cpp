@@ -89,17 +89,17 @@ void test_prophoto_rgb_linear_float(TestContext& test) {
 	test.check_equal(sanitised.blue, std::numeric_limits<float>::max(), "ProPhotoRgbLinear<float> sanitise infinity");
 	test.check_equal(sanitised.alpha, std::numeric_limits<float>::lowest(), "ProPhotoRgbLinear<float> sanitise negative infinity");
 
-	// Reference data checks linear ProPhoto RGB to transfer-encoded ProPhoto RGB.
+	// Reference data checks linear ProPhoto RGB to gamma-2.4 encoded ProPhoto RGB.
 	for (const auto& colour_case : colour_reference::prophoto_rgb_prophoto_rgb_linear_cases) {
 		mt::ProPhotoRgbLinear<float> colour(static_cast<float>(colour_case.expected[0]), static_cast<float>(colour_case.expected[1]), static_cast<float>(colour_case.expected[2]), static_cast<float>(colour_case.expected[3]));
 		mt::ProPhotoRgb<float> actual = colour.to_prophoto_rgb();
-		mt::ProPhotoRgb<float> transfer = colour.to_transfer();
+		mt::ProPhotoRgb<float> transfer = colour.to_prophoto_rgb();
 		std::string message = std::string("ProPhotoRgbLinear<float> to_prophoto_rgb ") + colour_case.name;
 		test.check_close(actual.red, colour_case.source[0], 5.0e-6f, message + " r");
 		test.check_close(actual.green, colour_case.source[1], 5.0e-6f, message + " g");
 		test.check_close(actual.blue, colour_case.source[2], 5.0e-6f, message + " b");
 		test.check_close(actual.alpha, colour_case.source[3], 5.0e-6f, message + " a");
-		message = std::string("ProPhotoRgbLinear<float> to_transfer ") + colour_case.name;
+		message = std::string("ProPhotoRgbLinear<float> to_prophoto_rgb ") + colour_case.name;
 		test.check_close(transfer.red, colour_case.source[0], 5.0e-6f, message + " r");
 		test.check_close(transfer.green, colour_case.source[1], 5.0e-6f, message + " g");
 		test.check_close(transfer.blue, colour_case.source[2], 5.0e-6f, message + " b");

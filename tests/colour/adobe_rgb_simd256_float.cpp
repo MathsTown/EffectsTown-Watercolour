@@ -105,7 +105,7 @@ void test_adobe_rgb_simd256_float(TestContext& test) {
 		test.check_equal(sanitised.alpha.element(lane), std::numeric_limits<float>::lowest(), "AdobeRgb<Simd256Float32> sanitise negative infinity lane " + std::to_string(lane));
 	}
 
-	// Reference data checks transfer-encoded Adobe RGB (1998) to linear Adobe RGB (1998).
+	// Reference data checks gamma-2.4 encoded Adobe RGB (1998) to linear Adobe RGB (1998).
 	const int linear_case_count = int(sizeof(colour_reference::adobe_rgb_adobe_rgb_linear_cases) / sizeof(colour_reference::adobe_rgb_adobe_rgb_linear_cases[0]));
 	for (int first_case = 0; first_case < linear_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::AdobeRgbLinear<mt::Simd256Float32> actual = adobe_rgb_batch(colour_reference::adobe_rgb_adobe_rgb_linear_cases, first_case, linear_case_count).to_linear();
@@ -119,7 +119,7 @@ void test_adobe_rgb_simd256_float(TestContext& test) {
 		}
 	}
 
-	// Reference data checks transfer-encoded Adobe RGB (1998) to HSV.
+	// Reference data checks gamma-2.4 encoded Adobe RGB (1998) to HSV.
 	const int hsv_case_count = int(sizeof(colour_reference::adobe_rgb_hsv_cases) / sizeof(colour_reference::adobe_rgb_hsv_cases[0]));
 	for (int first_case = 0; first_case < hsv_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::AdobeRgbHsv<mt::Simd256Float32> actual = adobe_rgb_batch(colour_reference::adobe_rgb_hsv_cases, first_case, hsv_case_count).to_hsv();
@@ -133,7 +133,7 @@ void test_adobe_rgb_simd256_float(TestContext& test) {
 		}
 	}
 
-	// Reference data checks transfer-encoded Adobe RGB (1998) to HSL.
+	// Reference data checks gamma-2.4 encoded Adobe RGB (1998) to HSL.
 	const int hsl_case_count = int(sizeof(colour_reference::adobe_rgb_hsl_cases) / sizeof(colour_reference::adobe_rgb_hsl_cases[0]));
 	for (int first_case = 0; first_case < hsl_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::AdobeRgbHsl<mt::Simd256Float32> actual = adobe_rgb_batch(colour_reference::adobe_rgb_hsl_cases, first_case, hsl_case_count).to_hsl();
@@ -147,7 +147,7 @@ void test_adobe_rgb_simd256_float(TestContext& test) {
 		}
 	}
 
-	// Reference data checks transfer-encoded Adobe RGB (1998) to CIE XYZ D65.
+	// Reference data checks gamma-2.4 encoded Adobe RGB (1998) to CIE XYZ D65.
 	const int xyz_case_count = int(sizeof(colour_reference::adobe_rgb_xyz_d65_cases) / sizeof(colour_reference::adobe_rgb_xyz_d65_cases[0]));
 	for (int first_case = 0; first_case < xyz_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::Xyz<mt::Simd256Float32> actual = adobe_rgb_batch(colour_reference::adobe_rgb_xyz_d65_cases, first_case, xyz_case_count).to_xyz();

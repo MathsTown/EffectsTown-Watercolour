@@ -89,7 +89,7 @@ void test_display_p3_float(TestContext& test) {
 	test.check_equal(sanitised.blue, std::numeric_limits<float>::max(), "DisplayP3<float> sanitise infinity");
 	test.check_equal(sanitised.alpha, std::numeric_limits<float>::lowest(), "DisplayP3<float> sanitise negative infinity");
 
-	// Reference data checks transfer-encoded Display P3 to linear Display P3.
+	// Reference data checks gamma-2.4 encoded Display P3 to linear Display P3.
 	for (const auto& colour_case : colour_reference::display_p3_display_p3_linear_cases) {
 		mt::DisplayP3<float> colour(static_cast<float>(colour_case.source[0]), static_cast<float>(colour_case.source[1]), static_cast<float>(colour_case.source[2]), static_cast<float>(colour_case.source[3]));
 		mt::DisplayP3Linear<float> actual = colour.to_linear();
@@ -100,7 +100,7 @@ void test_display_p3_float(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 5.0e-6f, message + " a");
 	}
 
-	// Reference data checks transfer-encoded Display P3 to HSV.
+	// Reference data checks gamma-2.4 encoded Display P3 to HSV.
 	for (const auto& colour_case : colour_reference::display_p3_hsv_cases) {
 		mt::DisplayP3<float> colour(static_cast<float>(colour_case.source[0]), static_cast<float>(colour_case.source[1]), static_cast<float>(colour_case.source[2]), static_cast<float>(colour_case.source[3]));
 		mt::DisplayP3Hsv<float> actual = colour.to_hsv();
@@ -111,7 +111,7 @@ void test_display_p3_float(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 5.0e-6f, message + " a");
 	}
 
-	// Reference data checks transfer-encoded Display P3 to HSL.
+	// Reference data checks gamma-2.4 encoded Display P3 to HSL.
 	for (const auto& colour_case : colour_reference::display_p3_hsl_cases) {
 		mt::DisplayP3<float> colour(static_cast<float>(colour_case.source[0]), static_cast<float>(colour_case.source[1]), static_cast<float>(colour_case.source[2]), static_cast<float>(colour_case.source[3]));
 		mt::DisplayP3Hsl<float> actual = colour.to_hsl();
@@ -122,7 +122,7 @@ void test_display_p3_float(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 5.0e-6f, message + " a");
 	}
 
-	// Reference data checks transfer-encoded Display P3 to CIE XYZ D65.
+	// Reference data checks gamma-2.4 encoded Display P3 to CIE XYZ D65.
 	for (const auto& colour_case : colour_reference::display_p3_xyz_d65_cases) {
 		mt::DisplayP3<float> colour(static_cast<float>(colour_case.source[0]), static_cast<float>(colour_case.source[1]), static_cast<float>(colour_case.source[2]), static_cast<float>(colour_case.source[3]));
 		mt::Xyz<float> actual = colour.to_xyz();

@@ -24,7 +24,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Type: AdobeRgb
 
 Specification:
-- Transfer-encoded Adobe RGB (1998), also represented by CSS Color 4 as a98-rgb.
+- gamma-2.4 encoded Adobe RGB (1998), also represented by CSS Color 4 as a98-rgb.
 - Specification references:
   https://www.w3.org/TR/css-color-4/#predefined-a98-rgb
   https://www.adobe.com/digitalimag/pdfs/AdobeRGB1998.pdf
@@ -35,12 +35,12 @@ Reference white:
 - XYZ values are relative tristimulus values with Y = 1.0 for diffuse white.
 
 Conversions:
-- to_linear() applies the Adobe RGB (1998) pure power transfer function over the nominal 0..1 range.
+- to_linear() applies the Adobe RGB (1998) pure power gamma 2.4 transfer function over the nominal 0..1 range.
 - to_xyz() converts through AdobeRgbLinear and the Adobe RGB (1998) D65 RGB-to-XYZ matrix.
-- to_hsv() and to_hsl() are conventional component-space transforms over transfer-encoded Adobe RGB values.
+- to_hsv() and to_hsl() are conventional component-space transforms over gamma-2.4 encoded Adobe RGB values.
 
 Components:
-- red, green, blue: nominal 0..1 transfer-encoded colour channels; out-of-range values are preserved unless clamped.
+- red, green, blue: nominal 0..1 gamma-2.4 encoded colour channels; out-of-range values are preserved unless clamped.
 - alpha: non-colour opacity channel, normally 0..1 and passed through unchanged.
 
 API:
@@ -61,10 +61,10 @@ namespace mt {
 // Forward declaration of the linear Adobe RGB (1998) type.
 template <ColourComponent F> struct AdobeRgbLinear;
 
-// Forward declaration of the transfer-encoded Adobe RGB (1998) HSV type.
+// Forward declaration of the gamma-2.4 encoded Adobe RGB (1998) HSV type.
 template <ColourComponent F> struct AdobeRgbHsv;
 
-// Forward declaration of the transfer-encoded Adobe RGB (1998) HSL type.
+// Forward declaration of the gamma-2.4 encoded Adobe RGB (1998) HSL type.
 template <ColourComponent F> struct AdobeRgbHsl;
 
 // Forward declaration of the CIE XYZ D65 type.
@@ -72,7 +72,7 @@ template <ColourComponent F> struct Xyz;
 
 /**************************************************************************************************
  * AdobeRgb floating point or Simd floating point colour type.
- * Colourspace : Adobe RGB (1998), transfer-encoded
+ * Colourspace : Adobe RGB (1998), gamma-2.4 encoded
  * Definition  : https://www.adobe.com/digitalimag/pdfs/AdobeRGB1998.pdf
  * PixelOrder  : RGBA
  * Alpha       : Assumed not-premultiplied for all operations except unpremultiply_alpha().

@@ -35,7 +35,8 @@ Reference white:
 
 Conversions:
 - to_xyz() uses the Rec.709 D65 RGB-to-XYZ matrix derived from the BT.709 primaries.
-- to_rec709() and to_transfer() apply the BT.709 opto-electronic transfer function.
+- to_rec709_oetf() applies the BT.709 opto-electronic gamma 2.4 transfer function.
+- to_rec709_gamma24() applies a pure gamma 2.4 display gamma 2.4 transfer function.
 - to_hsv() and to_hsl() are conventional component-space transforms over linear-light Rec.709 values.
 
 Components:
@@ -45,7 +46,7 @@ Components:
 API:
 - Construction: default, grey, RGB, RGBA.
 - Operations: arithmetic operators, premultiply_alpha(), un_premultiply_alpha(), clamp(), clip(), clip_rgb(), fit_gamut(), no_negatives(), sanitise_floats().
-- Conversion: to_rec709(), to_transfer(), to_hsv(), to_hsl(), to_xyz().
+- Conversion: to_rec709_oetf(), to_rec709_gamma24(), to_hsv(), to_hsl(), to_xyz().
 
 *********************************************************************************************************/
 #pragma once
@@ -57,8 +58,11 @@ API:
 
 namespace mt {
 
-// Forward declaration of the transfer-encoded Rec.709 type.
-template <ColourComponent F> struct Rec709;
+// Forward declaration of the Rec.709 OETF-encoded type.
+template <ColourComponent F> struct Rec709Oetf;
+
+// Forward declaration of the Rec.709 gamma-2.4 encoded type.
+template <ColourComponent F> struct Rec709Gamma24;
 
 // Forward declaration of the linear Rec.709 HSV type.
 template <ColourComponent F> struct Rec709LinearHsv;
@@ -174,13 +178,13 @@ template <ColourComponent F> struct Rec709Linear {
 	[[nodiscard]]
 	GenericRgb<F> to_generic_rgb() const noexcept;
 
-	// Convert to transfer-encoded Rec.709 RGBA (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded Rec.709 RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
-	Rec709<F> to_rec709() const noexcept;
+	Rec709Oetf<F> to_rec709_oetf() const noexcept;
 
-	// Convert to the matching transfer-encoded RGB type (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded Rec.709 RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
-	Rec709<F> to_transfer() const noexcept;
+	Rec709Gamma24<F> to_rec709_gamma24() const noexcept;
 
 	// Convert to linear Rec.709 HSV (implemented in colour_conversions.h).
 	[[nodiscard]]

@@ -36,7 +36,7 @@ Reference white:
 
 Conversions:
 - to_xyz() uses the Adobe RGB (1998) D65 RGB-to-XYZ matrix.
-- to_adobe_rgb() and to_transfer() apply the Adobe RGB (1998) pure power transfer function over the nominal 0..1 range.
+- to_adobe_rgb() applies the Adobe RGB (1998) pure power gamma 2.4 transfer function over the nominal 0..1 range.
 - to_hsv() and to_hsl() are conventional component-space transforms over linear-light Adobe RGB values.
 
 Components:
@@ -46,7 +46,7 @@ Components:
 API:
 - Construction: default, grey, RGB, RGBA.
 - Operations: arithmetic operators, premultiply_alpha(), un_premultiply_alpha(), clamp(), clip(), clip_rgb(), fit_gamut(), no_negatives(), sanitise_floats().
-- Conversion: to_adobe_rgb(), to_transfer(), to_hsv(), to_hsl(), to_xyz().
+- Conversion: to_adobe_rgb(), to_hsv(), to_hsl(), to_xyz().
 
 *********************************************************************************************************/
 #pragma once
@@ -58,7 +58,7 @@ API:
 
 namespace mt {
 
-// Forward declaration of the transfer-encoded Adobe RGB (1998) type.
+// Forward declaration of the gamma-2.4 encoded Adobe RGB (1998) type.
 template <ColourComponent F> struct AdobeRgb;
 
 // Forward declaration of the linear Adobe RGB (1998) HSV type.
@@ -175,13 +175,9 @@ template <ColourComponent F> struct AdobeRgbLinear {
 	[[nodiscard]]
 	GenericRgb<F> to_generic_rgb() const noexcept;
 
-	// Convert to transfer-encoded Adobe RGB (1998) RGBA (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded Adobe RGB (1998) RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
 	AdobeRgb<F> to_adobe_rgb() const noexcept;
-
-	// Convert to the matching transfer-encoded RGB type (implemented in colour_conversions.h).
-	[[nodiscard]]
-	AdobeRgb<F> to_transfer() const noexcept;
 
 	// Convert to linear Adobe RGB (1998) HSV (implemented in colour_conversions.h).
 	[[nodiscard]]

@@ -35,7 +35,7 @@ Reference white:
 
 Conversions:
 - to_xyz() uses the sRGB D65 RGB-to-XYZ matrix.
-- to_srgb() and to_transfer() apply the sRGB piecewise transfer function, including the CSS Color 4 extended handling for negative values.
+- to_srgb() applies the sRGB piecewise gamma 2.4 transfer function, including the CSS Color 4 extended handling for negative values.
 - to_hsv() and to_hsl() are conventional component-space transforms over linear-light sRGB values.
 
 Components:
@@ -45,7 +45,7 @@ Components:
 API:
 - Construction: default, grey, RGB, RGBA.
 - Operations: arithmetic operators, premultiply_alpha(), un_premultiply_alpha(), clamp(), clip(), clip_rgb(), fit_gamut(), no_negatives(), sanitise_floats().
-- Conversion: to_srgb(), to_transfer(), to_hsv(), to_hsl(), to_xyz().
+- Conversion: to_srgb(), to_hsv(), to_hsl(), to_xyz().
 
 *********************************************************************************************************/
 #pragma once
@@ -57,7 +57,7 @@ API:
 
 namespace mt {
 
-// Forward declaration of the transfer-encoded sRGBA type.
+// Forward declaration of the gamma-2.4 encoded sRGBA type.
 template <ColourComponent F> struct Srgb;
 
 // Forward declaration of the linear sRGB HSV type.
@@ -174,13 +174,9 @@ template <ColourComponent F> struct SrgbLinear {
 	[[nodiscard]]
 	GenericRgb<F> to_generic_rgb() const noexcept;
 
-	// Convert to transfer-encoded sRGBA (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded sRGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
 	Srgb<F> to_srgb() const noexcept;
-
-	// Convert to the matching transfer-encoded RGB type (implemented in colour_conversions.h).
-	[[nodiscard]]
-	Srgb<F> to_transfer() const noexcept;
 
 	// Convert to linear sRGB HSV (implemented in colour_conversions.h).
 	[[nodiscard]]

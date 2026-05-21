@@ -74,7 +74,7 @@ void test_srgb_hsl_double(TestContext& test) {
 	test.check_equal(wrapped_over_one.lightness, 0.75, "SrgbHsl<double> wrap over-one lightness");
 	test.check_equal(wrapped_over_one.alpha, 1.0, "SrgbHsl<double> wrap over-one alpha");
 
-	// Reference data checks transfer-encoded sRGB HSL to transfer-encoded sRGB.
+	// Reference data checks gamma-2.4 encoded sRGB HSL to gamma-2.4 encoded sRGB.
 	for (const auto& colour_case : colour_reference::srgb_hsl_cases) {
 		mt::SrgbHsl<double> colour(static_cast<double>(colour_case.expected[0]), static_cast<double>(colour_case.expected[1]), static_cast<double>(colour_case.expected[2]), static_cast<double>(colour_case.expected[3]));
 		mt::Srgb<double> actual = colour.to_srgb();

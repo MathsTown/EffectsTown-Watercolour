@@ -89,7 +89,7 @@ void test_adobe_rgb_double(TestContext& test) {
 	test.check_equal(sanitised.blue, std::numeric_limits<double>::max(), "AdobeRgb<double> sanitise infinity");
 	test.check_equal(sanitised.alpha, std::numeric_limits<double>::lowest(), "AdobeRgb<double> sanitise negative infinity");
 
-	// Reference data checks transfer-encoded Adobe RGB (1998) to linear Adobe RGB (1998).
+	// Reference data checks gamma-2.4 encoded Adobe RGB (1998) to linear Adobe RGB (1998).
 	for (const auto& colour_case : colour_reference::adobe_rgb_adobe_rgb_linear_cases) {
 		mt::AdobeRgb<double> colour(colour_case.source[0], colour_case.source[1], colour_case.source[2], colour_case.source[3]);
 		mt::AdobeRgbLinear<double> actual = colour.to_linear();
@@ -100,7 +100,7 @@ void test_adobe_rgb_double(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 2.0e-11, message + " a");
 	}
 
-	// Reference data checks transfer-encoded Adobe RGB (1998) to HSV.
+	// Reference data checks gamma-2.4 encoded Adobe RGB (1998) to HSV.
 	for (const auto& colour_case : colour_reference::adobe_rgb_hsv_cases) {
 		mt::AdobeRgb<double> colour(colour_case.source[0], colour_case.source[1], colour_case.source[2], colour_case.source[3]);
 		mt::AdobeRgbHsv<double> actual = colour.to_hsv();
@@ -111,7 +111,7 @@ void test_adobe_rgb_double(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 2.0e-11, message + " a");
 	}
 
-	// Reference data checks transfer-encoded Adobe RGB (1998) to HSL.
+	// Reference data checks gamma-2.4 encoded Adobe RGB (1998) to HSL.
 	for (const auto& colour_case : colour_reference::adobe_rgb_hsl_cases) {
 		mt::AdobeRgb<double> colour(colour_case.source[0], colour_case.source[1], colour_case.source[2], colour_case.source[3]);
 		mt::AdobeRgbHsl<double> actual = colour.to_hsl();
@@ -122,7 +122,7 @@ void test_adobe_rgb_double(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 2.0e-11, message + " a");
 	}
 
-	// Reference data checks transfer-encoded Adobe RGB (1998) to CIE XYZ D65.
+	// Reference data checks gamma-2.4 encoded Adobe RGB (1998) to CIE XYZ D65.
 	for (const auto& colour_case : colour_reference::adobe_rgb_xyz_d65_cases) {
 		mt::AdobeRgb<double> colour(colour_case.source[0], colour_case.source[1], colour_case.source[2], colour_case.source[3]);
 		mt::Xyz<double> actual = colour.to_xyz();

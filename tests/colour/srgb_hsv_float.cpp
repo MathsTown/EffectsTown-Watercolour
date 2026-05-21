@@ -97,7 +97,7 @@ void test_srgb_hsv_float(TestContext& test) {
 	test.check_equal(wrapped_over_one.value, 0.75f, "SrgbHsv<float> wrap over-one value");
 	test.check_equal(wrapped_over_one.alpha, 1.0f, "SrgbHsv<float> wrap over-one alpha");
 
-	// Reference data checks transfer-encoded sRGB HSV to transfer-encoded sRGB.
+	// Reference data checks gamma-2.4 encoded sRGB HSV to gamma-2.4 encoded sRGB.
 	for (const auto& colour_case : colour_reference::srgb_hsv_cases) {
 		mt::SrgbHsv<float> colour(static_cast<float>(colour_case.expected[0]), static_cast<float>(colour_case.expected[1]), static_cast<float>(colour_case.expected[2]), static_cast<float>(colour_case.expected[3]));
 		mt::Srgb<float> actual = colour.to_srgb();

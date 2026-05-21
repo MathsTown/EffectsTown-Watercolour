@@ -74,7 +74,7 @@ void test_srgb_hsv_double(TestContext& test) {
 	test.check_equal(wrapped_over_one.value, 0.75, "SrgbHsv<double> wrap over-one value");
 	test.check_equal(wrapped_over_one.alpha, 1.0, "SrgbHsv<double> wrap over-one alpha");
 
-	// Reference data checks transfer-encoded sRGB HSV to transfer-encoded sRGB.
+	// Reference data checks gamma-2.4 encoded sRGB HSV to gamma-2.4 encoded sRGB.
 	for (const auto& colour_case : colour_reference::srgb_hsv_cases) {
 		mt::SrgbHsv<double> colour(static_cast<double>(colour_case.expected[0]), static_cast<double>(colour_case.expected[1]), static_cast<double>(colour_case.expected[2]), static_cast<double>(colour_case.expected[3]));
 		mt::Srgb<double> actual = colour.to_srgb();

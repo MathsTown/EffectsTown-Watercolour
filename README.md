@@ -58,8 +58,8 @@ Supported colour families include:
 - Display P3: `mt::DisplayP3`, `mt::DisplayP3Linear`, `mt::DisplayP3Hsv`, `mt::DisplayP3Hsl`
 - Adobe RGB (1998): `mt::AdobeRgb`, `mt::AdobeRgbLinear`, `mt::AdobeRgbHsv`, `mt::AdobeRgbHsl`, `mt::AdobeRgbLinearHsv`, `mt::AdobeRgbLinearHsl`
 - ProPhoto RGB: `mt::ProPhotoRgb`, `mt::ProPhotoRgbLinear`, `mt::ProPhotoRgbHsv`, `mt::ProPhotoRgbHsl`, `mt::ProPhotoRgbLinearHsv`, `mt::ProPhotoRgbLinearHsl`
-- Rec.709: `mt::Rec709`, `mt::Rec709Linear`, `mt::Rec709Hsv`, `mt::Rec709Hsl`, `mt::Rec709LinearHsv`, `mt::Rec709LinearHsl`
-- Rec.2020: `mt::Rec2020`, `mt::Rec2020Linear`, `mt::Rec2020Hsv`, `mt::Rec2020Hsl`, `mt::Rec2020LinearHsv`, `mt::Rec2020LinearHsl`
+- Rec.709: `mt::Rec709Oetf`, `mt::Rec709Gamma24`, `mt::Rec709Linear`, `mt::Rec709OetfHsv`, `mt::Rec709OetfHsl`, `mt::Rec709Gamma24Hsv`, `mt::Rec709Gamma24Hsl`, `mt::Rec709LinearHsv`, `mt::Rec709LinearHsl`
+- Rec.2020: `mt::Rec2020Oetf`, `mt::Rec2020Gamma24`, `mt::Rec2020Linear`, `mt::Rec2020OetfHsv`, `mt::Rec2020OetfHsl`, `mt::Rec2020Gamma24Hsv`, `mt::Rec2020Gamma24Hsl`, `mt::Rec2020LinearHsv`, `mt::Rec2020LinearHsl`
 - ACES2065-1 / AP0: `mt::Aces2065_1`, `mt::Aces2065_1Hsv`, `mt::Aces2065_1Hsl`
 - ACEScg / AP1: `mt::Acescg`, `mt::AcescgHsv`, `mt::AcescgHsl`
 - XYZ: `mt::Xyz`, `mt::XyzD50`, `mt::XyzAces`
@@ -84,7 +84,7 @@ RGB types support operations such as:
 - alpha handling with `premultiply_alpha()` and `un_premultiply_alpha()`
 - range handling with `clamp()`, `clip()`, `clip_rgb()`, `no_negatives()`, and `sanitise_floats()`
 - gamut mapping with `fit_gamut()`
-- transfer conversion between encoded and linear forms, for example `to_linear()` and `to_transfer()`
+- transfer conversion between encoded and linear forms, for example `to_linear()`, `to_srgb()`, and `to_rec709_oetf()`
 - conversion to XYZ with `to_xyz()`
 - conversion to HSV and HSL companion types with `to_hsv()` and `to_hsl()`
 - arithmetic operators for linear-light RGB types and ACES RGB types

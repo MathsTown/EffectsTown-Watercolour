@@ -169,7 +169,7 @@ void test_srgb_simd256_float(TestContext& test) {
 		test.check_equal(sanitised.alpha.element(lane), std::numeric_limits<float>::lowest(), "Srgb<Simd256Float32> sanitise alpha negative infinity lane " + std::to_string(lane));
 	}
 
-	// Reference data checks transfer-encoded sRGB to linear sRGB.
+	// Reference data checks gamma-2.4 encoded sRGB to linear sRGB.
 	const int linear_case_count = int(sizeof(colour_reference::srgb_srgb_linear_cases) / sizeof(colour_reference::srgb_srgb_linear_cases[0]));
 	for (int first_case = 0; first_case < linear_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::SrgbLinear<mt::Simd256Float32> actual = srgb_batch(colour_reference::srgb_srgb_linear_cases, first_case, linear_case_count).to_linear();
@@ -183,7 +183,7 @@ void test_srgb_simd256_float(TestContext& test) {
 		}
 	}
 
-	// Reference data checks transfer-encoded sRGB to HSV.
+	// Reference data checks gamma-2.4 encoded sRGB to HSV.
 	const int hsv_case_count = int(sizeof(colour_reference::srgb_hsv_cases) / sizeof(colour_reference::srgb_hsv_cases[0]));
 	for (int first_case = 0; first_case < hsv_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::SrgbHsv<mt::Simd256Float32> actual = srgb_batch(colour_reference::srgb_hsv_cases, first_case, hsv_case_count).to_hsv();
@@ -197,7 +197,7 @@ void test_srgb_simd256_float(TestContext& test) {
 		}
 	}
 
-	// Reference data checks transfer-encoded sRGB to HSL.
+	// Reference data checks gamma-2.4 encoded sRGB to HSL.
 	const int hsl_case_count = int(sizeof(colour_reference::srgb_hsl_cases) / sizeof(colour_reference::srgb_hsl_cases[0]));
 	for (int first_case = 0; first_case < hsl_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::SrgbHsl<mt::Simd256Float32> actual = srgb_batch(colour_reference::srgb_hsl_cases, first_case, hsl_case_count).to_hsl();
@@ -211,7 +211,7 @@ void test_srgb_simd256_float(TestContext& test) {
 		}
 	}
 
-	// Reference data checks transfer-encoded sRGB to CIE XYZ D65.
+	// Reference data checks gamma-2.4 encoded sRGB to CIE XYZ D65.
 	const int xyz_case_count = int(sizeof(colour_reference::srgb_xyz_d65_cases) / sizeof(colour_reference::srgb_xyz_d65_cases[0]));
 	for (int first_case = 0; first_case < xyz_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::Xyz<mt::Simd256Float32> actual = srgb_batch(colour_reference::srgb_xyz_d65_cases, first_case, xyz_case_count).to_xyz();

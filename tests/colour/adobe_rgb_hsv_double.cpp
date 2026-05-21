@@ -74,7 +74,7 @@ void test_adobe_rgb_hsv_double(TestContext& test) {
 	test.check_equal(wrapped_over_one.value, 0.75, "AdobeRgbHsv<double> wrap over-one v");
 	test.check_equal(wrapped_over_one.alpha, 1.0, "AdobeRgbHsv<double> wrap over-one a");
 
-	// Reference data checks transfer-encoded Adobe RGB (1998) HSV to transfer-encoded Adobe RGB (1998).
+	// Reference data checks gamma-2.4 encoded Adobe RGB (1998) HSV to gamma-2.4 encoded Adobe RGB (1998).
 	for (const auto& colour_case : colour_reference::adobe_rgb_hsv_cases) {
 		mt::AdobeRgbHsv<double> colour(static_cast<double>(colour_case.expected[0]), static_cast<double>(colour_case.expected[1]), static_cast<double>(colour_case.expected[2]), static_cast<double>(colour_case.expected[3]));
 		mt::AdobeRgb<double> actual = colour.to_adobe_rgb();

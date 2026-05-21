@@ -35,7 +35,8 @@ Reference white:
 
 Conversions:
 - to_xyz() uses the Rec.2020 D65 RGB-to-XYZ matrix.
-- to_rec2020() and to_transfer() apply the BT.2020 opto-electronic transfer function using alpha = 1.099 and beta = 0.018.
+- to_rec2020_oetf() applies the BT.2020 opto-electronic transfer function using alpha = 1.099 and beta = 0.018.
+- to_rec2020_gamma24() applies a pure gamma 2.4 display transfer function.
 - to_hsv() and to_hsl() are conventional component-space transforms over linear-light Rec.2020 values.
 
 Components:
@@ -45,7 +46,7 @@ Components:
 API:
 - Construction: default, grey, RGB, RGBA.
 - Operations: arithmetic operators, premultiply_alpha(), un_premultiply_alpha(), clamp(), clip(), clip_rgb(), fit_gamut(), no_negatives(), sanitise_floats().
-- Conversion: to_rec2020(), to_transfer(), to_hsv(), to_hsl(), to_xyz().
+- Conversion: to_rec2020_oetf(), to_rec2020_gamma24(), to_hsv(), to_hsl(), to_xyz().
 
 *********************************************************************************************************/
 #pragma once
@@ -57,8 +58,11 @@ API:
 
 namespace mt {
 
-// Forward declaration of the transfer-encoded Rec.2020 type.
-template <ColourComponent F> struct Rec2020;
+// Forward declaration of the Rec.2020 OETF-encoded type.
+template <ColourComponent F> struct Rec2020Oetf;
+
+// Forward declaration of the gamma-2.4 encoded Rec.2020 type.
+template <ColourComponent F> struct Rec2020Gamma24;
 
 // Forward declaration of the linear Rec.2020 HSV type.
 template <ColourComponent F> struct Rec2020LinearHsv;
@@ -174,13 +178,13 @@ template <ColourComponent F> struct Rec2020Linear {
 	[[nodiscard]]
 	GenericRgb<F> to_generic_rgb() const noexcept;
 
-	// Convert to transfer-encoded Rec.2020 RGBA (implemented in colour_conversions.h).
+	// Convert to Rec.2020 OETF-encoded RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
-	Rec2020<F> to_rec2020() const noexcept;
+	Rec2020Oetf<F> to_rec2020_oetf() const noexcept;
 
-	// Convert to the matching transfer-encoded RGB type (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded Rec.2020 RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
-	Rec2020<F> to_transfer() const noexcept;
+	Rec2020Gamma24<F> to_rec2020_gamma24() const noexcept;
 
 	// Convert to linear Rec.2020 HSV (implemented in colour_conversions.h).
 	[[nodiscard]]
