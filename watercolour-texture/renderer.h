@@ -135,6 +135,8 @@ mt::GenericRgb<S> Renderer<S>::render_pixel(S x, S y) const {
     const auto parameter_evolve1 = 0.1f * static_cast<typename S::F>(params.get_value(ParameterID::evolve1));
     const auto parameter_evolve2 = static_cast<typename S::F>(2.0* std::numbers::pi) * static_cast<typename S::F>(params.get_value(ParameterID::evolve2));
     
+
+
     if (parameter_scale <= 0.0f) parameter_scale = 0.000001f;
 
     S xf = x ;
@@ -182,8 +184,20 @@ mt::GenericRgb<S> Renderer<S>::render_pixel(S x, S y) const {
     auto b = fbm(vec4<S>(nVec7, evolve_x*0.19f, evolve_y * 0.3f), 8, seed) * 0.65f;
     
 
+    auto result = mt::GenericRgb<S>(r, g, b);
+
+	auto working_colour_space = params.get_string(ParameterID::working_colour_space);
+	if (working_colour_space == "Rec.709") {
+		result = mt::Srgb<S>(result).to_xyz().to_rec709().to_generic_rgb();
+    } else if (working_colour_space == "sRGB") {
+        
+    } else if (working_colour_space == "Rec.2020") {
+        result = mt::Srgb<S>(result).to_xyz().to_rec2020().to_generic_rgb();
+    }
+
+
     
-    return mt::GenericRgb<S>{r,g,b};
+    return result;
 
 
 

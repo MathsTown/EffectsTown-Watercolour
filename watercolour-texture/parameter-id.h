@@ -42,11 +42,13 @@ enum class ParameterID {
 	seed_button,   //Reserved
 	seed_int,	   //Reserved
 	render_precision, //Reserved
-
+	working_colour_space, //Reserved
+	
 	scale = 100,
 	directional_bias,
 	evolve1,
 	evolve2,
+	
 
 	input_transform_group_start = 1000,
 	input_transform_group_end,

@@ -40,8 +40,22 @@ Description:
 #include "parameter-id.h" 
 #include "..\common\input-transforms.h"
 
+#include <vector>
+#include <string>
+
 ParameterList build_project_parameters() {
+	
+	//Build working colourspace list
+	std::vector<std::string> working_colourspace_list {};
+	working_colourspace_list.push_back("Rec.709");
+	working_colourspace_list.push_back("Rec.2020");
+	working_colourspace_list.push_back("sRGB");
+
+	
 	ParameterList params;
+	params.add_entry(ParameterEntry::make_list(ParameterID::working_colour_space,"Working Colour Space", working_colourspace_list));
+	
+
 	params.add_entry(ParameterEntry::make_seed(ParameterID::seed, "Random Seed"));
 	params.add_entry(ParameterEntry::make_number(ParameterID::scale, "Scale Noise",0.0000001,10000.0,1.0,0.000001,100.0,2));
 	params.add_entry(ParameterEntry::make_number(ParameterID::directional_bias, "Directional Bias", -10000, 10000.0, 0.0, -100.0, 100.0, 2));
