@@ -89,17 +89,17 @@ void test_adobe_rgb_linear_double(TestContext& test) {
 	test.check_equal(sanitised.blue, std::numeric_limits<double>::max(), "AdobeRgbLinear<double> sanitise infinity");
 	test.check_equal(sanitised.alpha, std::numeric_limits<double>::lowest(), "AdobeRgbLinear<double> sanitise negative infinity");
 
-	// Reference data checks linear Adobe RGB (1998) to transfer-encoded Adobe RGB (1998).
+	// Reference data checks linear Adobe RGB (1998) to gamma-2.4 encoded Adobe RGB (1998).
 	for (const auto& colour_case : colour_reference::adobe_rgb_adobe_rgb_linear_cases) {
 		mt::AdobeRgbLinear<double> colour(static_cast<double>(colour_case.expected[0]), static_cast<double>(colour_case.expected[1]), static_cast<double>(colour_case.expected[2]), static_cast<double>(colour_case.expected[3]));
 		mt::AdobeRgb<double> actual = colour.to_adobe_rgb();
-		mt::AdobeRgb<double> transfer = colour.to_transfer();
+		mt::AdobeRgb<double> transfer = colour.to_adobe_rgb();
 		std::string message = std::string("AdobeRgbLinear<double> to_adobe_rgb ") + colour_case.name;
 		test.check_close(actual.red, colour_case.source[0], 2.0e-11, message + " r");
 		test.check_close(actual.green, colour_case.source[1], 2.0e-11, message + " g");
 		test.check_close(actual.blue, colour_case.source[2], 2.0e-11, message + " b");
 		test.check_close(actual.alpha, colour_case.source[3], 2.0e-11, message + " a");
-		message = std::string("AdobeRgbLinear<double> to_transfer ") + colour_case.name;
+		message = std::string("AdobeRgbLinear<double> to_adobe_rgb ") + colour_case.name;
 		test.check_close(transfer.red, colour_case.source[0], 2.0e-11, message + " r");
 		test.check_close(transfer.green, colour_case.source[1], 2.0e-11, message + " g");
 		test.check_close(transfer.blue, colour_case.source[2], 2.0e-11, message + " b");

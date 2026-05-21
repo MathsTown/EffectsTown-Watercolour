@@ -13,12 +13,12 @@ Lab CAT:     Bradford
  * Header scope: Rec.709, plus CIE XYZ D65 conversion endpoints.
  * colour-science RGB colourspace key: ITU-R BT.709.
  * Whitepoint: D65.
- * Coordinate field `rec709`: transfer-encoded Rec.709 RGBA, ordered r, g, b, a.
+ * Coordinate field `rec709_oetf`: transfer-encoded Rec.709 RGBA, ordered r, g, b, a.
  * Coordinate field `rec709_linear`: linear-light Rec.709 RGBA, ordered r, g, b, a.
- * Transfer function for `rec709` <-> `rec709_linear`: Rec.709 transfer function from colour-science.
+ * Transfer function for `rec709_oetf` <-> `rec709_linear`: Rec.709 transfer function from colour-science.
  * Coordinate field `xyz_d65`: CIE XYZ with D65 reference white and Y = 1, ordered X, Y, Z, alpha.
- * Coordinate field `rec709_hsv`: HSV derived from `rec709`, ordered h, s, v, a; h is a 0..1 turn.
- * Coordinate field `rec709_hsl`: HSL derived from `rec709`, ordered h, s, l, a; h is a 0..1 turn.
+ * Coordinate field `rec709_oetf_hsv`: HSV derived from `rec709_oetf`, ordered h, s, v, a; h is a 0..1 turn.
+ * Coordinate field `rec709_oetf_hsl`: HSL derived from `rec709_oetf`, ordered h, s, l, a; h is a 0..1 turn.
  * Coordinate field `rec709_linear_hsv`: HSV derived from `rec709_linear`, ordered h, s, v, a; h is a 0..1 turn.
  * Coordinate field `rec709_linear_hsl`: HSL derived from `rec709_linear`, ordered h, s, l, a; h is a 0..1 turn.
  * The C++ library currently implements all coordinate fields named in this header for Rec.709.
@@ -40,12 +40,12 @@ namespace colour_reference {
 
 /**************************************************************************************************
  * Relationship between transfer-encoded Rec.709 RGBA and linear-light Rec.709 RGBA.
- * Source field   : rec709
+ * Source field   : rec709_oetf
  * Expected field : rec709_linear
  * Direction      : Tests may use source -> expected or expected -> source from the same row.
  * Cases          : 241
  * ************************************************************************************************/
-inline constexpr ColourReferenceCase rec709_rec709_linear_cases[] = {
+inline constexpr ColourReferenceCase rec709_oetf_rec709_linear_cases[] = {
 	{ "aliceblue", "css_named", { 0.93397121130302141, 0.9691488793347216, 1.0, 1.0 }, { 0.8713671191987975, 0.93868572845788778, 0.99999999999999989, 1.0 } },
 	{ "antiquewhite", "css_named", { 0.97795683414179191, 0.9120299612302889, 0.82462390418868525, 1.0 }, { 0.95597335324928656, 0.8307698767746543, 0.67954246963309384, 1.0 } },
 	{ "aqua", "css_named", { 0.0, 0.99999999999999978, 1.0, 1.0 }, { 0.0, 0.99999999999999978, 0.99999999999999989, 1.0 } },
@@ -291,12 +291,12 @@ inline constexpr ColourReferenceCase rec709_rec709_linear_cases[] = {
 
 /**************************************************************************************************
  * Relationship between transfer-encoded Rec.709 RGBA and CIE XYZ D65.
- * Source field   : rec709
+ * Source field   : rec709_oetf
  * Expected field : rec709_to_xyz_d65
  * Direction      : Tests may use source -> expected or expected -> source from the same row.
  * Cases          : 241
  * ************************************************************************************************/
-inline constexpr ColourReferenceCase rec709_xyz_d65_cases[] = {
+inline constexpr ColourReferenceCase rec709_oetf_xyz_d65_cases[] = {
 	{ "aliceblue", "css_named", { 0.93397121130302141, 0.9691488793347216, 1.0, 1.0 }, { 0.87548388724199078, 0.92879758553566383, 1.0792628307655161, 1.0 } },
 	{ "antiquewhite", "css_named", { 0.97795683414179191, 0.9120299612302889, 0.82462390418868525, 1.0 }, { 0.81394927346183332, 0.84647556287632708, 0.76343014631615602, 1.0 } },
 	{ "aqua", "css_named", { 0.0, 0.99999999999999978, 1.0, 1.0 }, { 0.53806512778571225, 0.78736099412848926, 1.0697269320442866, 1.0 } },
@@ -542,12 +542,12 @@ inline constexpr ColourReferenceCase rec709_xyz_d65_cases[] = {
 
 /**************************************************************************************************
  * Relationship between transfer-encoded Rec.709 RGBA and HSV coordinates.
- * Source field   : rec709
- * Expected field : rec709_hsv
+ * Source field   : rec709_oetf
+ * Expected field : rec709_oetf_hsv
  * Direction      : Tests may use source -> expected or expected -> source from the same row.
  * Cases          : 218
  * ************************************************************************************************/
-inline constexpr ColourReferenceCase rec709_hsv_cases[] = {
+inline constexpr ColourReferenceCase rec709_oetf_hsv_cases[] = {
 	{ "aliceblue", "css_named", { 0.93397121130302141, 0.9691488793347216, 1.0, 1.0 }, { 0.57787290280017434, 0.066028788696978591, 1.0, 1.0 } },
 	{ "antiquewhite", "css_named", { 0.97795683414179191, 0.9120299612302889, 0.82462390418868525, 1.0 }, { 0.095006833679208993, 0.15678905714449481, 0.97795683414179191, 1.0 } },
 	{ "aqua", "css_named", { 0.0, 0.99999999999999978, 1.0, 1.0 }, { 0.5, 0.99999999999999822, 1.0, 1.0 } },
@@ -770,12 +770,12 @@ inline constexpr ColourReferenceCase rec709_hsv_cases[] = {
 
 /**************************************************************************************************
  * Relationship between transfer-encoded Rec.709 RGBA and HSL coordinates.
- * Source field   : rec709
- * Expected field : rec709_hsl
+ * Source field   : rec709_oetf
+ * Expected field : rec709_oetf_hsl
  * Direction      : Tests may use source -> expected or expected -> source from the same row.
  * Cases          : 218
  * ************************************************************************************************/
-inline constexpr ColourReferenceCase rec709_hsl_cases[] = {
+inline constexpr ColourReferenceCase rec709_oetf_hsl_cases[] = {
 	{ "aliceblue", "css_named", { 0.93397121130302141, 0.9691488793347216, 1.0, 1.0 }, { 0.57787290280017434, 1.0, 0.9669856056515107, 1.0 } },
 	{ "antiquewhite", "css_named", { 0.97795683414179191, 0.9120299612302889, 0.82462390418868525, 1.0 }, { 0.095006833679208993, 0.77668677643918971, 0.90129036916523853, 1.0 } },
 	{ "aqua", "css_named", { 0.0, 0.99999999999999978, 1.0, 1.0 }, { 0.5, 1.0, 0.50000000000000089, 1.0 } },

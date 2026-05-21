@@ -74,7 +74,7 @@ void test_prophoto_rgb_hsl_float(TestContext& test) {
 	test.check_equal(wrapped_over_one.lightness, 0.75f, "ProPhotoRgbHsl<float> wrap over-one l");
 	test.check_equal(wrapped_over_one.alpha, 1.0f, "ProPhotoRgbHsl<float> wrap over-one a");
 
-	// Reference data checks transfer-encoded ProPhoto RGB HSL to transfer-encoded ProPhoto RGB.
+	// Reference data checks gamma-2.4 encoded ProPhoto RGB HSL to gamma-2.4 encoded ProPhoto RGB.
 	for (const auto& colour_case : colour_reference::prophoto_rgb_hsl_cases) {
 		mt::ProPhotoRgbHsl<float> colour(static_cast<float>(colour_case.expected[0]), static_cast<float>(colour_case.expected[1]), static_cast<float>(colour_case.expected[2]), static_cast<float>(colour_case.expected[3]));
 		mt::ProPhotoRgb<float> actual = colour.to_prophoto_rgb();

@@ -40,8 +40,7 @@ namespace mt {
 
 namespace detail {
 
-	template <typename>
-	inline constexpr bool always_false_v = false;
+	template <typename> inline constexpr bool always_false_v = false;
 
 	/**************************************************************************************************
 	 * Return mask value 1 when all RGB components are inside the closed 0..1 unit cube.
@@ -105,11 +104,7 @@ namespace detail {
 	inline C select_rgb(typename C::ComponentType mask, const C& if_true, const C& if_false) noexcept {
 		using F = typename C::ComponentType;
 		const F one = component_constant<F>(1.0);
-		return C(
-			if_equal(mask, one, if_true.red, if_false.red),
-			if_equal(mask, one, if_true.green, if_false.green),
-			if_equal(mask, one, if_true.blue, if_false.blue),
-			if_equal(mask, one, if_true.alpha, if_false.alpha));
+		return C(if_equal(mask, one, if_true.red, if_false.red), if_equal(mask, one, if_true.green, if_false.green), if_equal(mask, one, if_true.blue, if_false.blue), if_equal(mask, one, if_true.alpha, if_false.alpha));
 	}
 
 	/**************************************************************************************************
@@ -127,8 +122,7 @@ namespace detail {
 		return C(max(zero, min(colour.red, one)), max(zero, min(colour.green, one)), max(zero, min(colour.blue, one)), alpha);
 	}
 
-	template <RgbaColour C>
-	struct GamutRaytraceResult {
+	template <RgbaColour C> struct GamutRaytraceResult {
 		C colour;
 		typename C::ComponentType found;
 	};
@@ -228,12 +222,29 @@ namespace detail {
 	template <RgbaColour OutputRgb, RgbaColour LinearRgb>
 	[[nodiscard]]
 	inline OutputRgb linear_rgb_to_output_rgb(const LinearRgb& colour, typename OutputRgb::ComponentType alpha) noexcept {
+		using F = typename OutputRgb::ComponentType;
 		const LinearRgb clipped = clip_rgb_preserve_alpha(colour, alpha);
 
 		if constexpr (std::same_as<OutputRgb, LinearRgb>) {
 			return clipped;
+		} else if constexpr (std::same_as<OutputRgb, Srgb<F>>) {
+			return clipped.to_srgb();
+		} else if constexpr (std::same_as<OutputRgb, DisplayP3<F>>) {
+			return clipped.to_display_p3();
+		} else if constexpr (std::same_as<OutputRgb, AdobeRgb<F>>) {
+			return clipped.to_adobe_rgb();
+		} else if constexpr (std::same_as<OutputRgb, ProPhotoRgb<F>>) {
+			return clipped.to_prophoto_rgb();
+		} else if constexpr (std::same_as<OutputRgb, Rec709Oetf<F>>) {
+			return clipped.to_rec709_oetf();
+		} else if constexpr (std::same_as<OutputRgb, Rec709Gamma24<F>>) {
+			return clipped.to_rec709_gamma24();
+		} else if constexpr (std::same_as<OutputRgb, Rec2020Oetf<F>>) {
+			return clipped.to_rec2020_oetf();
+		} else if constexpr (std::same_as<OutputRgb, Rec2020Gamma24<F>>) {
+			return clipped.to_rec2020_gamma24();
 		} else {
-			return clipped.to_transfer();
+			static_assert(always_false_v<OutputRgb>, "Unsupported RGB output type for fit_gamut().");
 		}
 	}
 
@@ -299,7 +310,7 @@ namespace detail {
 } // namespace detail
 
 /**************************************************************************************************
- * Fit this transfer-encoded sRGB colour into the sRGB gamut.
+ * Fit this gamma-2.4 encoded sRGB colour into the sRGB gamut.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
@@ -317,7 +328,7 @@ inline SrgbLinear<F> SrgbLinear<F>::fit_gamut() const noexcept {
 }
 
 /**************************************************************************************************
- * Fit this transfer-encoded Display P3 colour into the Display P3 gamut.
+ * Fit this gamma-2.4 encoded Display P3 colour into the Display P3 gamut.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
@@ -335,7 +346,7 @@ inline DisplayP3Linear<F> DisplayP3Linear<F>::fit_gamut() const noexcept {
 }
 
 /**************************************************************************************************
- * Fit this transfer-encoded Adobe RGB (1998) colour into the Adobe RGB (1998) gamut.
+ * Fit this gamma-2.4 encoded Adobe RGB (1998) colour into the Adobe RGB (1998) gamut.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
@@ -353,7 +364,7 @@ inline AdobeRgbLinear<F> AdobeRgbLinear<F>::fit_gamut() const noexcept {
 }
 
 /**************************************************************************************************
- * Fit this transfer-encoded ProPhoto RGB colour into the ProPhoto RGB gamut.
+ * Fit this gamma-2.4 encoded ProPhoto RGB colour into the ProPhoto RGB gamut.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
@@ -371,12 +382,21 @@ inline ProPhotoRgbLinear<F> ProPhotoRgbLinear<F>::fit_gamut() const noexcept {
 }
 
 /**************************************************************************************************
- * Fit this transfer-encoded Rec.709 colour into the Rec.709 gamut.
+ * Fit this gamma-2.4 encoded Rec.709 colour into the Rec.709 gamut.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec709<F> Rec709<F>::fit_gamut() const noexcept {
-	return detail::fit_gamut_raytrace_rgb<Rec709<F>, Rec709Linear<F>>(*this);
+inline Rec709Oetf<F> Rec709Oetf<F>::fit_gamut() const noexcept {
+	return detail::fit_gamut_raytrace_rgb<Rec709Oetf<F>, Rec709Linear<F>>(*this);
+}
+
+/**************************************************************************************************
+ * Fit this gamma-2.4 encoded Rec.709 colour into the Rec.709 gamut.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Rec709Gamma24<F> Rec709Gamma24<F>::fit_gamut() const noexcept {
+	return detail::fit_gamut_raytrace_rgb<Rec709Gamma24<F>, Rec709Linear<F>>(*this);
 }
 
 /**************************************************************************************************
@@ -389,12 +409,21 @@ inline Rec709Linear<F> Rec709Linear<F>::fit_gamut() const noexcept {
 }
 
 /**************************************************************************************************
- * Fit this transfer-encoded Rec.2020 colour into the Rec.2020 gamut.
+ * Fit this Rec.2020 OETF-encoded colour into the Rec.2020 gamut.
  * ************************************************************************************************/
 template <ColourComponent F>
 [[nodiscard]]
-inline Rec2020<F> Rec2020<F>::fit_gamut() const noexcept {
-	return detail::fit_gamut_raytrace_rgb<Rec2020<F>, Rec2020Linear<F>>(*this);
+inline Rec2020Oetf<F> Rec2020Oetf<F>::fit_gamut() const noexcept {
+	return detail::fit_gamut_raytrace_rgb<Rec2020Oetf<F>, Rec2020Linear<F>>(*this);
+}
+
+/**************************************************************************************************
+ * Fit this gamma-2.4 encoded Rec.2020 colour into the Rec.2020 gamut.
+ * ************************************************************************************************/
+template <ColourComponent F>
+[[nodiscard]]
+inline Rec2020Gamma24<F> Rec2020Gamma24<F>::fit_gamut() const noexcept {
+	return detail::fit_gamut_raytrace_rgb<Rec2020Gamma24<F>, Rec2020Linear<F>>(*this);
 }
 
 /**************************************************************************************************

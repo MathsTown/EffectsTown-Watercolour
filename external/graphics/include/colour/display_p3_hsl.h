@@ -24,7 +24,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Type: DisplayP3Hsl
 
 Specification:
-- Conventional HSL coordinates over transfer-encoded Display P3 RGB components.
+- Conventional HSL coordinates over gamma-2.4 encoded Display P3 RGB components.
 - Underlying RGB specification: CSS Color 4 predefined display-p3
   https://www.w3.org/TR/css-color-4/#predefined-display-p3
 
@@ -34,7 +34,7 @@ Reference white:
 - Inherits the Display P3 D65 reference white from DisplayP3.
 
 Conversions:
-- DisplayP3::to_hsl() applies the common RGB to HSL transform to transfer-encoded Display P3 values.
+- DisplayP3::to_hsl() applies the common RGB to HSL transform to gamma-2.4 encoded Display P3 values.
 - to_display_p3() applies the inverse HSL to RGB transform.
 - No linearisation, RGB-to-XYZ matrix conversion, or chromatic adaptation is performed by this type.
 - wrap_hue() wraps hue to a 0..1 turn.
@@ -60,11 +60,11 @@ API:
 
 namespace mt {
 
-// Forward declaration of the transfer-encoded Display P3 type.
+// Forward declaration of the gamma-2.4 encoded Display P3 type.
 template <ColourComponent F> struct DisplayP3;
 
 /**************************************************************************************************
- * HSL coordinates for transfer-encoded Display P3.
+ * HSL coordinates for gamma-2.4 encoded Display P3.
  * Colourspace : Display P3 HSL
  * RGB Source  : https://www.w3.org/TR/css-color-4/#predefined-display-p3
  * HSL Model   : HSL transform applied to Display P3 components; not a predefined CSS colour space.
@@ -115,7 +115,7 @@ template <ColourComponent F> struct DisplayP3Hsl {
 	[[nodiscard]]
 	DisplayP3Hsl wrap_hue() const noexcept;
 
-	// Convert to transfer-encoded Display P3 RGBA (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded Display P3 RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
 	DisplayP3<F> to_display_p3() const noexcept;
 };

@@ -105,7 +105,7 @@ void test_display_p3_simd256_float(TestContext& test) {
 		test.check_equal(sanitised.alpha.element(lane), std::numeric_limits<float>::lowest(), "DisplayP3<Simd256Float32> sanitise negative infinity lane " + std::to_string(lane));
 	}
 
-	// Reference data checks transfer-encoded Display P3 to linear Display P3.
+	// Reference data checks gamma-2.4 encoded Display P3 to linear Display P3.
 	const int linear_case_count = int(sizeof(colour_reference::display_p3_display_p3_linear_cases) / sizeof(colour_reference::display_p3_display_p3_linear_cases[0]));
 	for (int first_case = 0; first_case < linear_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::DisplayP3Linear<mt::Simd256Float32> actual = display_p3_batch(colour_reference::display_p3_display_p3_linear_cases, first_case, linear_case_count).to_linear();
@@ -119,7 +119,7 @@ void test_display_p3_simd256_float(TestContext& test) {
 		}
 	}
 
-	// Reference data checks transfer-encoded Display P3 to HSV.
+	// Reference data checks gamma-2.4 encoded Display P3 to HSV.
 	const int hsv_case_count = int(sizeof(colour_reference::display_p3_hsv_cases) / sizeof(colour_reference::display_p3_hsv_cases[0]));
 	for (int first_case = 0; first_case < hsv_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::DisplayP3Hsv<mt::Simd256Float32> actual = display_p3_batch(colour_reference::display_p3_hsv_cases, first_case, hsv_case_count).to_hsv();
@@ -133,7 +133,7 @@ void test_display_p3_simd256_float(TestContext& test) {
 		}
 	}
 
-	// Reference data checks transfer-encoded Display P3 to HSL.
+	// Reference data checks gamma-2.4 encoded Display P3 to HSL.
 	const int hsl_case_count = int(sizeof(colour_reference::display_p3_hsl_cases) / sizeof(colour_reference::display_p3_hsl_cases[0]));
 	for (int first_case = 0; first_case < hsl_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::DisplayP3Hsl<mt::Simd256Float32> actual = display_p3_batch(colour_reference::display_p3_hsl_cases, first_case, hsl_case_count).to_hsl();
@@ -147,7 +147,7 @@ void test_display_p3_simd256_float(TestContext& test) {
 		}
 	}
 
-	// Reference data checks transfer-encoded Display P3 to CIE XYZ D65.
+	// Reference data checks gamma-2.4 encoded Display P3 to CIE XYZ D65.
 	const int xyz_case_count = int(sizeof(colour_reference::display_p3_xyz_d65_cases) / sizeof(colour_reference::display_p3_xyz_d65_cases[0]));
 	for (int first_case = 0; first_case < xyz_case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::Xyz<mt::Simd256Float32> actual = display_p3_batch(colour_reference::display_p3_xyz_d65_cases, first_case, xyz_case_count).to_xyz();

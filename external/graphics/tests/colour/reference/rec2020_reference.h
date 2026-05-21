@@ -13,12 +13,12 @@ Lab CAT:     Bradford
  * Header scope: Rec.2020, plus CIE XYZ D65 conversion endpoints.
  * colour-science RGB colourspace key: ITU-R BT.2020.
  * Whitepoint: D65.
- * Coordinate field `rec2020`: transfer-encoded Rec.2020 RGBA, ordered r, g, b, a.
+ * Coordinate field `rec2020_oetf`: transfer-encoded Rec.2020 RGBA, ordered r, g, b, a.
  * Coordinate field `rec2020_linear`: linear-light Rec.2020 RGBA, ordered r, g, b, a.
- * Transfer function for `rec2020` <-> `rec2020_linear`: Rec.2020 transfer function from colour-science.
+ * Transfer function for `rec2020_oetf` <-> `rec2020_linear`: Rec.2020 transfer function from colour-science.
  * Coordinate field `xyz_d65`: CIE XYZ with D65 reference white and Y = 1, ordered X, Y, Z, alpha.
- * Coordinate field `rec2020_hsv`: HSV derived from `rec2020`, ordered h, s, v, a; h is a 0..1 turn.
- * Coordinate field `rec2020_hsl`: HSL derived from `rec2020`, ordered h, s, l, a; h is a 0..1 turn.
+ * Coordinate field `rec2020_oetf_hsv`: HSV derived from `rec2020_oetf`, ordered h, s, v, a; h is a 0..1 turn.
+ * Coordinate field `rec2020_oetf_hsl`: HSL derived from `rec2020_oetf`, ordered h, s, l, a; h is a 0..1 turn.
  * Coordinate field `rec2020_linear_hsv`: HSV derived from `rec2020_linear`, ordered h, s, v, a; h is a 0..1 turn.
  * Coordinate field `rec2020_linear_hsl`: HSL derived from `rec2020_linear`, ordered h, s, l, a; h is a 0..1 turn.
  * The C++ library currently implements all coordinate fields named in this header for Rec.2020.
@@ -40,12 +40,12 @@ namespace colour_reference {
 
 /**************************************************************************************************
  * Relationship between transfer-encoded Rec.2020 RGBA and linear-light Rec.2020 RGBA.
- * Source field   : rec2020
+ * Source field   : rec2020_oetf
  * Expected field : rec2020_linear
  * Direction      : Tests may use source -> expected or expected -> source from the same row.
  * Cases          : 241
  * ************************************************************************************************/
-inline constexpr ColourReferenceCase rec2020_rec2020_linear_cases[] = {
+inline constexpr ColourReferenceCase rec2020_oetf_rec2020_linear_cases[] = {
 	{ "aliceblue", "css_named", { 0.94864099047085682, 0.96712138645130175, 0.99628073702891817, 1.0 }, { 0.89910547981070832, 0.93473086713669828, 0.99249505013850858, 1.0 } },
 	{ "antiquewhite", "css_named", { 0.95056182071115858, 0.91581803921888016, 0.83545839339577699, 1.0 }, { 0.90277290308014646, 0.83770280409506126, 0.69738359390931703, 1.0 } },
 	{ "aqua", "css_named", { 0.60578220765805058, 0.96515435114673687, 0.9918567604560784, 1.0 }, { 0.37259610406530108, 0.93090271064176733, 0.98360856112484951, 1.0 } },
@@ -291,12 +291,12 @@ inline constexpr ColourReferenceCase rec2020_rec2020_linear_cases[] = {
 
 /**************************************************************************************************
  * Relationship between transfer-encoded Rec.2020 RGBA and CIE XYZ D65.
- * Source field   : rec2020
+ * Source field   : rec2020_oetf
  * Expected field : rec2020_to_xyz_d65
  * Direction      : Tests may use source -> expected or expected -> source from the same row.
  * Cases          : 241
  * ************************************************************************************************/
-inline constexpr ColourReferenceCase rec2020_xyz_d65_cases[] = {
+inline constexpr ColourReferenceCase rec2020_oetf_xyz_d65_cases[] = {
 	{ "aliceblue", "css_named", { 0.94864099047085682, 0.96712138645130175, 0.99628073702891817, 1.0 }, { 0.87548388724199089, 0.92879758553566372, 1.0792628307655157, 1.0 } },
 	{ "antiquewhite", "css_named", { 0.95056182071115858, 0.91581803921888016, 0.83545839339577699, 1.0 }, { 0.8139492734618331, 0.8464755628763273, 0.76343014631615591, 1.0 } },
 	{ "aqua", "css_named", { 0.60578220765805058, 0.96515435114673687, 0.9918567604560784, 1.0 }, { 0.53806512778571225, 0.78736099412848948, 1.0697269320442861, 1.0 } },
@@ -542,12 +542,12 @@ inline constexpr ColourReferenceCase rec2020_xyz_d65_cases[] = {
 
 /**************************************************************************************************
  * Relationship between transfer-encoded Rec.2020 RGBA and HSV coordinates.
- * Source field   : rec2020
- * Expected field : rec2020_hsv
+ * Source field   : rec2020_oetf
+ * Expected field : rec2020_oetf_hsv
  * Direction      : Tests may use source -> expected or expected -> source from the same row.
  * Cases          : 218
  * ************************************************************************************************/
-inline constexpr ColourReferenceCase rec2020_hsv_cases[] = {
+inline constexpr ColourReferenceCase rec2020_oetf_hsv_cases[] = {
 	{ "aliceblue", "css_named", { 0.94864099047085682, 0.96712138645130175, 0.99628073702891817, 1.0 }, { 0.60201338407653016, 0.04781759276018057, 0.99628073702891817, 1.0 } },
 	{ "antiquewhite", "css_named", { 0.95056182071115858, 0.91581803921888016, 0.83545839339577699, 1.0 }, { 0.11635860561435037, 0.12108989105965509, 0.95056182071115858, 1.0 } },
 	{ "aqua", "css_named", { 0.60578220765805058, 0.96515435114673687, 0.9918567604560784, 1.0 }, { 0.51152731129079398, 0.38924426206512108, 0.9918567604560784, 1.0 } },
@@ -770,12 +770,12 @@ inline constexpr ColourReferenceCase rec2020_hsv_cases[] = {
 
 /**************************************************************************************************
  * Relationship between transfer-encoded Rec.2020 RGBA and HSL coordinates.
- * Source field   : rec2020
- * Expected field : rec2020_hsl
+ * Source field   : rec2020_oetf
+ * Expected field : rec2020_oetf_hsl
  * Direction      : Tests may use source -> expected or expected -> source from the same row.
  * Cases          : 218
  * ************************************************************************************************/
-inline constexpr ColourReferenceCase rec2020_hsl_cases[] = {
+inline constexpr ColourReferenceCase rec2020_oetf_hsl_cases[] = {
 	{ "aliceblue", "css_named", { 0.94864099047085682, 0.96712138645130175, 0.99628073702891817, 1.0 }, { 0.60201338407653016, 0.8649462736484107, 0.97246086374988749, 1.0 } },
 	{ "antiquewhite", "css_named", { 0.95056182071115858, 0.91581803921888016, 0.83545839339577699, 1.0 }, { 0.11635860561435037, 0.53791729361250984, 0.89301010705346773, 1.0 } },
 	{ "aqua", "css_named", { 0.60578220765805058, 0.96515435114673687, 0.9918567604560784, 1.0 }, { 0.51152731129079398, 0.95952272263666227, 0.79881948405706449, 1.0 } },

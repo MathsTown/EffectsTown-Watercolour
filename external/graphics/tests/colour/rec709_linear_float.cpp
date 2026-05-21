@@ -89,17 +89,17 @@ void test_rec709_linear_float(TestContext& test) {
 	test.check_equal(sanitised.blue, std::numeric_limits<float>::max(), "Rec709Linear<float> sanitise infinity");
 	test.check_equal(sanitised.alpha, std::numeric_limits<float>::lowest(), "Rec709Linear<float> sanitise negative infinity");
 
-	// Reference data checks linear Rec.709 to transfer-encoded Rec.709.
-	for (const auto& colour_case : colour_reference::rec709_rec709_linear_cases) {
+	// Reference data checks linear Rec.709 to gamma-2.4 encoded Rec.709.
+	for (const auto& colour_case : colour_reference::rec709_oetf_rec709_linear_cases) {
 		mt::Rec709Linear<float> colour(static_cast<float>(colour_case.expected[0]), static_cast<float>(colour_case.expected[1]), static_cast<float>(colour_case.expected[2]), static_cast<float>(colour_case.expected[3]));
-		mt::Rec709<float> actual = colour.to_rec709();
-		mt::Rec709<float> transfer = colour.to_transfer();
+		mt::Rec709Oetf<float> actual = colour.to_rec709_oetf();
+		mt::Rec709Oetf<float> transfer = colour.to_rec709_oetf();
 		std::string message = std::string("Rec709Linear<float> to_rec709 ") + colour_case.name;
 		test.check_close(actual.red, colour_case.source[0], 5.0e-6f, message + " r");
 		test.check_close(actual.green, colour_case.source[1], 5.0e-6f, message + " g");
 		test.check_close(actual.blue, colour_case.source[2], 5.0e-6f, message + " b");
 		test.check_close(actual.alpha, colour_case.source[3], 5.0e-6f, message + " a");
-		message = std::string("Rec709Linear<float> to_transfer ") + colour_case.name;
+		message = std::string("Rec709Linear<float> to_rec709_oetf ") + colour_case.name;
 		test.check_close(transfer.red, colour_case.source[0], 5.0e-6f, message + " r");
 		test.check_close(transfer.green, colour_case.source[1], 5.0e-6f, message + " g");
 		test.check_close(transfer.blue, colour_case.source[2], 5.0e-6f, message + " b");

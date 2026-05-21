@@ -64,7 +64,7 @@ template <ColourComponent F> struct Cielab;
 // Forward declaration of the CIELCH D50 type.
 template <ColourComponent F> struct Cielch;
 
-// Forward declaration of the transfer-encoded ProPhoto RGB type.
+// Forward declaration of the gamma-2.4 encoded ProPhoto RGB type.
 template <ColourComponent F> struct ProPhotoRgb;
 
 // Forward declaration of the linear ProPhoto RGB type.
@@ -139,7 +139,7 @@ template <ColourComponent F> struct XyzD50 {
 	[[nodiscard]]
 	ProPhotoRgbLinear<F> to_prophoto_rgb_linear() const noexcept;
 
-	// Convert to transfer-encoded ProPhoto RGB RGBA (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded ProPhoto RGB RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
 	ProPhotoRgb<F> to_prophoto_rgb() const noexcept;
 };

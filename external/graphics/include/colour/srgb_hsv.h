@@ -24,7 +24,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Type: SrgbHsv
 
 Specification:
-- Conventional HSV coordinates over transfer-encoded sRGB RGB components.
+- Conventional HSV coordinates over gamma-2.4 encoded sRGB RGB components.
 - Underlying RGB specification: CSS Color 4 predefined sRGB
   https://www.w3.org/TR/css-color-4/#predefined-sRGB
 
@@ -34,7 +34,7 @@ Reference white:
 - Inherits the sRGB D65 reference white from Srgb.
 
 Conversions:
-- Srgb::to_hsv() applies the common RGB to HSV transform to transfer-encoded sRGB values.
+- Srgb::to_hsv() applies the common RGB to HSV transform to gamma-2.4 encoded sRGB values.
 - to_srgb() applies the inverse HSV to RGB transform.
 - No linearisation, RGB-to-XYZ matrix conversion, or chromatic adaptation is performed by this type.
 - wrap_hue() wraps hue to a 0..1 turn.
@@ -60,11 +60,11 @@ API:
 
 namespace mt {
 
-// Forward declaration of the transfer-encoded sRGBA type.
+// Forward declaration of the gamma-2.4 encoded sRGBA type.
 template <ColourComponent F> struct Srgb;
 
 /**************************************************************************************************
- * HSV coordinates for transfer-encoded sRGB.
+ * HSV coordinates for gamma-2.4 encoded sRGB.
  * Colourspace : sRGB HSV
  * RGB Source  : https://www.w3.org/TR/css-color-4/#predefined-sRGB
  * HSV Model   : Conventional HSV transform over sRGB components; not a predefined CSS colour space.
@@ -115,7 +115,7 @@ template <ColourComponent F> struct SrgbHsv {
 	[[nodiscard]]
 	SrgbHsv wrap_hue() const noexcept;
 
-	// Convert to transfer-encoded sRGBA (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded sRGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
 	Srgb<F> to_srgb() const noexcept;
 };

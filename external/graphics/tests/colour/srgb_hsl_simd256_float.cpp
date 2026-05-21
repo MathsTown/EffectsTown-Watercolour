@@ -86,7 +86,7 @@ void test_srgb_hsl_simd256_float(TestContext& test) {
 		test.check_equal(sanitised.alpha.element(lane), std::numeric_limits<float>::lowest(), "SrgbHsl<Simd256Float32> sanitise negative infinity lane " + std::to_string(lane));
 	}
 
-	// Reference data checks transfer-encoded sRGB HSL to transfer-encoded sRGB.
+	// Reference data checks gamma-2.4 encoded sRGB HSL to gamma-2.4 encoded sRGB.
 	const int case_count = int(sizeof(colour_reference::srgb_hsl_cases) / sizeof(colour_reference::srgb_hsl_cases[0]));
 	for (int first_case = 0; first_case < case_count; first_case += mt::Simd256Float32::number_of_elements()) {
 		mt::Srgb<mt::Simd256Float32> actual = srgb_hsl_batch(colour_reference::srgb_hsl_cases, first_case, case_count).to_srgb();

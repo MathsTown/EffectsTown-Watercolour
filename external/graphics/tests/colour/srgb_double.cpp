@@ -89,7 +89,7 @@ void test_srgb_double(TestContext& test) {
 	test.check_equal(sanitised.blue, std::numeric_limits<double>::max(), "Srgb<double> sanitise blue infinity");
 	test.check_equal(sanitised.alpha, std::numeric_limits<double>::lowest(), "Srgb<double> sanitise alpha negative infinity");
 
-	// Reference data checks transfer-encoded sRGB to linear sRGB.
+	// Reference data checks gamma-2.4 encoded sRGB to linear sRGB.
 	for (const auto& colour_case : colour_reference::srgb_srgb_linear_cases) {
 		mt::Srgb<double> colour(colour_case.source[0], colour_case.source[1], colour_case.source[2], colour_case.source[3]);
 		mt::SrgbLinear<double> actual = colour.to_linear();
@@ -100,7 +100,7 @@ void test_srgb_double(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 2.0e-11, message + " alpha");
 	}
 
-	// Reference data checks transfer-encoded sRGB to HSV.
+	// Reference data checks gamma-2.4 encoded sRGB to HSV.
 	for (const auto& colour_case : colour_reference::srgb_hsv_cases) {
 		mt::Srgb<double> colour(colour_case.source[0], colour_case.source[1], colour_case.source[2], colour_case.source[3]);
 		mt::SrgbHsv<double> actual = colour.to_hsv();
@@ -111,7 +111,7 @@ void test_srgb_double(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 2.0e-11, message + " alpha");
 	}
 
-	// Reference data checks transfer-encoded sRGB to HSL.
+	// Reference data checks gamma-2.4 encoded sRGB to HSL.
 	for (const auto& colour_case : colour_reference::srgb_hsl_cases) {
 		mt::Srgb<double> colour(colour_case.source[0], colour_case.source[1], colour_case.source[2], colour_case.source[3]);
 		mt::SrgbHsl<double> actual = colour.to_hsl();
@@ -122,7 +122,7 @@ void test_srgb_double(TestContext& test) {
 		test.check_close(actual.alpha, colour_case.expected[3], 2.0e-11, message + " alpha");
 	}
 
-	// Reference data checks transfer-encoded sRGB to CIE XYZ D65.
+	// Reference data checks gamma-2.4 encoded sRGB to CIE XYZ D65.
 	for (const auto& colour_case : colour_reference::srgb_xyz_d65_cases) {
 		mt::Srgb<double> colour(colour_case.source[0], colour_case.source[1], colour_case.source[2], colour_case.source[3]);
 		mt::Xyz<double> actual = colour.to_xyz();

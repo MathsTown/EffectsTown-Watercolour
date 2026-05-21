@@ -89,17 +89,17 @@ void test_rec2020_linear_float(TestContext& test) {
 	test.check_equal(sanitised.blue, std::numeric_limits<float>::max(), "Rec2020Linear<float> sanitise infinity");
 	test.check_equal(sanitised.alpha, std::numeric_limits<float>::lowest(), "Rec2020Linear<float> sanitise negative infinity");
 
-	// Reference data checks linear Rec.2020 to transfer-encoded Rec.2020.
-	for (const auto& colour_case : colour_reference::rec2020_rec2020_linear_cases) {
+	// Reference data checks linear Rec.2020 to gamma-2.4 encoded Rec.2020.
+	for (const auto& colour_case : colour_reference::rec2020_oetf_rec2020_linear_cases) {
 		mt::Rec2020Linear<float> colour(static_cast<float>(colour_case.expected[0]), static_cast<float>(colour_case.expected[1]), static_cast<float>(colour_case.expected[2]), static_cast<float>(colour_case.expected[3]));
-		mt::Rec2020<float> actual = colour.to_rec2020();
-		mt::Rec2020<float> transfer = colour.to_transfer();
+		mt::Rec2020Oetf<float> actual = colour.to_rec2020_oetf();
+		mt::Rec2020Oetf<float> transfer = colour.to_rec2020_oetf();
 		std::string message = std::string("Rec2020Linear<float> to_rec2020 ") + colour_case.name;
 		test.check_close(actual.red, colour_case.source[0], 5.0e-6f, message + " r");
 		test.check_close(actual.green, colour_case.source[1], 5.0e-6f, message + " g");
 		test.check_close(actual.blue, colour_case.source[2], 5.0e-6f, message + " b");
 		test.check_close(actual.alpha, colour_case.source[3], 5.0e-6f, message + " a");
-		message = std::string("Rec2020Linear<float> to_transfer ") + colour_case.name;
+		message = std::string("Rec2020Linear<float> to_rec2020 ") + colour_case.name;
 		test.check_close(transfer.red, colour_case.source[0], 5.0e-6f, message + " r");
 		test.check_close(transfer.green, colour_case.source[1], 5.0e-6f, message + " g");
 		test.check_close(transfer.blue, colour_case.source[2], 5.0e-6f, message + " b");

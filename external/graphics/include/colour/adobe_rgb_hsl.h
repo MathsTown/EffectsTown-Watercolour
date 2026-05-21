@@ -24,7 +24,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Type: AdobeRgbHsl
 
 Specification:
-- Conventional HSL coordinates over transfer-encoded Adobe RGB (1998) components.
+- Conventional HSL coordinates over gamma-2.4 encoded Adobe RGB (1998) components.
 - Underlying RGB specification: CSS Color 4 a98-rgb / Adobe RGB (1998)
   https://www.w3.org/TR/css-color-4/#predefined-a98-rgb
 
@@ -34,7 +34,7 @@ Reference white:
 - Inherits the Adobe RGB (1998) D65 reference white from AdobeRgb.
 
 Conversions:
-- AdobeRgb::to_hsl() applies the common RGB to HSL transform to transfer-encoded Adobe RGB values.
+- AdobeRgb::to_hsl() applies the common RGB to HSL transform to gamma-2.4 encoded Adobe RGB values.
 - to_adobe_rgb() applies the inverse HSL to RGB transform.
 - No linearisation, RGB-to-XYZ matrix conversion, or chromatic adaptation is performed by this type.
 - wrap_hue() wraps hue to a 0..1 turn.
@@ -60,11 +60,11 @@ API:
 
 namespace mt {
 
-// Forward declaration of the transfer-encoded Adobe RGB (1998) type.
+// Forward declaration of the gamma-2.4 encoded Adobe RGB (1998) type.
 template <ColourComponent F> struct AdobeRgb;
 
 /**************************************************************************************************
- * HSL coordinates for transfer-encoded Adobe RGB (1998).
+ * HSL coordinates for gamma-2.4 encoded Adobe RGB (1998).
  * Colourspace : Adobe RGB (1998) HSL
  * RGB Source  : https://www.adobe.com/digitalimag/pdfs/AdobeRGB1998.pdf
  * HSL Model   : HSL transform applied to Adobe RGB (1998) components.
@@ -115,7 +115,7 @@ template <ColourComponent F> struct AdobeRgbHsl {
 	[[nodiscard]]
 	AdobeRgbHsl wrap_hue() const noexcept;
 
-	// Convert to transfer-encoded Adobe RGB (1998) RGBA (implemented in colour_conversions.h).
+	// Convert to gamma-2.4 encoded Adobe RGB (1998) RGBA (implemented in colour_conversions.h).
 	[[nodiscard]]
 	AdobeRgb<F> to_adobe_rgb() const noexcept;
 };

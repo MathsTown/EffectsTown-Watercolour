@@ -23,8 +23,7 @@ mt::GenericRgb<double> render_srgb_as_generic() {
 	return mt::Srgb<double>(0.125, 0.25, 0.5, 0.75);
 }
 
-template <typename C>
-void check_rgb_type_generic_conversion(TestContext& test, const std::string& name) {
+template <typename C> void check_rgb_type_generic_conversion(TestContext& test, const std::string& name) {
 	C source(0.125, 0.25, 0.5, 0.75);
 
 	mt::GenericRgb<double> implicit = source;
@@ -90,9 +89,11 @@ void test_generic_rgb_double(TestContext& test) {
 	check_rgb_type_generic_conversion<mt::AdobeRgbLinear<double>>(test, "AdobeRgbLinear<double>");
 	check_rgb_type_generic_conversion<mt::ProPhotoRgb<double>>(test, "ProPhotoRgb<double>");
 	check_rgb_type_generic_conversion<mt::ProPhotoRgbLinear<double>>(test, "ProPhotoRgbLinear<double>");
-	check_rgb_type_generic_conversion<mt::Rec709<double>>(test, "Rec709<double>");
+	check_rgb_type_generic_conversion<mt::Rec709Oetf<double>>(test, "Rec709Oetf<double>");
+	check_rgb_type_generic_conversion<mt::Rec709Gamma24<double>>(test, "Rec709Gamma24<double>");
 	check_rgb_type_generic_conversion<mt::Rec709Linear<double>>(test, "Rec709Linear<double>");
-	check_rgb_type_generic_conversion<mt::Rec2020<double>>(test, "Rec2020<double>");
+	check_rgb_type_generic_conversion<mt::Rec2020Oetf<double>>(test, "Rec2020Oetf<double>");
+	check_rgb_type_generic_conversion<mt::Rec2020Gamma24<double>>(test, "Rec2020Gamma24<double>");
 	check_rgb_type_generic_conversion<mt::Rec2020Linear<double>>(test, "Rec2020Linear<double>");
 	check_rgb_type_generic_conversion<mt::Aces2065_1<double>>(test, "Aces2065_1<double>");
 	check_rgb_type_generic_conversion<mt::Acescg<double>>(test, "Acescg<double>");

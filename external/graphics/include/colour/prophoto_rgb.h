@@ -24,7 +24,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Type: ProPhotoRgb
 
 Specification:
-- Transfer-encoded ProPhoto RGB / ROMM RGB.
+- gamma-2.4 encoded ProPhoto RGB / ROMM RGB.
 - Specification: CSS Color 4 predefined prophoto-rgb
   https://www.w3.org/TR/css-color-4/#predefined-prophoto-rgb
 
@@ -34,14 +34,14 @@ Reference white:
 - XYZ values are relative tristimulus values with Y = 1.0 for diffuse white.
 
 Conversions:
-- to_linear() applies the ProPhoto RGB 1.8 gamma transfer function with its linear toe, including extended handling for negative values.
+- to_linear() applies the ProPhoto RGB 1.8 gamma gamma 2.4 transfer function with its linear toe, including extended handling for negative values.
 - to_xyz_d50() converts through ProPhotoRgbLinear and the ProPhoto RGB D50 RGB-to-XYZ matrix.
 - to_xyz() uses Bradford chromatic adaptation from D50 to D65.
 - to_xyz_with_cat02() provides the explicit CAT02 adaptation path.
-- to_hsv() and to_hsl() are conventional component-space transforms over transfer-encoded ProPhoto RGB values.
+- to_hsv() and to_hsl() are conventional component-space transforms over gamma-2.4 encoded ProPhoto RGB values.
 
 Components:
-- red, green, blue: nominal 0..1 transfer-encoded colour channels; out-of-range values are preserved unless clamped.
+- red, green, blue: nominal 0..1 gamma-2.4 encoded colour channels; out-of-range values are preserved unless clamped.
 - alpha: non-colour opacity channel, normally 0..1 and passed through unchanged.
 
 API:
@@ -62,10 +62,10 @@ namespace mt {
 // Forward declaration of the linear ProPhoto RGB type.
 template <ColourComponent F> struct ProPhotoRgbLinear;
 
-// Forward declaration of the transfer-encoded ProPhoto RGB HSV type.
+// Forward declaration of the gamma-2.4 encoded ProPhoto RGB HSV type.
 template <ColourComponent F> struct ProPhotoRgbHsv;
 
-// Forward declaration of the transfer-encoded ProPhoto RGB HSL type.
+// Forward declaration of the gamma-2.4 encoded ProPhoto RGB HSL type.
 template <ColourComponent F> struct ProPhotoRgbHsl;
 
 // Forward declaration of the CIE XYZ D65 type.
@@ -76,7 +76,7 @@ template <ColourComponent F> struct XyzD50;
 
 /**************************************************************************************************
  * ProPhotoRgb floating point or Simd floating point colour type.
- * Colourspace : ProPhoto RGB, transfer-encoded
+ * Colourspace : ProPhoto RGB, gamma-2.4 encoded
  * Definition  : https://www.w3.org/TR/css-color-4/#predefined-prophoto-rgb
  * PixelOrder  : RGBA
  * Alpha       : Assumed not-premultiplied for all operations except unpremultiply_alpha().

@@ -24,7 +24,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Type: Srgb
 
 Specification:
-- Transfer-encoded sRGB RGB.
+- gamma-2.4 encoded sRGB RGB.
 - Specification: CSS Color 4 predefined sRGB / IEC 61966-2-1
   https://www.w3.org/TR/css-color-4/#predefined-sRGB
 
@@ -34,12 +34,12 @@ Reference white:
 - XYZ values are relative tristimulus values with Y = 1.0 for diffuse white.
 
 Conversions:
-- to_linear() applies the sRGB piecewise transfer function, including the CSS Color 4 extended handling for negative values.
+- to_linear() applies the sRGB piecewise gamma 2.4 transfer function, including the CSS Color 4 extended handling for negative values.
 - to_xyz() converts through SrgbLinear and the sRGB D65 RGB-to-XYZ matrix.
-- to_hsv() and to_hsl() are conventional component-space transforms over transfer-encoded sRGB values.
+- to_hsv() and to_hsl() are conventional component-space transforms over gamma-2.4 encoded sRGB values.
 
 Components:
-- red, green, blue: nominal 0..1 transfer-encoded colour channels; out-of-range values are preserved unless clamped.
+- red, green, blue: nominal 0..1 gamma-2.4 encoded colour channels; out-of-range values are preserved unless clamped.
 - alpha: non-colour opacity channel, normally 0..1 and passed through unchanged.
 
 API:
@@ -60,10 +60,10 @@ namespace mt {
 // Forward declaration of the linear sRGBA type.
 template <ColourComponent F> struct SrgbLinear;
 
-// Forward declaration of the transfer-encoded sRGB HSV type.
+// Forward declaration of the gamma-2.4 encoded sRGB HSV type.
 template <ColourComponent F> struct SrgbHsv;
 
-// Forward declaration of the transfer-encoded sRGB HSL type.
+// Forward declaration of the gamma-2.4 encoded sRGB HSL type.
 template <ColourComponent F> struct SrgbHsl;
 
 // Forward declaration of the CIE XYZ D65 type.
@@ -71,7 +71,7 @@ template <ColourComponent F> struct Xyz;
 
 /**************************************************************************************************
  * Srgb floating point or Simd floating point colour type.
- * Colourspace : sRGB (transfer-encoded)
+ * Colourspace : sRGB (gamma-2.4 encoded)
  * Definition  : https://www.w3.org/TR/css-color-4/#predefined-sRGB
  * PixelOrder  : RGBA
  * Alpha       : Assumed not-premultiplied for all operations except unpremultiply_alpha().
