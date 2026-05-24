@@ -39,8 +39,12 @@ Description:
 
 #include "simd-cpuid.h"
 
+#include <climits>
 #include <exception>
+#include <optional>
+#include <stdexcept>
 #include <string.h>
+#include <vector>
 
 
 /*******************************************************************************************************
@@ -345,25 +349,60 @@ void add_parameters(const OfxImageEffectHandle effect) {
 
     //Get parameters from project
     auto params = build_project_parameters();
+    std::vector<ParameterID> group_stack{};
 
-    //Build After Effect Parameters
+    auto current_parent_group = [&group_stack]() -> std::optional<ParameterID> {
+        if (group_stack.empty()) return std::nullopt;
+        return group_stack.back();
+    };
+
+    //Build OpenFX Parameters
     for (auto p : params.entries) {
         switch (p.type) {
+        case ParameterType::group_start:
+        {
+            const bool open_by_default = group_stack.empty();
+            master_parameter_helper.add_group(p.id, p.name, current_parent_group(), open_by_default);
+            group_stack.push_back(p.id);
+            break;
+        }
+        case ParameterType::group_end:
+            if (group_stack.empty()) {
+                throw std::runtime_error("OpenFX parameter group_end without matching group_start.");
+            }
+            group_stack.pop_back();
+            break;
         case ParameterType::seed:
             //master_parameter_helper.add_slider(p.id, p.name, static_cast<float>(p.min), static_cast<float>(p.max), static_cast<float>(p.slider_min), static_cast<float>(p.slider_max), static_cast<float>(p.initial_value), 0);
-            master_parameter_helper.add_integer(p.id, p.name);
+            master_parameter_helper.add_integer(p.id, p.name, INT_MIN, INT_MAX, INT_MIN, INT_MAX, 0, current_parent_group());
             break;
         case ParameterType::number:
-            master_parameter_helper.add_slider(p.id, p.name, static_cast<float>(p.min), static_cast<float>(p.max), static_cast<float>(p.slider_min), static_cast<float>(p.slider_max), static_cast<float>(p.initial_value), p.precision);
+            master_parameter_helper.add_slider(p.id, p.name, static_cast<float>(p.min), static_cast<float>(p.max), static_cast<float>(p.slider_min), static_cast<float>(p.slider_max), static_cast<float>(p.initial_value), p.precision, current_parent_group());
             break;
 
         case ParameterType::list:
-            master_parameter_helper.add_list(p.id,p.name,p.list);
+            master_parameter_helper.add_list(p.id, p.name, p.list, current_parent_group());
+            break;
+        case ParameterType::colour:
+            master_parameter_helper.add_colour(
+                p.id,
+                p.name,
+                mt::GenericRgb<double>(
+                    static_cast<double>(p.red),
+                    static_cast<double>(p.green),
+                    static_cast<double>(p.blue)
+                ).clamp(),
+                current_parent_group()
+            );
             break;
 
         default:
             break;
         }
+    }
+
+    if (!group_stack.empty()) {
+        throw std::runtime_error("OpenFX parameter group_start without matching group_end.");
     }
 }
 

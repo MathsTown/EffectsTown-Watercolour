@@ -31,7 +31,12 @@ Description:
 #include "openfx-helper.h"
 #include "parameter-id.h"
 
+#include <colour.h>
+
 #include <array>
+#include <climits>
+#include <optional>
+#include <string>
 #include <vector>
 
 class ParameterHelper {
@@ -44,20 +49,30 @@ private:
 
 	OfxParamSetHandle paramset{ nullptr };
 
+	static std::string make_param_name(ParameterID id);
+	static std::string make_group_name(ParameterID id);
+	static void set_display_label(OfxPropertySetHandle param_properties, const std::string& label);
+	static void set_parent_group(OfxPropertySetHandle param_properties, std::optional<ParameterID> parent_group);
+	void add_to_lookup(ParameterID id, const std::string& ofx_name);
+
 public:
 	ParameterHelper();
 	void set_paramset(OfxParamSetHandle p) { paramset = p; }  //Must be called at the start of each action that uses this class
 	void load_handles();									  //Must be called in create instance action.
 
-	void add_slider(ParameterID id, const std::string& name, double min, double max, double sliderMin, double sliderMax, double value, short precision);
+	void add_group(ParameterID id, const std::string& label, std::optional<ParameterID> parent_group, bool open);
+	void add_slider(ParameterID id, const std::string& label, double min, double max, double sliderMin, double sliderMax, double value, short precision, std::optional<ParameterID> parent_group = std::nullopt);
 	double read_slider(ParameterID id, OfxTime time);
-	void add_integer(ParameterID id, const std::string& name, int min = INT_MIN, int max = INT_MAX, int slider_min = INT_MIN, int slider_max = INT_MAX, int value = 0);
+	void add_integer(ParameterID id, const std::string& label, int min = INT_MIN, int max = INT_MAX, int slider_min = INT_MIN, int slider_max = INT_MAX, int value = 0, std::optional<ParameterID> parent_group = std::nullopt);
 
 	int read_integer(ParameterID id, OfxTime time);
 
-	void add_list(ParameterID id, const std::string& name, const std::vector<std::string>& list);
+	void add_list(ParameterID id, const std::string& label, const std::vector<std::string>& list, std::optional<ParameterID> parent_group = std::nullopt);
 
 	int read_list(ParameterID id, OfxTime time);
+
+	void add_colour(ParameterID id, const std::string& label, const mt::GenericRgb<double>& colour, std::optional<ParameterID> parent_group = std::nullopt);
+	mt::GenericRgb<double> read_colour(ParameterID id, OfxTime time);
 
 	
 

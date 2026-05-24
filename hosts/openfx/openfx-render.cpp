@@ -203,6 +203,14 @@ static ParameterList read_parameters(ParameterHelper& parameter_helper, OfxTime 
             p.value_string = p.list[i];
             break;
         }
+        case ParameterType::colour:
+        {
+            const auto colour = parameter_helper.read_colour(p.id, time);
+            p.red = static_cast<float>(colour.red);
+            p.green = static_cast<float>(colour.green);
+            p.blue = static_cast<float>(colour.blue);
+            break;
+        }
 
         default:
             break;
@@ -410,4 +418,3 @@ static inline void render_pixel32(RenderThreadData<S>* rd, int x, int y) {
     }
     copy_pixel_to_output_buffer(*rd->output, x, y, rd->render_window->x2, c);
 }
-

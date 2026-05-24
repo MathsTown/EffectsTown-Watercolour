@@ -31,12 +31,41 @@ Description:
 
 #include "openfx-parameter-helper.h"
 
+#include <string>
+
 /********************************************************************************************************
 * Constructor
 *******************************************************************************************************/
 ParameterHelper::ParameterHelper() {
 	param_is_added.fill(false);
 	param_handle.fill(nullptr);
+}
+
+/********************************************************************************************************
+* Build stable OpenFX names from the stable project parameter IDs.
+* Display labels are set separately, so these names should not be visible to users.
+*******************************************************************************************************/
+std::string ParameterHelper::make_param_name(ParameterID id) {
+	return std::string("param_") + std::to_string(parameter_id_to_int(id));
+}
+
+std::string ParameterHelper::make_group_name(ParameterID id) {
+	return std::string("group_") + std::to_string(parameter_id_to_int(id));
+}
+
+void ParameterHelper::set_display_label(OfxPropertySetHandle param_properties, const std::string& label) {
+	global_PropertySuite->propSetString(param_properties, kOfxPropLabel, 0, label.c_str());
+}
+
+void ParameterHelper::set_parent_group(OfxPropertySetHandle param_properties, std::optional<ParameterID> parent_group) {
+	if (!parent_group) return;
+	const auto parent_name = make_group_name(*parent_group);
+	global_PropertySuite->propSetString(param_properties, kOfxParamPropParent, 0, parent_name.c_str());
+}
+
+void ParameterHelper::add_to_lookup(ParameterID id, const std::string& ofx_name) {
+	param_is_added.at(parameter_id_to_int(id)) = true;
+	param_name.at(parameter_id_to_int(id)) = ofx_name;
 }
 
 /********************************************************************************************************
@@ -47,9 +76,26 @@ void ParameterHelper::load_handles() {
 	check_null(paramset);
 	for (size_t i = 0; i < param_is_added.size(); i++) {
 		if (param_is_added.at(i)) {
-			global_ParameterSuite->paramGetHandle(paramset, param_name.at(i).c_str(), &param_handle.at(i), 0);
+			check_openfx(global_ParameterSuite->paramGetHandle(paramset, param_name.at(i).c_str(), &param_handle.at(i), 0));
 		}
 	}
+}
+
+/********************************************************************************************************
+* Add a group parameter.
+* Should be called in "Describe in Context" action.
+* Ensure set_paramset() is called first.
+*******************************************************************************************************/
+void ParameterHelper::add_group(ParameterID id, const std::string& label, std::optional<ParameterID> parent_group, bool open) {
+	check_null(paramset);
+
+	OfxPropertySetHandle param_properties{};
+	const auto ofx_name = make_group_name(id);
+	check_openfx(global_ParameterSuite->paramDefine(paramset, kOfxParamTypeGroup, ofx_name.c_str(), &param_properties));
+
+	set_display_label(param_properties, label);
+	set_parent_group(param_properties, parent_group);
+	global_PropertySuite->propSetInt(param_properties, kOfxParamPropGroupOpen, 0, open ? 1 : 0);
 }
 
 /********************************************************************************************************
@@ -57,14 +103,17 @@ void ParameterHelper::load_handles() {
 * Should be called in "Describe in Context" action.
 * Ensure set_paramset() is called first.
 *******************************************************************************************************/
-void ParameterHelper::add_slider(ParameterID id, const std::string& name, double min, double max, double slider_min, double slider_max, double value, short precision) {
+void ParameterHelper::add_slider(ParameterID id, const std::string& label, double min, double max, double slider_min, double slider_max, double value, short precision, std::optional<ParameterID> parent_group) {
 	check_null(paramset);
 
 	//Add the parameter
 	OfxPropertySetHandle param_properties{};
-	global_ParameterSuite->paramDefine(paramset, kOfxParamTypeDouble, name.c_str(), &param_properties);
+	const auto ofx_name = make_param_name(id);
+	check_openfx(global_ParameterSuite->paramDefine(paramset, kOfxParamTypeDouble, ofx_name.c_str(), &param_properties));
 
 	//Set the properties of this parameter
+	set_display_label(param_properties, label);
+	set_parent_group(param_properties, parent_group);
 	global_PropertySuite->propSetString(param_properties, kOfxParamPropDoubleType, 0, kOfxParamDoubleTypeScale); 
 	global_PropertySuite->propSetDouble(param_properties, kOfxParamPropDefault,	0, value);   
 	global_PropertySuite->propSetDouble(param_properties, kOfxParamPropMin, 0, min);		 
@@ -75,8 +124,7 @@ void ParameterHelper::add_slider(ParameterID id, const std::string& name, double
 
 	
 	//Add to lookup
-	param_is_added.at(parameter_id_to_int(id)) = true;
-	param_name.at(parameter_id_to_int(id)) = name;
+	add_to_lookup(id, ofx_name);
 
 }
 
@@ -97,14 +145,17 @@ double ParameterHelper::read_slider(ParameterID id, OfxTime time) {
 * Should be called in "Describe in Context" action.
 * Ensure set_paramset() is called first.
 *******************************************************************************************************/
-void ParameterHelper::add_integer(ParameterID id, const std::string& name, int min, int max , int slider_min , int slider_max , int value) {
+void ParameterHelper::add_integer(ParameterID id, const std::string& label, int min, int max , int slider_min , int slider_max , int value, std::optional<ParameterID> parent_group) {
 	check_null(paramset);
 
 	//Add the parameter
 	OfxPropertySetHandle param_properties{};
-	global_ParameterSuite->paramDefine(paramset, kOfxParamTypeInteger, name.c_str(), &param_properties);
+	const auto ofx_name = make_param_name(id);
+	check_openfx(global_ParameterSuite->paramDefine(paramset, kOfxParamTypeInteger, ofx_name.c_str(), &param_properties));
 
 	//Set the properties of this parameter
+	set_display_label(param_properties, label);
+	set_parent_group(param_properties, parent_group);
 	global_PropertySuite->propSetString(param_properties, kOfxParamPropDoubleType, 0, kOfxParamDoubleTypeScale);
 	global_PropertySuite->propSetInt(param_properties, kOfxParamPropDefault, 0, value);
 	global_PropertySuite->propSetInt(param_properties, kOfxParamPropMin, 0, min);
@@ -116,8 +167,7 @@ void ParameterHelper::add_integer(ParameterID id, const std::string& name, int m
 
 
 	//Add to lookup
-	param_is_added.at(parameter_id_to_int(id)) = true;
-	param_name.at(parameter_id_to_int(id)) = name;
+	add_to_lookup(id, ofx_name);
 
 }
 /********************************************************************************************************
@@ -133,12 +183,16 @@ int ParameterHelper::read_integer(ParameterID id, OfxTime time) {
 /********************************************************************************************************
 * Add a list.
 *******************************************************************************************************/
-void ParameterHelper::add_list(ParameterID id, const std::string& name, const std::vector<std::string>& list) {
+void ParameterHelper::add_list(ParameterID id, const std::string& label, const std::vector<std::string>& list, std::optional<ParameterID> parent_group) {
 	check_null(paramset);
 
 	//Add the parameter
 	OfxPropertySetHandle param_properties{};
-	global_ParameterSuite->paramDefine(paramset, kOfxParamTypeChoice, name.c_str(), &param_properties);
+	const auto ofx_name = make_param_name(id);
+	check_openfx(global_ParameterSuite->paramDefine(paramset, kOfxParamTypeChoice, ofx_name.c_str(), &param_properties));
+
+	set_display_label(param_properties, label);
+	set_parent_group(param_properties, parent_group);
 
 	//Add the list items
 	int item_number{};
@@ -147,8 +201,7 @@ void ParameterHelper::add_list(ParameterID id, const std::string& name, const st
 	}
 
 	//Add to lookup
-	param_is_added.at(parameter_id_to_int(id)) = true;
-	param_name.at(parameter_id_to_int(id)) = name;
+	add_to_lookup(id, ofx_name);
 }
 
 /********************************************************************************************************
@@ -158,4 +211,40 @@ int ParameterHelper::read_list(ParameterID id, OfxTime time) {
 	int value;
 	global_ParameterSuite->paramGetValueAtTime(param_handle.at(parameter_id_to_int(id)), time, &value);
 	return value;
+}
+
+/********************************************************************************************************
+* Add an RGB colour picker.
+*******************************************************************************************************/
+void ParameterHelper::add_colour(ParameterID id, const std::string& label, const mt::GenericRgb<double>& colour, std::optional<ParameterID> parent_group) {
+	check_null(paramset);
+
+	OfxPropertySetHandle param_properties{};
+	const auto ofx_name = make_param_name(id);
+	check_openfx(global_ParameterSuite->paramDefine(paramset, kOfxParamTypeRGB, ofx_name.c_str(), &param_properties));
+
+	set_display_label(param_properties, label);
+	set_parent_group(param_properties, parent_group);
+
+	const auto clamped_colour = colour.clamp();
+	const double values[3]{ clamped_colour.red, clamped_colour.green, clamped_colour.blue };
+	for (int i = 0; i < 3; ++i) {
+		global_PropertySuite->propSetDouble(param_properties, kOfxParamPropDefault, i, values[i]);
+		global_PropertySuite->propSetDouble(param_properties, kOfxParamPropMin, i, 0.0);
+		global_PropertySuite->propSetDouble(param_properties, kOfxParamPropMax, i, 1.0);
+		global_PropertySuite->propSetDouble(param_properties, kOfxParamPropDisplayMin, i, 0.0);
+		global_PropertySuite->propSetDouble(param_properties, kOfxParamPropDisplayMax, i, 1.0);
+	}
+
+	add_to_lookup(id, ofx_name);
+}
+
+/********************************************************************************************************
+* Read an RGB colour picker.
+*******************************************************************************************************/
+mt::GenericRgb<double> ParameterHelper::read_colour(ParameterID id, OfxTime time) {
+	mt::GenericRgb<double> colour{};
+	check_openfx(global_ParameterSuite->paramGetValueAtTime(param_handle.at(parameter_id_to_int(id)), time, &colour.red, &colour.green, &colour.blue));
+	colour.alpha = 1.0;
+	return colour;
 }
