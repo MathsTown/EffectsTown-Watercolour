@@ -183,17 +183,30 @@ mt::GenericRgb<S> Renderer<S>::render_pixel(S x, S y) const {
     auto g = fbm(vec4<S>(nVec6, evolve_x*0.25f, evolve_y * 0.3f), 8, seed) * 0.65f;
     auto b = fbm(vec4<S>(nVec7, evolve_x*0.19f, evolve_y * 0.3f), 8, seed) * 0.65f;
     
-
-    auto result = mt::GenericRgb<S>(r, g, b);
-
-	auto working_colour_space = params.get_string(ParameterID::working_colour_space);
-	if (working_colour_space == "Rec.709") {
-		result = mt::Srgb<S>(result).to_xyz().to_rec709().to_generic_rgb();
-    } else if (working_colour_space == "sRGB") {
-        
-    } else if (working_colour_space == "Rec.2020") {
-        result = mt::Srgb<S>(result).to_xyz().to_rec2020().to_generic_rgb();
+    mt::Xyz<S> xyz{};
+    
+    const auto mixing_colour_space = params.get_string(ParameterID::mixing_colour_space);
+    if (mixing_colour_space == "sRGB") {
+        xyz = mt::Srgb(r, g, b).to_xyz();
     }
+    else if (mixing_colour_space == "Rec.709 (gamma 2.4)") {
+        xyz = mt::Rec709Gamma24(r, g, b).to_xyz();
+    }
+    else if (mixing_colour_space == "Rec.2020 (gamma 2.4)") {
+        xyz = mt::Rec2020Gamma24(r, g, b).to_xyz();
+    }
+    else if (mixing_colour_space == "Oklab") {
+        xyz = mt::Oklab(r, (g -0.5f) *0.5 , (b-0.5f)*0.6).to_xyz();
+    }
+    else if (mixing_colour_space == "Oklch") {
+        xyz = mt::Oklch(r, g  *0.5, b*1.2  ).to_xyz();
+    }
+
+
+    mt::GenericRgb<S> result {};
+    //result = xyz.to_rec709_gamma24().to_generic_rgb();
+    result = xyz.to_srgb().to_generic_rgb();
+
 
 
     

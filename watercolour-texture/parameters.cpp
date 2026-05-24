@@ -46,14 +46,14 @@ Description:
 ParameterList build_project_parameters() {
 	
 	//Build working colourspace list
-	std::vector<std::string> working_colourspace_list {};
-	working_colourspace_list.push_back("Rec.709");
-	working_colourspace_list.push_back("Rec.2020");
-	working_colourspace_list.push_back("sRGB");
+	/*std::vector<std::string> working_colourspace_list{};
+	working_colourspace_list.push_back("Rec.709 (gamma 2.4)");
+	working_colourspace_list.push_back("Rec.2020 (gamma 2.4)");
+	working_colourspace_list.push_back("sRGB");*/
 
 	
 	ParameterList params;
-	params.add_entry(ParameterEntry::make_list(ParameterID::working_colour_space,"Working Colour Space", working_colourspace_list));
+	//params.add_entry(ParameterEntry::make_list(ParameterID::working_colour_space,"Working Colour Space", working_colourspace_list));
 	
 
 	params.add_entry(ParameterEntry::make_seed(ParameterID::seed, "Random Seed"));
@@ -65,6 +65,16 @@ ParameterList build_project_parameters() {
 
 	//Input Transforms (builds from common set used in multiple projects)
 	build_input_transforms_parameter_list(params);
+
+	//Mixing space
+	std::vector<std::string> mixing_colourspace_list{};
+	mixing_colourspace_list.push_back("sRGB");
+	mixing_colourspace_list.push_back("Rec.709 (gamma 2.4)");
+	mixing_colourspace_list.push_back("Rec.2020 (gamma 2.4)");
+	mixing_colourspace_list.push_back("Oklab");
+	mixing_colourspace_list.push_back("Oklch");
+	params.add_entry(ParameterEntry::make_list(ParameterID::mixing_colour_space, "Mixing Space (Artistic)", mixing_colourspace_list));
+	
 
 	return params;
 }

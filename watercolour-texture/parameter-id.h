@@ -48,6 +48,7 @@ enum class ParameterID {
 	directional_bias,
 	evolve1,
 	evolve2,
+	mixing_colour_space,
 	
 
 	input_transform_group_start = 1000,

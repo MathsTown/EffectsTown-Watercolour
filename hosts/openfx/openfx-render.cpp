@@ -385,6 +385,10 @@ Passes of to actual project renderer
 *******************************************************************************************************/
 template <mt::SimdFloat S>
 static inline void render_pixel32(RenderThreadData<S>* rd, int x, int y) {
+    // OFX image coordinates are bottom-left; the shared renderer uses top-left image coordinates.
+    const auto renderer_x = S::make_sequential(static_cast<S::F>(x - rd->output->bounds.x1));
+    const auto renderer_y = S(static_cast<S::F>(rd->output->bounds.y2 - 1 - y));
+
     mt::GenericRgb<S> c;
     if constexpr (project_uses_input) {
         
@@ -399,13 +403,11 @@ static inline void render_pixel32(RenderThreadData<S>* rd, int x, int y) {
                 input_colour.alpha.set_element(i, *(ptr++));
             }
         }
-        c = rd->renderer->render_pixel_with_input(S::make_sequential(static_cast<S::F>(x)), S(static_cast<S::F>(y)), input_colour);        
+        c = rd->renderer->render_pixel_with_input(renderer_x, renderer_y, input_colour);        
     }
     else {
-        c = rd->renderer->render_pixel(S::make_sequential(static_cast<S::F>(x)), S(static_cast<S::F>(y)));        
+        c = rd->renderer->render_pixel(renderer_x, renderer_y);        
     }
     copy_pixel_to_output_buffer(*rd->output, x, y, rd->render_window->x2, c);
 }
-
-
 
